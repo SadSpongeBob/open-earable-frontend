@@ -1,7 +1,7 @@
-class AuthResult {
+class AuthResult<T> {
   final bool success;
   final String? errorMessage;
-  final dynamic data;
+  final T? data;
 
   const AuthResult({
     required this.success,
@@ -10,7 +10,7 @@ class AuthResult {
   });
 
   /// Success factory
-  factory AuthResult.success(dynamic data) {
+  factory AuthResult.success(T data) {
     return AuthResult(
       success: true,
       data: data,

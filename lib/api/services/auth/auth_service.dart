@@ -1,16 +1,13 @@
 import 'package:dio/dio.dart';
-
-import '../../../models/auth_result.dart';
-import '../../client.dart';
+import 'package:openearable/models/auth_result.dart';
+import 'package:openearable/api/client_dio.dart';
 import 'auth_endpoints.dart';
 
 class AuthService {
-  final Dio _dio = Client.dio;
-
   /// LOGIN
   Future<AuthResult> login(String email, String password) async {
     try {
-      final response = await _dio.post(
+      final response = await dio.post(
         AuthEndpoints.login,
         data: {
           "email": email,
@@ -20,13 +17,19 @@ class AuthService {
 
       return AuthResult.success(response.data);
     } on DioException catch (e) {
-      return AuthResult.error(
-        e.response?.data["message"] ?? "Login failed",
-      );
+      String errorMsg = "Login failed";
+
+      if (e.response?.data is Map<String, dynamic>) {
+        errorMsg = (e.response!.data["message"] ?? errorMsg).toString();
+      }
+
+      return AuthResult.error(errorMsg);
+    } catch (e) {
+      return AuthResult.error("An unexpected error occurred");
     }
   }
 
-  /// SIGNUP
+  /// signup
   Future<AuthResult> signup({
     required String name,
     required String email,
@@ -34,7 +37,7 @@ class AuthService {
     required String downloadMethod,
   }) async {
     try {
-      final response = await _dio.post(
+      final response = await dio.post(
         AuthEndpoints.signup,
         data: {
           "name": name,
@@ -46,9 +49,15 @@ class AuthService {
 
       return AuthResult.success(response.data);
     } on DioException catch (e) {
-      return AuthResult.error(
-        e.response?.data["message"] ?? "Signup failed",
-      );
+      String errorMsg = "Signup failed";
+
+      if (e.response?.data is Map<String, dynamic>) {
+        errorMsg = (e.response!.data["message"] ?? errorMsg).toString();
+      }
+
+      return AuthResult.error(errorMsg);
+    } catch (e) {
+      return AuthResult.error("An unexpected error occurred");
     }
   }
 }
