@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:openearable/features/auth/pages/login_page.dart';
-import 'package:openearable/app/constants/colors.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'constants/colors.dart';
 
-void main() {
+void main() async {
+  await dotenv.load();
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const OpenEarableApp());
 }

@@ -1,87 +1,63 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:openearable/models/auth_result.dart';
+import 'package:openearable/api/client_dio.dart';
+import 'auth_endpoints.dart';
 
 class AuthService {
-  // TODO: backend URL
-  static const String baseUrl = "";
-
   /// LOGIN
   Future<AuthResult> login(String email, String password) async {
-    final url = Uri.parse("$baseUrl/login");
-
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
+      final response = await dio.post(
+        AuthEndpoints.login,
+        data: {
           "email": email,
           "password": password,
-        }),
+        },
       );
 
-      if (response.statusCode == 200) {
-        return AuthResult.success(jsonDecode(response.body));
-      } else {
-        return AuthResult.error(
-          jsonDecode(response.body)["message"] ?? "Login failed",
-        );
+      return AuthResult.success(response.data);
+    } on DioException catch (e) {
+      String errorMsg = "Login failed";
+
+      if (e.response?.data is Map<String, dynamic>) {
+        errorMsg = (e.response!.data["message"] ?? errorMsg).toString();
       }
+
+      return AuthResult.error(errorMsg);
     } catch (e) {
-      return AuthResult.error("Network error: $e");
+      return AuthResult.error("An unexpected error occurred");
     }
   }
 
-  /// SIGNUP
+  /// signup
   Future<AuthResult> signup({
     required String name,
     required String email,
     required String password,
     required String downloadMethod,
   }) async {
-    final url = Uri.parse("$baseUrl/signup");
-
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
+      final response = await dio.post(
+        AuthEndpoints.signup,
+        data: {
           "name": name,
           "email": email,
           "password": password,
           "downloadMethod": downloadMethod,
-        }),
+        },
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return AuthResult.success(jsonDecode(response.body));
-      } else {
-        return AuthResult.error(
-          jsonDecode(response.body)["message"] ?? "Signup failed",
-        );
+      return AuthResult.success(response.data);
+    } on DioException catch (e) {
+      String errorMsg = "Signup failed";
+
+      if (e.response?.data is Map<String, dynamic>) {
+        errorMsg = (e.response!.data["message"] ?? errorMsg).toString();
       }
+
+      return AuthResult.error(errorMsg);
     } catch (e) {
-      return AuthResult.error("Network error: $e");
+      return AuthResult.error("An unexpected error occurred");
     }
-  }
-}
-
-/// Wrapper for login/signup result
-class AuthResult {
-  final bool success;
-  final String? errorMessage;
-  final dynamic data;
-
-  AuthResult({
-    required this.success,
-    this.errorMessage,
-    this.data,
-  });
-
-  factory AuthResult.success(dynamic data) {
-    return AuthResult(success: true, data: data);
-  }
-
-  factory AuthResult.error(String message) {
-    return AuthResult(success: false, errorMessage: message);
   }
 }
