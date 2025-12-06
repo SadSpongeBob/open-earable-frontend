@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'constants/colors.dart';
+import 'features/auth/pages/login_page.dart';
 
 void main() async {
-  await dotenv.load();
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load();
   runApp(const OpenEarableApp());
 }
 
@@ -26,7 +27,7 @@ class OpenEarableApp extends StatelessWidget {
         ),
       ),
 
-      //home: const LoginPage(),
+      home: const LoginPage(),
     );
   }
 }
