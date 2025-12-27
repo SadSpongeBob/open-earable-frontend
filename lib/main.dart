@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'constants/colors.dart';
+import 'app/constants/colors.dart';
 import 'features/auth/pages/login_page.dart';
 
 void main() async {

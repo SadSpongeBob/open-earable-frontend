@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:openearable/models/auth_result.dart';
 import 'package:openearable/api/client_dio.dart';
+import '../../models/auth/auth_result.dart';
 import 'auth_endpoints.dart';
 
 class AuthService {
