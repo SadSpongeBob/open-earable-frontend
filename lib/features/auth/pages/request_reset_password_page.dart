@@ -1,44 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/features/auth/pages/login_page.dart';
 import 'package:openearable/app/utils/validators.dart';
-
 import '../../../app/theme/text_styles.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/auth_card.dart';
+import '../widgets/auth_footer_link.dart';
 import '../widgets/text_field.dart';
 
-class ResetPasswordPage extends StatefulWidget {
-  // auth token parsed from a path like /reset/{authToken}.
-  final String? authToken;
-
-  const ResetPasswordPage({super.key, this.authToken});
+class RequestResetPage extends StatefulWidget {
+  const RequestResetPage({super.key});
 
   @override
-  State<ResetPasswordPage> createState() => _ResetState();
+  State<RequestResetPage> createState() => _RequestResetState();
 }
 
-class _ResetState extends State<ResetPasswordPage> {
-  final _pwController = TextEditingController();
-  final _confirmController = TextEditingController();
+class _RequestResetState extends State<RequestResetPage> {
+  final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
-  bool _showPassword = false;
 
-  bool get _isFormFilled => _pwController.text.isNotEmpty;
+  bool get _isFormFilled => _emailController.text.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
-    _pwController.addListener(_onFormChanged);
-    _confirmController.addListener(_onFormChanged);
+    _emailController.addListener(_onFormChanged);
   }
 
   void _onFormChanged() => setState(() {});
 
   @override
   void dispose() {
-    _pwController.dispose();
-    _confirmController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -62,7 +55,7 @@ class _ResetState extends State<ResetPasswordPage> {
                 const SizedBox(height: 20),
 
                 const Text(
-                  "Reset Password",
+                  "Reset your password",
                   textAlign: TextAlign.center,
                   style: AuthTextStyles.title,
                 ),
@@ -70,7 +63,7 @@ class _ResetState extends State<ResetPasswordPage> {
                 const SizedBox(height: 12),
 
                 const Text(
-                  "Enter a new password.",
+                  "Enter your email address and we'll send you a link to reset your password.",
                   textAlign: TextAlign.center,
                   style: AuthTextStyles.body,
                 ),
@@ -78,28 +71,31 @@ class _ResetState extends State<ResetPasswordPage> {
                 const SizedBox(height: 30),
 
                 AuthTextField(
-                  controller: _pwController,
-                  hint: "Password",
-                  validator: Validators.password,
-                  obscureText: !_showPassword,
-                  suffixIcon: Transform.translate(
-                    offset: const Offset(-8, 0),
-                    child: IconButton(
-                      icon: Icon(
-                        _showPassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () => setState(() => _showPassword = !_showPassword),
-                    ),
-                  ),
+                  controller: _emailController,
+                  hint: "Email Address",
+                  validator: Validators.email,
+                  keyboardType: TextInputType.emailAddress,
                 ),
 
                 const SizedBox(height: 30),
 
                 AuthButton(
-                  text: "Reset",
+                  text: "Send",
                   loading: _loading,
                   enabled: _isFormFilled,
-                  onTap: _handleReset,
+                  onTap: _handleSendReset,
+                ),
+
+                const SizedBox(height: 30),
+
+                AuthFooterLink(
+                  text: "Back to Log In",
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                    );
+                  },
                 ),
               ],
             ),
@@ -109,24 +105,26 @@ class _ResetState extends State<ResetPasswordPage> {
     );
   }
 
-  Future<void> _handleReset() async {
+  Future<void> _handleSendReset() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _loading = true);
 
-    // TODO: Replace this with a real API call
-    // something like : AuthService().resetPassword(widget.authToken, _pwController.text)
+    // TODO: Replace this with a real API call when available
     await Future.delayed(const Duration(seconds: 1));
 
     if (!mounted) return;
 
     setState(() => _loading = false);
 
+    // TODO: modify the dialog design
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Password Reset'),
-        content: const Text('Your password has been reset successfully.'),
+        title: const Text('Reset Link Sent'),
+        content: Text(
+          'If an account with ${_emailController.text.trim()} exists, a password reset link has been sent to that address.',
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -136,7 +134,7 @@ class _ResetState extends State<ResetPasswordPage> {
                 MaterialPageRoute(builder: (_) => const LoginPage()),
               );
             },
-            child: const Text('Go to Login'),
+            child: const Text('Back to Login'),
           ),
         ],
       ),

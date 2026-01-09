@@ -25,11 +25,11 @@ class AuthTextField extends StatelessWidget {
       validator: validator,
       obscureText: obscureText,
       keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 18, fontFamily: "Roboto"),
+      style: const TextStyle(fontSize: 21, fontFamily: "Roboto", fontWeight: FontWeight.w600,),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(
-          fontSize: 18,
+          fontSize: 20,
           fontWeight: FontWeight.w400,
           color: Color(0xFF1F1F1F),
           fontFamily: "Roboto",

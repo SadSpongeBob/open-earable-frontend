@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
-import 'package:openearable/features/auth/pages/reset_password_page.dart';
+import 'package:openearable/features/auth/pages/request_reset_password_page.dart';
 import 'package:openearable/features/auth/pages/signup_page.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/app/utils/validators.dart';
@@ -88,12 +88,15 @@ class _LoginPageState extends State<LoginPage> {
                   hint: "Password",
                   validator: Validators.password,
                   obscureText: !_showPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _showPassword ? Icons.visibility_off : Icons.visibility,
+                  suffixIcon: Transform.translate(
+                    offset: const Offset(-8, 0),
+                    child: IconButton(
+                      icon: Icon(
+                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          setState(() => _showPassword = !_showPassword),
                     ),
-                    onPressed: () =>
-                        setState(() => _showPassword = !_showPassword),
                   ),
                 ),
 
@@ -161,12 +164,12 @@ class _LoginPageState extends State<LoginPage> {
           onTap: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (_) => const ResetPasswordPage()),
+              MaterialPageRoute(builder: (_) => const RequestResetPage()),
             );
           },
           child: Text(
             "Forgot Password?",
-            style: AuthTextStyles.link,
+            style: AuthTextStyles.body,
           ),
         ),
       ],
