@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
+import 'package:openearable/features/auth/pages/reset_password_page.dart';
 import 'package:openearable/features/auth/pages/signup_page.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/app/utils/validators.dart';
@@ -24,7 +25,6 @@ class _LoginPageState extends State<LoginPage> {
   final _pwController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  bool _rememberMe = false;
   bool _loading = false;
   bool _showPassword = false;
   bool get _isFormFilled =>
@@ -81,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
                   keyboardType: TextInputType.emailAddress,
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 20),
 
                 AuthTextField(
                   controller: _pwController,
@@ -97,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 _buildRememberForgotRow(),
                 const SizedBox(height: 30),
 
@@ -108,32 +108,41 @@ class _LoginPageState extends State<LoginPage> {
                   onTap: _handleLogin,
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 10),
 
-                AuthFooterLink(
-                  text: "Don’t have an account yet? Sign Up",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SignupPage()),
-                    );
-                  },
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Don’t have an account yet? ",
+                      style: AuthTextStyles.body,
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SignupPage()),
+                        );
+                      },
+                      child: Text(
+                        "Sign Up",
+                        style: AuthTextStyles.link,
+                      ),
+                    ),
+                  ],
                 ),
 
-                const SizedBox(height: 10),
-
                 const AuthSeparator(),
-
-                const SizedBox(height: 10),
 
                 AuthFooterLink(
                   text: "Continue as Guest",
                   bold: true,
                   onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomePage()),
-                    );
+                    //Navigator.pushReplacement(
+                      //context,
+                      //MaterialPageRoute(builder: (_) => const HomePage()),
+                    //);
                   },
                 ),
               ],
@@ -147,22 +156,17 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildRememberForgotRow() {
     return Row(
       children: [
-        Checkbox(
-          value: _rememberMe,
-          onChanged: (v) => setState(() => _rememberMe = v ?? false),
-        ),
-        const Text(
-          "Remember me",
-          style: AuthTextStyles.body,
-        ),
         const Spacer(),
-        TextButton(
-          onPressed: () {
-            // TODO: Forgot password flow
+        GestureDetector(
+          onTap: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ResetPasswordPage()),
+            );
           },
-          child: const Text(
+          child: Text(
             "Forgot Password?",
-            style: AuthTextStyles.body,
+            style: AuthTextStyles.link,
           ),
         ),
       ],
@@ -178,7 +182,6 @@ class _LoginPageState extends State<LoginPage> {
     final result = await AuthService().login(
       _emailController.text.trim(),
       _pwController.text.trim(),
-      // rememberMe: _rememberMe (optional)
     );
 
     setState(() => _loading = false);
@@ -193,4 +196,3 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 }
-

@@ -20,7 +20,13 @@ class AuthTextStyles {
     fontWeight: FontWeight.w700,
     color: Color(0xFF1F1F1F),
     fontFamily: "Roboto",
-    decoration: TextDecoration.underline,
+  );
+
+  static const fieldHint = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w400,
+    color: Color(0xFF1F1F1F),
+    fontFamily: "Roboto",
   );
 
   static const button = TextStyle(
