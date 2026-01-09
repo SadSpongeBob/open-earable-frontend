@@ -139,10 +139,10 @@ class _LoginPageState extends State<LoginPage> {
                   text: "Continue as Guest",
                   bold: true,
                   onTap: () {
-                    //Navigator.pushReplacement(
-                      //context,
-                      //MaterialPageRoute(builder: (_) => const HomePage()),
-                    //);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HomePage()),
+                    );
                   },
                 ),
               ],
