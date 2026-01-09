@@ -27,6 +27,25 @@ class _LoginPageState extends State<LoginPage> {
   bool _rememberMe = false;
   bool _loading = false;
   bool _showPassword = false;
+  bool get _isFormFilled =>
+      _emailController.text.isNotEmpty &&
+          _pwController.text.isNotEmpty;
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_onFormChanged);
+    _pwController.addListener(_onFormChanged);
+  }
+
+  void _onFormChanged() {
+    setState(() {});
+  }
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _pwController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +104,7 @@ class _LoginPageState extends State<LoginPage> {
                 AuthButton(
                   text: "Log In",
                   loading: _loading,
+                  enabled: _isFormFilled,
                   onTap: _handleLogin,
                 ),
 
@@ -100,11 +120,11 @@ class _LoginPageState extends State<LoginPage> {
                   },
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
 
                 const AuthSeparator(),
 
-                const SizedBox(height: 15),
+                const SizedBox(height: 10),
 
                 AuthFooterLink(
                   text: "Continue as Guest",

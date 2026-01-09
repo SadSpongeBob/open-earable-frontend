@@ -5,29 +5,40 @@ class AuthButton extends StatelessWidget {
   final String text;
   final VoidCallback? onTap;
   final bool loading;
+  final bool enabled;
 
   const AuthButton({
     super.key,
     required this.text,
     this.onTap,
     this.loading = false,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool isActive = enabled && !loading;
+
     return GestureDetector(
-      onTap: loading ? null : onTap,
+      onTap: isActive ? onTap : null,
       child: Container(
         height: 55,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: const Color(0xFF6E6E6E),
+          color: isActive
+              ? Colors.black // enabled state
+              : const Color(0xFF6E6E6E),
           borderRadius: BorderRadius.circular(36),
-          border: Border.all(color: const Color(0xFF1F1F1F)),
+          border: Border.all(color: Colors.black),
         ),
         child: loading
             ? const CircularProgressIndicator(color: Colors.white)
-            : Text(text, style: AuthTextStyles.button),
+            : Text(
+          text,
+          style: AuthTextStyles.button.copyWith(
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

@@ -15,6 +15,14 @@ class AuthTextStyles {
     fontFamily: "Roboto",
   );
 
+  static const link = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    color: Color(0xFF1F1F1F),
+    fontFamily: "Roboto",
+    decoration: TextDecoration.underline,
+  );
+
   static const button = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w500,
