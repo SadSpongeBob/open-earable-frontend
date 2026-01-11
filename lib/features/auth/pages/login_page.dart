@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
+import 'package:openearable/features/auth/pages/Settings.dart';
 import 'package:openearable/features/auth/pages/signup_page.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/app/utils/validators.dart';
@@ -112,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (_) => const HomePage()),
+                      MaterialPageRoute(builder: (_) => const Settings()),
                     );
                   },
                 ),

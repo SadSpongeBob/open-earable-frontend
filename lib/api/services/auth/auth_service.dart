@@ -30,12 +30,7 @@ class AuthService {
   }
 
   /// signup
-  Future<AuthResult> signup({
-    required String name,
-    required String email,
-    required String password,
-    required String downloadMethod,
-  }) async {
+  Future<AuthResult> signup(String name, String email, String password,) async {
     try {
       final response = await dio.post(
         AuthEndpoints.signup,
@@ -43,9 +38,9 @@ class AuthService {
           "name": name,
           "email": email,
           "password": password,
-          "downloadMethod": downloadMethod,
         },
       );
+
 
       return AuthResult.success(response.data);
     } on DioException catch (e) {
