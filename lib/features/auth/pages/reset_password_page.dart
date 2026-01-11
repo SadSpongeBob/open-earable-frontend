@@ -8,9 +8,7 @@ import '../widgets/auth_card.dart';
 import '../widgets/text_field.dart';
 
 class ResetPasswordPage extends StatefulWidget {
-  // auth token parsed from a path like /reset/{authToken}.
   final String? authToken;
-
   const ResetPasswordPage({super.key, this.authToken});
 
   @override
