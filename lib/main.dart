@@ -29,7 +29,7 @@ class OpenEarableApp extends StatelessWidget {
         ),
       ),
 
-      home: const Settings(),
+      home: const LoginPage(),
     );
   }
 }
