@@ -4,20 +4,20 @@ import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/features/auth/pages/login_page.dart';
 
 import '../../../app/theme/text_styles.dart';
-import '../../settings/widgets/downloadMethod_customDropDown.dart';
+import '../../settings/widgets/download_method_dropdown.dart';
 import '../../auth/widgets/auth_card.dart';
 
 import '../../auth/widgets/text_field.dart';
 
 
-class Settings extends StatefulWidget {
-  const Settings({super.key});
+class SettingsPage extends StatefulWidget {
+  const SettingsPage({super.key});
 
   @override
-  State<Settings> createState() => _SettingsState();
+  State<SettingsPage> createState() => _SettingsState();
 }
 
-class _SettingsState extends State<Settings> {
+class _SettingsState extends State<SettingsPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _pwController = TextEditingController();
@@ -74,7 +74,11 @@ class _SettingsState extends State<Settings> {
                     },
                     child: const Text(
                       'Cancel',
-                      style: TextStyle(color: Colors.red, fontSize: 15),
+                      style: TextStyle(
+                          color: Color(0xFFFF4442),
+                          fontSize: 16,
+                          fontFamily: 'Roboto',
+                      ),
                     ),
                   ),
 
@@ -83,10 +87,7 @@ class _SettingsState extends State<Settings> {
                   // Title
                   const Text(
                     'Settings',
-                    style: TextStyle(
-                      fontSize: 50,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: GlobalTextStyles.appBarTitle,
                   ),
 
                   const Spacer(),
@@ -98,7 +99,11 @@ class _SettingsState extends State<Settings> {
                     },
                     child: const Text(
                       'Save',
-                      style: TextStyle(fontSize: 15),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontFamily: 'Roboto',
+                      ),
                     ),
                   ),
                 ],
@@ -125,14 +130,14 @@ class _SettingsState extends State<Settings> {
                   const Text(
                     'Account',
                     textAlign: TextAlign.center,
-                    style: AuthTextStyles.title,
+                    style: GlobalTextStyles.cardTitle,
                   ),
                   Image.asset('assets/images/user.png', width: 80, height: 100),
                   const SizedBox(height: 10),
 
                   AuthTextField(
                     controller: _nameController,
-                    //to do: fetch current user name
+                    //TODO: fetch current user name
                     hint: '',
                     validator: Validators.name,
                     keyboardType: TextInputType.name,
@@ -142,7 +147,7 @@ class _SettingsState extends State<Settings> {
 
                   AuthTextField(
                     controller: _emailController,
-                    //to do: fetch current user email
+                    //TODO: fetch current user email
                     hint: '',
                     validator: Validators.email,
                     keyboardType: TextInputType.emailAddress,
@@ -152,15 +157,19 @@ class _SettingsState extends State<Settings> {
 
                   AuthTextField(
                     controller: _pwController,
-                    //to do: fetch current user password
-                    hint: '',
+                    //TODO: fetch current user password
+                    hint: "",
                     validator: Validators.password,
                     obscureText: !_showPassword,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                    suffixIcon: Transform.translate(
+                      offset: const Offset(-20, 0),
+                      child: IconButton(
+                        icon: Icon(
+                          _showPassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
                       ),
-                      onPressed: () => setState(() => _showPassword = !_showPassword),
                     ),
                   ),
 
@@ -186,12 +195,16 @@ class _SettingsState extends State<Settings> {
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           ),
-                          child: const Text('Sign Out'),
+                          child: const Text('Sign Out', style: TextStyle(
+                              color: Color(0xFF1F1F1F),
+                              fontSize: 16,
+                              fontFamily: 'Roboto'),
+                          ),
                         ),
 
                         ElevatedButton(
                           onPressed: () {
-                            // Delete account logic
+                            // TODO: Delete account logic
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
@@ -200,7 +213,10 @@ class _SettingsState extends State<Settings> {
                           ),
                           child: const Text(
                             'Delete Account',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'Roboto'),
                           ),
                         ),
                       ],
