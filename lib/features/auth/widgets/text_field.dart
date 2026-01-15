@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../app/theme/text_styles.dart';
+import '../../../app/constants/colors.dart';
 
 class AuthTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -25,17 +27,12 @@ class AuthTextField extends StatelessWidget {
       validator: validator,
       obscureText: obscureText,
       keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 18, fontFamily: "Roboto"),
+      style: AuthTextStyles.fieldInput,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w400,
-          color: Color(0xFF1F1F1F),
-          fontFamily: "Roboto",
-        ),
+        hintStyle: AuthTextStyles.fieldHint,
         contentPadding:
-        const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         border: _border(),
         enabledBorder: _border(),
         focusedBorder: _border(),
@@ -49,7 +46,7 @@ class AuthTextField extends StatelessWidget {
       borderRadius: BorderRadius.circular(36),
       borderSide: const BorderSide(
         width: 3,
-        color: Color(0xFF1F1F1F),
+        color: AppColors.fieldBorder,
       ),
     );
   }
