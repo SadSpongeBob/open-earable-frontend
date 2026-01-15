@@ -4,9 +4,9 @@ import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/features/auth/pages/login_page.dart';
 import '../../../app/theme/text_styles.dart';
 
-import '../widgets/auth_card.dart';
+import '../../auth/widgets/auth_card.dart';
 
-import '../widgets/text_field.dart';
+import '../../auth/widgets/text_field.dart';
 
 
 class Settings extends StatefulWidget {
@@ -56,7 +56,7 @@ class _SettingsState extends State<Settings> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black,
                   blurRadius: 12,
                 ),
               ],

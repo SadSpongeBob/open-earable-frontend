@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:openearable/features/auth/pages/Settings.dart';
-import 'package:openearable/features/home/pages/home_page.dart';
 import 'app/constants/colors.dart';
 import 'features/auth/pages/login_page.dart';
 

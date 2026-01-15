@@ -26,6 +26,31 @@ class _SignupPageState extends State<SignupPage> {
   bool _loading = false;
   bool _showPassword = false;
 
+  bool get _isFormFilled =>
+      _namecontroller.text.isNotEmpty &&
+      _emailController.text.isNotEmpty &&
+      _pwController.text.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _namecontroller.addListener(_onFormChanged);
+    _emailController.addListener(_onFormChanged);
+    _pwController.addListener(_onFormChanged);
+  }
+
+  void _onFormChanged() {
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _namecontroller.dispose();
+    _emailController.dispose();
+    _pwController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,14 +76,15 @@ class _SignupPageState extends State<SignupPage> {
                   style: AuthTextStyles.title,
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 35),
+
                 AuthTextField(
                   controller: _namecontroller,
                   hint: "Name",
                   validator: Validators.name,
                   keyboardType: TextInputType.name,
                 ),
-                const SizedBox(height: 25),
+                const SizedBox(height: 20),
 
                 AuthTextField(
                   controller: _emailController,
@@ -67,49 +93,62 @@ class _SignupPageState extends State<SignupPage> {
                   keyboardType: TextInputType.emailAddress,
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 20),
 
                 AuthTextField(
                   controller: _pwController,
                   hint: "Password",
                   validator: Validators.password,
                   obscureText: !_showPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _showPassword ? Icons.visibility_off : Icons.visibility,
+                  suffixIcon: Transform.translate(
+                    offset: const Offset(-20, 0),
+                    child: IconButton(
+                      icon: Icon(
+                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          setState(() => _showPassword = !_showPassword),
                     ),
-                    onPressed: () =>
-                        setState(() => _showPassword = !_showPassword),
                   ),
                 ),
 
+                const SizedBox(height: 10),
 
-
-                const SizedBox(height: 30),
+                const SizedBox(height: 35),
 
                 AuthButton(
                   text: "Sign up",
                   loading: _loading,
+                  enabled: _isFormFilled,
                   onTap: _handleSingup,
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 10),
 
-                AuthFooterLink(
-                  text: "Already have an account? Login",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
-                    );
-                  },
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Already have an account? ",
+                      style: AuthTextStyles.body,
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginPage()),
+                        );
+                      },
+                      child: Text(
+                        "Log in",
+                        style: AuthTextStyles.link,
+                      ),
+                    ),
+                  ],
                 ),
 
-                const SizedBox(height: 20),
-
                 const AuthSeparator(),
-
-                const SizedBox(height: 15),
 
                 AuthFooterLink(
                   text: "Continue as Guest",
@@ -155,5 +194,3 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 }
-
-
