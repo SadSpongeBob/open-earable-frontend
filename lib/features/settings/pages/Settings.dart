@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/features/auth/pages/login_page.dart';
-import 'package:openearable/features/home/pages/Playback.dart';
+import 'package:openearable/features/playback/pages/Playback.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../settings/widgets/downloadMethod_customDropDown.dart';
 import '../../auth/widgets/auth_card.dart';

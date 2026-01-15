@@ -4,6 +4,7 @@ import 'package:openearable/features/auth/pages/request_reset_password_page.dart
 import 'package:openearable/features/auth/pages/signup_page.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/app/utils/validators.dart';
+import 'package:openearable/features/settings/pages/Settings.dart';
 
 import '../../../app/theme/text_styles.dart';
 import '../widgets/auth_button.dart';
@@ -144,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (_) => const HomePage()),
+                      MaterialPageRoute(builder: (_) => const Settings()),
                     );
                   },
                 ),
