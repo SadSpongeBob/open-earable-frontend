@@ -72,7 +72,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: AuthTextStyles.title,
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 35),
 
                 AuthTextField(
                   controller: _emailController,
@@ -89,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
                   validator: Validators.password,
                   obscureText: !_showPassword,
                   suffixIcon: Transform.translate(
-                    offset: const Offset(-8, 0),
+                    offset: const Offset(-20, 0),
                     child: IconButton(
                       icon: Icon(
                         _showPassword ? Icons.visibility_off : Icons.visibility,
@@ -102,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 10),
                 _buildRememberForgotRow(),
-                const SizedBox(height: 30),
+                const SizedBox(height: 35),
 
                 AuthButton(
                   text: "Log In",

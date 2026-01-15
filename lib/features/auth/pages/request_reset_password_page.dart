@@ -55,7 +55,7 @@ class _RequestResetState extends State<RequestResetPage> {
                 const SizedBox(height: 20),
 
                 const Text(
-                  "Reset your password",
+                  "Forgot your password?",
                   textAlign: TextAlign.center,
                   style: AuthTextStyles.title,
                 ),
@@ -63,12 +63,12 @@ class _RequestResetState extends State<RequestResetPage> {
                 const SizedBox(height: 12),
 
                 const Text(
-                  "Enter your email address and we'll send you a link to reset your password.",
+                  "Enter your Email so that we can send you password reset link.",
                   textAlign: TextAlign.center,
                   style: AuthTextStyles.body,
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 35),
 
                 AuthTextField(
                   controller: _emailController,
@@ -86,10 +86,10 @@ class _RequestResetState extends State<RequestResetPage> {
                   onTap: _handleSendReset,
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 25),
 
                 AuthFooterLink(
-                  text: "Back to Log In",
+                  text: "< Back to Log In",
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
