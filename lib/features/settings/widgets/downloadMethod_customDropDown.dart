@@ -31,9 +31,11 @@ class _CustomDropdownState extends State<CustomDropdown> {
             onSelected: (value) => setState(() => _selected = value),
             itemBuilder: (context) => _options
                 .map((opt) => PopupMenuItem<String>(
-              value: opt,
-              child: Text(opt, style: TextStyle(color: _getColor(opt, _selected))),
-            ))
+                       value: opt,
+                      child: Text(opt,
+                          style: TextStyle(
+                              color: _getColor(opt, _selected))),
+                    ))
                 .toList(),
           ),
         ],
