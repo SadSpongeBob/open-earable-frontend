@@ -84,6 +84,7 @@ class _SignupPageState extends State<SignupPage> {
                   validator: Validators.name,
                   keyboardType: TextInputType.name,
                 ),
+
                 const SizedBox(height: 20),
 
                 AuthTextField(
@@ -112,9 +113,7 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ),
 
-                const SizedBox(height: 10),
-
-                const SizedBox(height: 35),
+                const SizedBox(height: 20),
 
                 AuthButton(
                   text: "Sign up",
