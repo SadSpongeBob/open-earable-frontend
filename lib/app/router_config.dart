@@ -1,11 +1,11 @@
 import 'dart:async';
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/app/routes.dart';
 import 'package:openearable/features/auth/pages/reset_password_page.dart';
-import 'package:uni_links/uni_links.dart';
 
 class RouterConfig {
   RouterConfig() {
@@ -13,7 +13,8 @@ class RouterConfig {
   }
 
   late final GoRouter router;
-  StreamSubscription<Uri?>? _linkSub;
+  StreamSubscription<Uri>? _linkSub;
+  final AppLinks _appLinks = AppLinks();
 
   GoRouter getRouter() => router;
 
@@ -36,31 +37,26 @@ class RouterConfig {
           child: Text('No route for: ${state.uri}\n\n${state.error ?? ""}'),
         ),
       ),
-
-      // TODO: later add redirect/auth-guard
-      // redirect: (context, state) { ... return null; },
     );
   }
 
   Future<void> initDeepLinks() async {
     try {
       // Cold start (app opened from link)
-      final initial = await getInitialUri();
+      final initial = await _appLinks.getInitialLink();
       _handleIncomingUri(initial);
 
       // Warm start (app already open)
       await _linkSub?.cancel();
-      _linkSub = uriLinkStream.listen(
+      _linkSub = _appLinks.uriLinkStream.listen(
         _handleIncomingUri,
         onError: (err) {
-          // TODO: add logging
           if (kDebugMode) {
             print('Deep link stream error: $err');
           }
         },
       );
     } catch (e) {
-      // TODO: add logging
       if (kDebugMode) {
         print('initDeepLinks exception: $e');
       }
@@ -79,9 +75,7 @@ class RouterConfig {
     final isResetLink =
         uri.scheme == 'open-earable' && uri.host == 'reset-password';
 
-    if (!isResetLink) {
-      return;
-    }
+    if (!isResetLink) return;
 
     final token = uri.queryParameters['token'];
 

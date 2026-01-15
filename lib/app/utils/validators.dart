@@ -35,6 +35,15 @@ class Validators {
 
     return null;
   }
+  static String? name(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return "name is required";
+    }
+
+
+
+    return null;
+  }
 
   /// confirm password validator
   static String? confirmPassword(String? value, String original) {
