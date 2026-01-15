@@ -13,9 +13,9 @@ class AuthSeparator extends StatelessWidget {
         Expanded(child: Divider(thickness: 2, color: Colors.black)),
         SizedBox(width: 9),
         Text("or", style: AuthTextStyles.body),
-        SizedBox(width: 4),
+        SizedBox(width: 9),
         Expanded(child: Divider(thickness: 2, color: Colors.black)),
-        SizedBox(width: 90),
+        SizedBox(width: 75),
       ],
     );
   }
