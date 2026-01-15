@@ -1,0 +1,53 @@
+import 'package:flutter/material.dart';
+import '../../../app/theme/text_styles.dart';
+import '../../../app/constants/colors.dart';
+
+class AuthTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final String? Function(String?)? validator;
+  final bool obscureText;
+  final Widget? suffixIcon;
+  final TextInputType keyboardType;
+
+  const AuthTextField({
+    super.key,
+    required this.controller,
+    required this.hint,
+    this.validator,
+    this.obscureText = false,
+    this.suffixIcon,
+    this.keyboardType = TextInputType.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      style: AuthTextStyles.fieldInput,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: AuthTextStyles.fieldHint,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        border: _border(),
+        enabledBorder: _border(),
+        focusedBorder: _border(),
+        suffixIcon: suffixIcon,
+      ),
+    );
+  }
+
+  OutlineInputBorder _border() {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(36),
+      borderSide: const BorderSide(
+        width: 3,
+        color: AppColors.fieldBorder,
+      ),
+    );
+  }
+}
