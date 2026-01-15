@@ -13,7 +13,7 @@ class AuthCard extends StatelessWidget {
     return Center(
       child: Container(
         width: cardWidth,
-        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 32),
+        padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 50),
         decoration: BoxDecoration(
           color: const Color(0xFFF2F2F2),
           borderRadius: BorderRadius.circular(50),

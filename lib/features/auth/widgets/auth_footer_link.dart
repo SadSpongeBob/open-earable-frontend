@@ -20,8 +20,8 @@ class AuthFooterLink extends StatelessWidget {
       child: Text(
         text,
         style: bold
-            ? AuthTextStyles.body.copyWith(fontWeight: FontWeight.w700)
-            : AuthTextStyles.body,
+            ? AuthTextStyles.link.copyWith(fontWeight: FontWeight.w700)
+            : AuthTextStyles.link,
       ),
     );
   }

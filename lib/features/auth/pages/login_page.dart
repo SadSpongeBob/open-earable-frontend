@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
-import 'package:openearable/features/auth/pages/Settings.dart';
+import 'package:openearable/features/auth/pages/request_reset_password_page.dart';
 import 'package:openearable/features/auth/pages/signup_page.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/app/utils/validators.dart';
@@ -25,9 +25,27 @@ class _LoginPageState extends State<LoginPage> {
   final _pwController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  bool _rememberMe = false;
   bool _loading = false;
   bool _showPassword = false;
+  bool get _isFormFilled =>
+      _emailController.text.isNotEmpty &&
+          _pwController.text.isNotEmpty;
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_onFormChanged);
+    _pwController.addListener(_onFormChanged);
+  }
+
+  void _onFormChanged() {
+    setState(() {});
+  }
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _pwController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +72,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: AuthTextStyles.title,
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 35),
 
                 AuthTextField(
                   controller: _emailController,
@@ -63,49 +81,62 @@ class _LoginPageState extends State<LoginPage> {
                   keyboardType: TextInputType.emailAddress,
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 20),
 
                 AuthTextField(
                   controller: _pwController,
                   hint: "Password",
                   validator: Validators.password,
                   obscureText: !_showPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _showPassword ? Icons.visibility_off : Icons.visibility,
+                  suffixIcon: Transform.translate(
+                    offset: const Offset(-20, 0),
+                    child: IconButton(
+                      icon: Icon(
+                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          setState(() => _showPassword = !_showPassword),
                     ),
-                    onPressed: () =>
-                        setState(() => _showPassword = !_showPassword),
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 _buildRememberForgotRow(),
-                const SizedBox(height: 30),
+                const SizedBox(height: 35),
 
                 AuthButton(
                   text: "Log In",
                   loading: _loading,
+                  enabled: _isFormFilled,
                   onTap: _handleLogin,
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 10),
 
-                AuthFooterLink(
-                  text: "Don’t have an account yet? Sign Up",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SignupPage()),
-                    );
-                  },
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Don’t have an account yet? ",
+                      style: AuthTextStyles.body,
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SignupPage()),
+                        );
+                      },
+                      child: Text(
+                        "Sign Up",
+                        style: AuthTextStyles.link,
+                      ),
+                    ),
+                  ],
                 ),
 
-                const SizedBox(height: 20),
-
                 const AuthSeparator(),
-
-                const SizedBox(height: 15),
 
                 AuthFooterLink(
                   text: "Continue as Guest",
@@ -113,7 +144,7 @@ class _LoginPageState extends State<LoginPage> {
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (_) => const Settings()),
+                      MaterialPageRoute(builder: (_) => const HomePage()),
                     );
                   },
                 ),
@@ -128,20 +159,15 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildRememberForgotRow() {
     return Row(
       children: [
-        Checkbox(
-          value: _rememberMe,
-          onChanged: (v) => setState(() => _rememberMe = v ?? false),
-        ),
-        const Text(
-          "Remember me",
-          style: AuthTextStyles.body,
-        ),
         const Spacer(),
-        TextButton(
-          onPressed: () {
-            // TODO: Forgot password flow
+        GestureDetector(
+          onTap: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const RequestResetPage()),
+            );
           },
-          child: const Text(
+          child: Text(
             "Forgot Password?",
             style: AuthTextStyles.body,
           ),
@@ -159,7 +185,6 @@ class _LoginPageState extends State<LoginPage> {
     final result = await AuthService().login(
       _emailController.text.trim(),
       _pwController.text.trim(),
-      // rememberMe: _rememberMe (optional)
     );
 
     setState(() => _loading = false);
@@ -174,4 +199,3 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 }
-
