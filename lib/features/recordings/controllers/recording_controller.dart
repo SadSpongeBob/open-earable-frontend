@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
-//es gibt noch ein problm wenn ich die kamera switche wahren der asufnahme boooom muss noch fixieren
-
+///matmisi lahna chy 7achtiik b7aja goulili
 class RecordingController extends ChangeNotifier {
   RecordingController({this.initialCamera = CameraLensDirection.back});
 
@@ -13,9 +12,8 @@ class RecordingController extends ChangeNotifier {
   CameraLensDirection currentLens = CameraLensDirection.back;
   bool isInitialized = false;
   bool isRecording = false;
+  bool isPaused = false;
   String? error;
-
-  /// Initialisiert Controller und listet verfügbare Kameras.
   Future<void> init() async {
     currentLens = initialCamera;
     await _loadCameras();
@@ -84,6 +82,7 @@ class RecordingController extends ChangeNotifier {
     try {
       final XFile file = await cameraController!.stopVideoRecording();
       isRecording = false;
+      isPaused = false; // reset
       notifyListeners();
       final saved = await _saveVideo(file);
       return saved;
@@ -116,6 +115,30 @@ class RecordingController extends ChangeNotifier {
     currentLens = next;
     notifyListeners();
     await _initCameraController(next);
+  }
+  Future<void> pauseRecording() async {
+    if (!isInitialized || !isRecording || isPaused || cameraController == null) return;
+
+    try {
+      await cameraController!.pauseVideoRecording();
+      isPaused = true;
+      notifyListeners();
+    } catch (e) {
+      error = 'Fehler beim Pausieren der Aufnahme: $e';
+      notifyListeners();
+    }
+  }
+  Future<void> resumeRecording() async {
+    if (!isInitialized || !isRecording || !isPaused || cameraController == null) return;
+
+    try {
+      await cameraController!.resumeVideoRecording();
+      isPaused = false;
+      notifyListeners();
+    } catch (e) {
+      error = 'Fehler beim Fortsetzen der Aufnahme: $e';
+      notifyListeners();
+    }
   }
 
   @override
