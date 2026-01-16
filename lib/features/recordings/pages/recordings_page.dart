@@ -10,23 +10,26 @@ class RecordingPage extends StatefulWidget {
     super.key,
     this.onVideoRecorded,
     this.initialCamera = CameraLensDirection.back,
-
   });
+
   final void Function(String videoPath)? onVideoRecorded;
   final CameraLensDirection initialCamera;
+
   @override
   State<RecordingPage> createState() => _RecordingPageState();
 }
-class _RecordingPageState extends State<RecordingPage>
-    with WidgetsBindingObserver {
+
+class _RecordingPageState extends State<RecordingPage> {
   late final RecordingController _controller;
+
   @override
   void initState() {
     super.initState();
-    _controller = RecordingController(initialCamera: widget.initialCamera);
-    _controller.addListener(_onControllerChanged);
-    _controller.init();
+    _controller = RecordingController(initialCamera: widget.initialCamera)
+      ..addListener(_onControllerChanged)
+      ..init();
   }
+
   @override
   void dispose() {
     _controller.removeListener(_onControllerChanged);
@@ -38,64 +41,78 @@ class _RecordingPageState extends State<RecordingPage>
     if (mounted) setState(() {});
   }
 
+  Future<void> _onShutterPressed() async {
+    if (_controller.isRecording) {
+      final path = await _controller.stopRecording();
+      if (path != null) widget.onVideoRecorded?.call(path);
+    } else {
+      await _controller.startRecording();
+    }
+  }
+
+  Future<void> _onFlipOrPausePressed() async {
+    if (!_controller.isRecording) {
+      await _controller.toggleCamera();
+    } else {
+      if (_controller.isPaused) {
+        await _controller.resumeRecording();
+      } else {
+        await _controller.pauseRecording();
+      }
+    }
+  }
+
+  void _navigateToHome() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomePage()),
+    );
+  }
+
+  Widget _buildCameraPreview() {
+    if (_controller.error != null) {
+      return Center(
+        child: Text(
+          _controller.error!,
+          style: const TextStyle(color: Colors.white),
+        ),
+      );
+    }
+
+    if (!_controller.isInitialized) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Positioned.fill(
+      child: CameraPreview(_controller.cameraController!),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        RecordingLeftBar(
-          onBackToProjects: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomePage()),
-            );
-          },
-        ),
-        // Kamera-Vorschau links
-        Expanded(
-          child: Container(
-            color: Colors.black,
-            child: Stack(
-              children: [
-                if (_controller.error != null)
-                  Center(child: Text(_controller.error!, style: const TextStyle(color: Colors.white)))
-                else if (!_controller.isInitialized)
-                  const Center(child: CircularProgressIndicator())
-                else
-                  Positioned.fill(child: CameraPreview(_controller.cameraController!)),
-              ],
+    return SafeArea(
+      child: Row(
+        children: [
+          RecordingLeftBar(onBackToProjects: _navigateToHome),
+          // Kamera Vorschau
+          Expanded(
+            child: Container(
+              color: Colors.black,
+              child: Stack(children: [ _buildCameraPreview() ]),
             ),
           ),
-        ),
-        HomeRecordingRightBar(
-          onSettings: () async {
-          },
-          onWaveSound: () {},
-          onShutter: () async {
-            if (_controller.isRecording) {
-              final path = await _controller.stopRecording();
-              if (path != null) widget.onVideoRecorded?.call(path);
-            } else {
-              await _controller.startRecording();
-            }
-          },
-          onFlipCamera: () async {
-            if (!_controller.isRecording) {
-              await _controller.toggleCamera();
-            } else {
-              if (_controller.isPaused) {
-                await _controller.resumeRecording();
-              } else {
-                await _controller.pauseRecording();
-              }
-            }
-          },
-          onBluetooth: () {},
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          isRecording: _controller.isRecording,
-          isPaused: _controller.isPaused,
-        ),
-
-      ],
+          HomeRecordingRightBar(
+            onSettings: () async {},
+            onWaveSound: () {},
+            onShutter: _onShutterPressed,
+            onFlipCamera: _onFlipOrPausePressed,
+            onBluetooth: () {},
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            isRecording: _controller.isRecording,
+            isPaused: _controller.isPaused,
+          ),
+        ],
+      ),
     );
   }
 }
