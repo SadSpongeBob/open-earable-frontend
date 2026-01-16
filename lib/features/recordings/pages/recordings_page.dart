@@ -5,7 +5,6 @@ import '../../home/pages/home_page.dart';
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
 
-//hier bitte design wie du willst ändern ist mir scheiss egal als was mit kamera zu tun hat bitte nicht anfassen
 class RecordingPage extends StatefulWidget {
   const RecordingPage({
     super.key,
@@ -68,7 +67,6 @@ class _RecordingPageState extends State<RecordingPage>
           ),
         ),
         HomeRecordingRightBar(
-          ///hier wird pausieren mit settings gesteur also einfach pause button erstelln und die funktion verschieben dorthin musst du nur jtzt die neue button nur zeigen wenn _controller.isRecording  ansonsten nicht kapito eya
           onSettings: () async {
           },
           onWaveSound: () {},
