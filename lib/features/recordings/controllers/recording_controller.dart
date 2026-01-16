@@ -4,9 +4,7 @@ import 'package:flutter/foundation.dart';
 ///matmisi lahna chy 7achtiik b7aja goulili
 class RecordingController extends ChangeNotifier {
   RecordingController({this.initialCamera = CameraLensDirection.back});
-
   final CameraLensDirection initialCamera;
-
   CameraController? cameraController;
   List<CameraDescription> cameras = [];
   CameraLensDirection currentLens = CameraLensDirection.back;
@@ -129,7 +127,8 @@ class RecordingController extends ChangeNotifier {
     }
   }
   Future<void> resumeRecording() async {
-    if (!isInitialized || !isRecording || !isPaused || cameraController == null) return;
+    if (!isInitialized || !isRecording || !isPaused || cameraController == null)
+      return;
 
     try {
       await cameraController!.resumeVideoRecording();
@@ -140,7 +139,6 @@ class RecordingController extends ChangeNotifier {
       notifyListeners();
     }
   }
-
   @override
   void dispose() {
     try {
