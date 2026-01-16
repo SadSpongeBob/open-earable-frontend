@@ -17,21 +17,15 @@ class RecordingLeftBar extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
+
+          SizedBox(height: 15),
+
           _Btn(
             asset: 'assets/buttons/back_to_projects.png',
             width: 76,
-            height: 44,
+            height: 67,
             onTap: onBackToProjects,
             semanticLabel: 'Back to projects',
-          ),
-
-          const Text(
-            "< Projects",
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1F1F1F),
-            ),
           ),
         ],
       ),

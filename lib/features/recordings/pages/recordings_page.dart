@@ -4,6 +4,7 @@ import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import '../../home/pages/home_page.dart';
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
+
 //hier bitte design wie du willst ändern ist mir scheiss egal als was mit kamera zu tun hat bitte nicht anfassen
 class RecordingPage extends StatefulWidget {
   const RecordingPage({
@@ -78,10 +79,13 @@ class _RecordingPageState extends State<RecordingPage>
             }
           },
           onFlipCamera: () async {
-            await _controller.toggleCamera();
+            if (!_controller.isRecording) {
+              await _controller.toggleCamera();
+            }
           },
           onBluetooth: () {},
           padding: const EdgeInsets.symmetric(vertical: 24),
+          isRecording: _controller.isRecording,
         ),
 
       ],

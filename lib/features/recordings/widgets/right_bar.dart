@@ -9,6 +9,7 @@ class HomeRecordingRightBar extends StatelessWidget {
     required this.onFlipCamera,
     required this.onBluetooth,
     this.padding = const EdgeInsets.symmetric(vertical: 24),
+    this.isRecording = false,
   });
 
   final VoidCallback onSettings;
@@ -18,6 +19,9 @@ class HomeRecordingRightBar extends StatelessWidget {
   final VoidCallback onBluetooth;
 
   final EdgeInsets padding;
+
+  // New flag to control icon swapping when recording
+  final bool isRecording;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +33,8 @@ class HomeRecordingRightBar extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
+          SizedBox(height: 10),
+
           Btn(
             asset: 'assets/buttons/settings_button.png',
             size: 70,
@@ -36,7 +42,7 @@ class HomeRecordingRightBar extends StatelessWidget {
             semanticLabel: 'Settings',
           ),
 
-          SizedBox(height: 70),
+          SizedBox(height: 140),
 
           Column(
             children: [
@@ -47,21 +53,25 @@ class HomeRecordingRightBar extends StatelessWidget {
                 semanticLabel: 'Wave sound',
               ),
               Btn(
-                asset: 'assets/buttons/shutter.png',
+                asset: isRecording
+                    ? 'assets/buttons/shutter_on.png'
+                    : 'assets/buttons/shutter.png',
                 size: 76,
                 onTap: onShutter,
-                semanticLabel: 'Record',
+                semanticLabel: isRecording ? 'Stop recording' : 'Record',
               ),
               Btn(
-                asset: 'assets/buttons/flip_camera.png',
+                asset: isRecording
+                    ? 'assets/buttons/pause_flase.png'
+                    : 'assets/buttons/flip_camera.png',
                 size: 52,
                 onTap: onFlipCamera,
-                semanticLabel: 'Flip camera',
+                semanticLabel: isRecording ? 'Pause' : 'Flip camera',
               ),
             ],
           ),
 
-          SizedBox(height: 70),
+          SizedBox(height: 140),
 
           Btn(
             asset: 'assets/buttons/bluetooth.png',
