@@ -78,7 +78,9 @@ class _RecordingPageState extends State<RecordingPage>
             }
           },
           onFlipCamera: () async {
-            await _controller.toggleCamera();
+            if (!_controller.isRecording) {
+              await _controller.toggleCamera();
+            }
           },
           onBluetooth: () {},
           padding: const EdgeInsets.symmetric(vertical: 24),
