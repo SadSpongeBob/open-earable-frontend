@@ -70,11 +70,6 @@ class _RecordingPageState extends State<RecordingPage>
         HomeRecordingRightBar(
           ///hier wird pausieren mit settings gesteur also einfach pause button erstelln und die funktion verschieben dorthin musst du nur jtzt die neue button nur zeigen wenn _controller.isRecording  ansonsten nicht kapito eya
           onSettings: () async {
-            if (_controller.isPaused) {
-              await _controller.resumeRecording();
-            } else {
-              await _controller.pauseRecording();
-            }
           },
           onWaveSound: () {},
           onShutter: () async {
@@ -88,11 +83,18 @@ class _RecordingPageState extends State<RecordingPage>
           onFlipCamera: () async {
             if (!_controller.isRecording) {
               await _controller.toggleCamera();
+            } else {
+              if (_controller.isPaused) {
+                await _controller.resumeRecording();
+              } else {
+                await _controller.pauseRecording();
+              }
             }
           },
           onBluetooth: () {},
           padding: const EdgeInsets.symmetric(vertical: 24),
           isRecording: _controller.isRecording,
+          isPaused: _controller.isPaused,
         ),
 
       ],

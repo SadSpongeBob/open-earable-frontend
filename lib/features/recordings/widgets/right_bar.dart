@@ -10,6 +10,7 @@ class HomeRecordingRightBar extends StatelessWidget {
     required this.onBluetooth,
     this.padding = const EdgeInsets.symmetric(vertical: 24),
     this.isRecording = false,
+    this.isPaused = false,
   });
 
   final VoidCallback onSettings;
@@ -20,8 +21,9 @@ class HomeRecordingRightBar extends StatelessWidget {
 
   final EdgeInsets padding;
 
-  // New flag to control icon swapping when recording
+  // New flags to control icon swapping when recording
   final bool isRecording;
+  final bool isPaused;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +55,7 @@ class HomeRecordingRightBar extends StatelessWidget {
                 semanticLabel: 'Wave sound',
               ),
               Btn(
+                // swap shutter icon when recording
                 asset: isRecording
                     ? 'assets/buttons/shutter_on.png'
                     : 'assets/buttons/shutter.png',
@@ -61,12 +64,17 @@ class HomeRecordingRightBar extends StatelessWidget {
                 semanticLabel: isRecording ? 'Stop recording' : 'Record',
               ),
               Btn(
+                // when recording show pause icon (true/false) depending on isPaused, otherwise show flip camera
                 asset: isRecording
-                    ? 'assets/buttons/pause_flase.png'
+                    ? (isPaused
+                        ? 'assets/buttons/pause_true.png'
+                        : 'assets/buttons/pause_flase.png')
                     : 'assets/buttons/flip_camera.png',
                 size: 52,
                 onTap: onFlipCamera,
-                semanticLabel: isRecording ? 'Pause' : 'Flip camera',
+                semanticLabel: isRecording
+                    ? (isPaused ? 'Resume recording' : 'Pause recording')
+                    : 'Flip camera',
               ),
             ],
           ),
