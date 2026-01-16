@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
-///matmisi lahna chy 7achtiik b7aja goulili
+
 class RecordingController extends ChangeNotifier {
+
   RecordingController({this.initialCamera = CameraLensDirection.back});
   final CameraLensDirection initialCamera;
   CameraController? cameraController;
@@ -12,6 +13,7 @@ class RecordingController extends ChangeNotifier {
   bool isRecording = false;
   bool isPaused = false;
   String? error;
+
   Future<void> init() async {
     currentLens = initialCamera;
     await _loadCameras();
@@ -31,13 +33,13 @@ class RecordingController extends ChangeNotifier {
     try {
       cameras = await availableCameras();
       if (cameras.isEmpty) {
-        error = 'Keine Kameras verfügbar.';
+        error = 'No cameras found on device.';
         notifyListeners();
         return;
       }
       await _initCameraController(currentLens);
     } catch (e) {
-      error = 'Fehler beim Laden der Kameras: $e';
+      error = 'Error loading cameras: $e';
       notifyListeners();
     }
   }
@@ -57,7 +59,7 @@ class RecordingController extends ChangeNotifier {
       error = null;
       notifyListeners();
     } catch (e) {
-      error = 'Fehler beim Initialisieren der Kamera: $e';
+      error = 'Error initializing camera: $e';
       isInitialized = false;
       notifyListeners();
     }
@@ -69,28 +71,28 @@ class RecordingController extends ChangeNotifier {
       isRecording = true;
       notifyListeners();
     } catch (e) {
-      error = 'Fehler beim Starten der Aufnahme: $e';
+      error = 'Error starting recording: $e';
       notifyListeners();
     }
   }
 
-  /// Stoppt die Aufnahme und speichert die Datei.normalemt fi pictures.
   Future<String?> stopRecording() async {
     if (!isInitialized || !isRecording || cameraController == null) return null;
     try {
       final XFile file = await cameraController!.stopVideoRecording();
       isRecording = false;
-      isPaused = false; // reset
+      isPaused = false;
       notifyListeners();
       final saved = await _saveVideo(file);
       return saved;
     } catch (e) {
-      error = 'Fehler beim Stoppen der Aufnahme: $e';
+      error = 'Error stopping recording: $e';
       notifyListeners();
       return null;
     }
   }
 
+  // for now saving to a fixed path, later navigate to playback page
   Future<String?> _saveVideo(XFile file) async {
     try {
       final dir = Directory('/storage/emulated/0/Pictures/OpenEarable');
@@ -99,13 +101,12 @@ class RecordingController extends ChangeNotifier {
       await File(file.path).copy(newPath);
       return newPath;
     } catch (e) {
-      error = 'Fehler beim Speichern des Videos: $e';
+      error = 'Error saving video: $e';
       notifyListeners();
       return null;
     }
   }
 
-  /// Wechselt die Kamera (Front <-> Back).
   Future<void> toggleCamera() async {
     if (cameras.isEmpty) return;
     final next = currentLens == CameraLensDirection.front ? CameraLensDirection.back : CameraLensDirection.front;
@@ -122,20 +123,21 @@ class RecordingController extends ChangeNotifier {
       isPaused = true;
       notifyListeners();
     } catch (e) {
-      error = 'Fehler beim Pausieren der Aufnahme: $e';
+      error = 'Error pausing recording: $e';
       notifyListeners();
     }
   }
   Future<void> resumeRecording() async {
-    if (!isInitialized || !isRecording || !isPaused || cameraController == null)
+    if (!isInitialized || !isRecording || !isPaused || cameraController == null) {
       return;
+    }
 
     try {
       await cameraController!.resumeVideoRecording();
       isPaused = false;
       notifyListeners();
     } catch (e) {
-      error = 'Fehler beim Fortsetzen der Aufnahme: $e';
+      error = 'Error resuming recording: $e';
       notifyListeners();
     }
   }

@@ -94,7 +94,6 @@ class _RecordingPageState extends State<RecordingPage> {
       child: Row(
         children: [
           RecordingLeftBar(onBackToProjects: _navigateToHome),
-          // Kamera Vorschau
           Expanded(
             child: Container(
               color: Colors.black,
@@ -102,11 +101,17 @@ class _RecordingPageState extends State<RecordingPage> {
             ),
           ),
           HomeRecordingRightBar(
-            onSettings: () async {},
-            onWaveSound: () {},
+            onSettings: () async {
+              // TODO: navigate to settings page
+            },
+            onWaveSound: () {
+              // TODO: implement sensors data page and visualization
+            },
             onShutter: _onShutterPressed,
             onFlipCamera: _onFlipOrPausePressed,
-            onBluetooth: () {},
+            onBluetooth: () {
+              // TODO: implement bluetooth devices popup
+            },
             padding: const EdgeInsets.symmetric(vertical: 24),
             isRecording: _controller.isRecording,
             isPaused: _controller.isPaused,
