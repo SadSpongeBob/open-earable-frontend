@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
+//es gibt noch ein problm wenn ich die kamera switche wahren der asufnahme boooom muss noch fixieren
+
 class RecordingController extends ChangeNotifier {
   RecordingController({this.initialCamera = CameraLensDirection.back});
 
