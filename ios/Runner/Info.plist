@@ -45,5 +45,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- Camera & Microphone usage descriptions -->
+	<key>NSCameraUsageDescription</key>
+	<string>Wird benötigt, um Videos in der App aufzunehmen.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Wird benötigt, um Audio während Videoaufnahmen aufzunehmen.</string>
+
 </dict>
 </plist>
