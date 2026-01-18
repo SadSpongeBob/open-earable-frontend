@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 class GlobalTextStyles {
-  static const appBarTitle = TextStyle(
-    fontSize: 36,
-    fontWeight: FontWeight.w700,
-    color: Color(0xFF1F1F1F),
-    fontFamily: "Roboto",
-  );
   static const cardTitle = TextStyle(
     fontSize: 32,
     fontWeight: FontWeight.w700,

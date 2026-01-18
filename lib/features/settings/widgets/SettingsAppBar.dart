@@ -51,7 +51,7 @@ class SettingsAppBar extends StatelessWidget
 
                 const Text(
                   'Settings',
-                  style: GlobalTextStyles.appBarTitle,
+                  style: AuthTextStyles.title,
                 ),
                 const Spacer(),
                 TextButton(
