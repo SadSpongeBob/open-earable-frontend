@@ -48,9 +48,9 @@
 
 	<!-- Camera & Microphone usage descriptions -->
 	<key>NSCameraUsageDescription</key>
-	<string>Wird benötigt, um Videos in der App aufzunehmen.</string>
+	<string>Required to record video.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Wird benötigt, um Audio während Videoaufnahmen aufzunehmen.</string>
+	<string>Required to record audio.</string>
 
 </dict>
 </plist>
