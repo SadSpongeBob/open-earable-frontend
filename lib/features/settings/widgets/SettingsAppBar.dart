@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../../app/theme/text_styles.dart';
+import 'package:openearable/app/theme/appBar_styles.dart';
 import '../../auth/pages/login_page.dart';
 
 class SettingsAppBar extends StatelessWidget
@@ -15,15 +15,7 @@ class SettingsAppBar extends StatelessWidget
       child: SafeArea(
         child: Container(
           height: 100,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha((0.15 * 255).round()),
-                blurRadius: 12,
-              ),
-            ],
-          ),
+          decoration: GlobalAppBarStyles.appBarDecoration,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -39,11 +31,7 @@ class SettingsAppBar extends StatelessWidget
                   },
                   child: const Text(
                     'Cancel',
-                    style: TextStyle(
-                      color: Color(0xFFFF4442),
-                      fontSize: 16,
-                      fontFamily: 'Roboto',
-                    ),
+                    style: GlobalAppBarStyles.appBarText,
                   ),
                 ),
 
@@ -51,7 +39,7 @@ class SettingsAppBar extends StatelessWidget
 
                 const Text(
                   'Settings',
-                  style: AuthTextStyles.title,
+                  style: GlobalAppBarStyles.appBarTitle,
                 ),
                 const Spacer(),
                 TextButton(
@@ -60,11 +48,7 @@ class SettingsAppBar extends StatelessWidget
                   },
                   child: const Text(
                     'Save',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontFamily: 'Roboto',
-                    ),
+                    style: GlobalAppBarStyles.appBarText,
                   ),
                 ),
               ],

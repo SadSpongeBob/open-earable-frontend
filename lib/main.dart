@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:openearable/features/settings/pages/settings_page.dart';
 
 import 'app/constants/colors.dart';
 import 'features/auth/pages/login_page.dart';
@@ -37,7 +36,7 @@ class OpenEarableApp extends StatelessWidget {
         ),
       ),
 
-      home: const SettingsPage(),
+      home: const LoginPage(),
     );
   }
 }
