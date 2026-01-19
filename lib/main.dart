@@ -1,11 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'constants/colors.dart';
+import 'package:openearable/features/home/pages/home_page.dart';
+import 'package:openearable/app/utils/logger.dart';
+import 'package:provider/provider.dart';
+import 'app/constants/colors.dart';
+import 'package:logger/logger.dart';
+import 'package:openearable/api/models/device/wearable_connector.dart';
+import 'package:openearable/features/home/controllers/home_controller.dart';
 
 void main() async {
-  await dotenv.load();
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const OpenEarableApp());
+  try {
+    // Adding a timeout to see if the app works. The App doesn't run for me without 
+    // it, because it's unable to see the env file, crazy
+    await dotenv.load(fileName: ".env").timeout(const Duration(seconds: 2));
+  } catch (e) {
+    print("Dotenv failed to load, using system defaults: $e");
+  }
+  initLogger(Logger());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => WearablesProvider(), lazy: true),
+        Provider.value(value: WearableConnector()),
+      ],
+      child: const OpenEarableApp()
+    ),
+  );
 }
 
 class OpenEarableApp extends StatelessWidget {
@@ -26,7 +47,7 @@ class OpenEarableApp extends StatelessWidget {
         ),
       ),
 
-      //home: const LoginPage(),
+      home: HomePage(),
     );
   }
 }
