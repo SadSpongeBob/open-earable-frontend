@@ -5,7 +5,7 @@ import 'features/auth/pages/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load();
+  await dotenv.load(fileName: "assets/.env");
   runApp(const OpenEarableApp());
 }
 
