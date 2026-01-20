@@ -14,6 +14,12 @@ class AttachTokenInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    final override = options.extra['authTokenOverride'] as String?;
+    if (override != null && override.isNotEmpty) {
+      options.headers['Authorization'] = 'Bearer $override';
+      return handler.next(options);
+    }
+
     if (_isAuthEndpoint(options.path)) {
       return handler.next(options);
     }
