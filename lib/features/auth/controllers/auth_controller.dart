@@ -15,13 +15,12 @@ class AuthController {
 
   Future<void> bootstrap() async {
     _session.setLoading();
-
-    if (await _guestStorage.isGuest()) {
-      _session.setMode(AuthMode.guest);
-      return;
-    }
-
     try {
+      if (await _guestStorage.isGuest()) {
+        _session.setMode(AuthMode.guest);
+        return;
+      }
+
       await _authService.refresh();
       _session.setMode(AuthMode.authenticated);
     } catch (_) {
