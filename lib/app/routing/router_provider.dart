@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/app/routing/refresh_stream.dart';
 import 'package:openearable/app/routing/routes.dart';
+import 'package:openearable/features/auth/pages/login_page.dart';
 import 'package:openearable/features/auth/pages/reset_password_page.dart';
+import 'package:openearable/features/auth/pages/signup_page.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
@@ -35,13 +37,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.recording,
         builder: (_, _) => const RecordingPage(),
       ),
-      // GoRoute(path: Routes.playback, builder: (_, __) => const PlaybackPage()),
       GoRoute(path: Routes.settings, builder: (_, _) => const SettingsPage()),
-      // GoRoute(path: Routes.export, builder: (_, __) => const ExportPage()),
-      // GoRoute(
-      //   path: Routes.sensordata,
-      //   builder: (_, __) => const SensorDataPage(),
-      // ),
+      GoRoute(path: Routes.login, builder: (_, _) => const LoginPage()),
+      GoRoute(path: Routes.signup, builder: (_, _) => const SignupPage()),
     ],
 
     redirect: (context, state) {
