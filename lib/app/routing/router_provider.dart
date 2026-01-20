@@ -3,17 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/app/routing/refresh_stream.dart';
 import 'package:openearable/app/routing/routes.dart';
-import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/features/auth/pages/reset_password_page.dart';
+import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authControllerProvider);
+  final authState = ref.watch(sessionProvider);
 
   final refresh = GoRouterRefreshStream(
-    ref.watch(authControllerProvider.notifier).stream,
+    ref.watch(sessionProvider.notifier).stream,
   );
   ref.onDispose(refresh.dispose);
 
@@ -45,7 +45,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
 
     redirect: (context, state) {
-      final auth = ref.read(authControllerProvider);
+      final session = ref.read(sessionProvider);
       final loc = state.matchedLocation;
 
       final isPublic =
@@ -53,9 +53,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           loc == Routes.signup ||
           loc == Routes.resetPassword;
 
-      if (auth.isLoading) return null;
+      if (session.isLoading) return null;
 
-      if (auth.isLoggedOut) {
+      if (session.isLoggedOut) {
         return isPublic ? null : Routes.login;
       }
 
