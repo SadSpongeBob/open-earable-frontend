@@ -16,10 +16,7 @@ class _AppBootstrapperState extends ConsumerState<AppBootstrapper> {
   void initState() {
     super.initState();
     Future.microtask(() async {
-      final router = ref.read(routerProvider);
-      await ref.read(deepLinkServiceProvider).init(router);
-
-      await ref.read(authControllerProvider).bootstrap();
+      await ref.read(authControllerProvider.notifier).bootstrap();
     });
   }
 
