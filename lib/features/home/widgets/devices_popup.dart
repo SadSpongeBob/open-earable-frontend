@@ -27,6 +27,7 @@ class _DevicesPopup extends State<DevicesPopup> {
   List<DiscoveredDevice> discoveredDevices = [];
   Map<String, bool> connectingDevices = {};
   final Set<String> failedDevices = {};
+  static final Set<String> connectedDevices = {};
 
   @override
   void initState() {
@@ -38,17 +39,17 @@ class _DevicesPopup extends State<DevicesPopup> {
 
   @override
   Widget build(BuildContext context) {
-    final wearablesProvider = context.watch<WearablesProvider>();
     return SizedBox(
       height: 550,
       width: 300,
       child: ListView.builder(
         itemCount: discoveredDevices.length,
         itemBuilder: (context, index) {
-          final device =discoveredDevices[index];
+          final device = discoveredDevices[index];
 
           bool isConnecting = connectingDevices[device.id] ?? false;
-          bool isConnected = wearablesProvider.wearables.any((w) => w.deviceId == device.id);
+          bool isConnected = connectedDevices.contains(device.id);
+          bool isConnectionFailed = failedDevices.contains(device.id);
 
           String? statusText;
 
@@ -56,7 +57,7 @@ class _DevicesPopup extends State<DevicesPopup> {
             statusText = "Connecting...";
           } else if (isConnected) {
             statusText = "Connected";
-          } else if (failedDevices.contains(device.id)) {
+          } else if (isConnectionFailed) {
             statusText = "Connection failed";
           }
 
@@ -81,8 +82,8 @@ class _DevicesPopup extends State<DevicesPopup> {
 
                       if (isConnecting)
                         Positioned(
-                          right: -10,
-                          top: -10,
+                          right: -15,
+                          top: -15,
                           child: SizedBox(
                             width: 16,
                             height: 16,
@@ -94,8 +95,8 @@ class _DevicesPopup extends State<DevicesPopup> {
                         
                       if (!isConnecting && isConnected)
                         Positioned(
-                          right: -10,
-                          top: -10,
+                          right: -15,
+                          top: -15,
                           child: Container(
                             width: 16,
                             height: 16,
@@ -105,6 +106,20 @@ class _DevicesPopup extends State<DevicesPopup> {
                             ),
                           ),
                         ),
+
+                      if (isConnectionFailed)
+                        Positioned(
+                          right: -15,
+                          top: -15,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: const BoxDecoration(
+                              color: Colors.redAccent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        )
                     ],
                   ),
 
@@ -140,9 +155,9 @@ class _DevicesPopup extends State<DevicesPopup> {
     await _wearableManager.startScan();
     _scanSubscription?.cancel();
     _scanSubscription = _wearableManager.scanStream.listen((incomingDevice) {
-      bool isTargetDevice = incomingDevice.name.toLowerCase().contains("esense") || 
+      // bool isTargetDevice = incomingDevice.name.toLowerCase().contains("esense") || 
                             incomingDevice.name.toLowerCase().contains("openearable");
-      if (incomingDevice.name.isNotEmpty && isTargetDevice &&
+      if (incomingDevice.name.isNotEmpty &&
           !discoveredDevices.any((d) => d.id == incomingDevice.id)) {
         setState(() {
           discoveredDevices.add(incomingDevice);
@@ -168,7 +183,7 @@ class _DevicesPopup extends State<DevicesPopup> {
 
     setState(() {
       failedDevices.remove(device.id);
-      failedDevices.add(device.id);
+      connectedDevices.add(device.id);
     });
   } catch (e) {
     final message = _wearableManager.deviceErrorMessage(e, device.name);
@@ -189,6 +204,11 @@ class _DevicesPopup extends State<DevicesPopup> {
         ),
       );
     }
+
+    setState(() {
+      failedDevices.add(device.id);
+      connectedDevices.remove(device.id);
+    });
   } finally {
     setState(() {
       connectingDevices.remove(device.id);

@@ -17,7 +17,7 @@ class ImageButton extends StatefulWidget  {
     required this.onPressed,
     required this.width,
     required this.height,
-    this.pressDuration = const Duration(seconds: 2),
+    this.pressDuration = const Duration(milliseconds: 100),
   });
 
   @override
@@ -58,7 +58,7 @@ class _ImageButtonState extends State<ImageButton> {
 
             AnimatedOpacity(
               opacity: _isPressed ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 250),
+              duration: const Duration(milliseconds: 100),
               curve: Curves.easeInOut,
               child: Image.asset(
                 widget.activeImage,
