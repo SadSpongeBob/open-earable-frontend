@@ -16,6 +16,7 @@ class RefreshTokenInterceptor extends Interceptor {
   final Dio _dio;
   final TokenStorage _tokenStorage;
   final Future<Tokens> Function() _refresh;
+  final Future<void> Function() _logout;
 
   bool _isRefreshing = false;
   final List<_QueuedRequest> _queue = [];
@@ -24,9 +25,11 @@ class RefreshTokenInterceptor extends Interceptor {
     required Dio dio,
     required TokenStorage tokenStorage,
     required Future<Tokens> Function() refresh,
+    required Future<void> Function() logout,
   }) : _dio = dio,
        _tokenStorage = tokenStorage,
-       _refresh = refresh;
+       _refresh = refresh,
+       _logout = logout;
 
   @override
   Future<void> onError(
@@ -50,7 +53,7 @@ class RefreshTokenInterceptor extends Interceptor {
       final response = await _refreshAndRetry(requestOptions);
       return handler.resolve(response);
     } catch (_) {
-      await _tokenStorage.clear();
+      await _logout();
       return handler.next(err);
     }
   }
