@@ -33,7 +33,7 @@ class AuthService {
   Future<AuthResult> signup(String name, String email, String password,) async {
     try {
       final response = await dio.post(
-        AuthEndpoints.signup,
+        AuthEndpoints.register,
         data: {
           "name": name,
           "email": email,
