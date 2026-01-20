@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:openearable/app/routing/refresh_stream.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/features/auth/pages/login_page.dart';
+import 'package:openearable/features/auth/pages/request_reset_password_page.dart';
 import 'package:openearable/features/auth/pages/reset_password_page.dart';
 import 'package:openearable/features/auth/pages/signup_page.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
@@ -28,6 +29,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.resetPassword,
         builder: (context, state) {
           final token = state.uri.queryParameters['token'];
+
+          if (token == null || token.isEmpty) {
+            return const RequestResetPage();
+          }
+
           return ResetPasswordPage(authToken: token);
         },
       ),
@@ -40,6 +46,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.settings, builder: (_, _) => const SettingsPage()),
       GoRoute(path: Routes.login, builder: (_, _) => const LoginPage()),
       GoRoute(path: Routes.signup, builder: (_, _) => const SignupPage()),
+      GoRoute(
+        path: Routes.requestResetPassword,
+        builder: (_, _) => const RequestResetPage(),
+      ),
     ],
 
     redirect: (context, state) {
