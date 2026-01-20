@@ -4,6 +4,6 @@ class AuthEndpoints {
   static const refresh = "/api/auth/refresh";
 
   static String resetPassword(String emailAddress) {
-    return "/api/auth/$emailAddress/reset";
+    return "/api/auth/$emailAddress/reset-password";
   }
 }
