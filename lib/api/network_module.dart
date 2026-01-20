@@ -17,7 +17,7 @@ class NetworkModule {
     required this.authService,
   });
 
-  factory NetworkModule.create({required Future<void> Function() logout}) {
+  factory NetworkModule.create() {
     final tokenStorage = TokenStorage();
 
     final dio = Dio(
@@ -40,7 +40,6 @@ class NetworkModule {
         dio: dio,
         tokenStorage: tokenStorage,
         refresh: () => authService.refresh(),
-        logout: logout,
       ),
       MapResponseInterceptor(),
     ]);
