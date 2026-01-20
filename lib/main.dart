@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/routing//router_provider.dart';
-import 'app/constants/colors.dart';
+import 'package:openearable/app/routing/app_bootstrapper.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +37,14 @@ class OpenEarableApp extends ConsumerWidget {
         ),
       ),
       routerConfig: router,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            child!,
+            const AppBootstrapper(),
+          ],
+        );
+      },
     );
   }
 }
