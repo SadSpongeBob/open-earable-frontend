@@ -1,58 +1,87 @@
 import 'package:dio/dio.dart';
-import 'package:openearable/api/client_dio.dart';
-import '../../models/auth/auth_result.dart';
+import 'package:openearable/api/models/auth/auth_tokens.dart';
+
 import 'auth_endpoints.dart';
+import 'token_storage.dart';
 
 class AuthService {
-  /// LOGIN
-  Future<AuthResult> login(String email, String password) async {
-    try {
-      final response = await dio.post(
-        AuthEndpoints.login,
-        data: {
-          "email": email,
-          "password": password,
-        },
-      );
+  final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-      return AuthResult.success(response.data);
-    } on DioException catch (e) {
-      String errorMsg = "Login failed";
+  AuthService({required Dio dio, required TokenStorage tokenStorage})
+    : _dio = dio,
+      _tokenStorage = tokenStorage;
 
-      if (e.response?.data is Map<String, dynamic>) {
-        errorMsg = (e.response!.data["message"] ?? errorMsg).toString();
-      }
+  Future<Tokens> login({
+    required String email,
+    required String password,
+  }) async {
+    final res = await _dio.post(
+      AuthEndpoints.login,
+      data: {'emailAddress': email, 'password': password},
+    );
 
-      return AuthResult.error(errorMsg);
-    } catch (e) {
-      return AuthResult.error("An unexpected error occurred");
-    }
+    final data = requireMap(res);
+
+    final tokens = Tokens.fromJson(data);
+    await _tokenStorage.saveTokens(tokens);
+    return tokens;
   }
 
-  /// signup
-  Future<AuthResult> signup(String name, String email, String password,) async {
-    try {
-      final response = await dio.post(
-        AuthEndpoints.register,
-        data: {
-          "name": name,
-          "email": email,
-          "password": password,
-        },
-      );
-
-
-      return AuthResult.success(response.data);
-    } on DioException catch (e) {
-      String errorMsg = "Signup failed";
-
-      if (e.response?.data is Map<String, dynamic>) {
-        errorMsg = (e.response!.data["message"] ?? errorMsg).toString();
-      }
-
-      return AuthResult.error(errorMsg);
-    } catch (e) {
-      return AuthResult.error("An unexpected error occurred");
+  Future<Tokens> refresh() async {
+    final refreshToken = await _tokenStorage.readRefreshToken();
+    if (refreshToken == null) {
+      throw StateError('No refresh token available');
     }
+
+    final res = await _dio.post(
+      AuthEndpoints.refresh,
+      data: {'refreshToken': refreshToken},
+    );
+
+    final data = requireMap(res);
+
+    final tokens = Tokens.fromJson(data);
+
+    await _tokenStorage.saveTokens(tokens);
+    return tokens;
+  }
+
+  Future<Tokens> register({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    final res = await _dio.post(
+      AuthEndpoints.register,
+      data: {'emailAddress': email, 'password': password, 'name': name},
+    );
+
+    final data = requireMap(res);
+    final tokens = Tokens.fromJson(data);
+    await _tokenStorage.saveTokens(tokens);
+    return tokens;
+  }
+
+  Future<void> resetPassword({
+    required String userId,
+    required String newPassword,
+  }) async {
+    await _dio.post(
+      AuthEndpoints.resetPassword(userId),
+      data: {'password': newPassword},
+    );
+  }
+
+  Future<void> logout() => _tokenStorage.clear();
+
+  Map<String, dynamic> requireMap(Response<dynamic> res) {
+    final data = res.data;
+    if (data is Map<String, dynamic>) return data;
+
+    throw DioException(
+      requestOptions: res.requestOptions,
+      message: 'Invalid response format',
+    );
   }
 }
