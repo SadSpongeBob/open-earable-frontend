@@ -19,7 +19,7 @@ class _AppBootstrapperState extends ConsumerState<AppBootstrapper> {
       final router = ref.read(routerProvider);
       await ref.read(deepLinkServiceProvider).init(router);
 
-      await ref.read(authControllerProvider.notifier).bootstrap();
+      await ref.read(authControllerProvider).bootstrap();
     });
   }
 

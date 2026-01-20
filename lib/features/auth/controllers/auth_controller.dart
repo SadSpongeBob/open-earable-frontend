@@ -1,68 +1,82 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
 import 'package:openearable/api/services/auth/guest_storage.dart';
+import 'package:openearable/features/auth/state/session_provider.dart';
 
-class AuthController extends StateNotifier<AuthState> {
+class AuthController {
   final AuthService _authService;
   final GuestStorage _guestStorage;
+  final SessionNotifier _session;
 
-  AuthController(this._authService, this._guestStorage)
-    : super(AuthState.initial());
+  AuthController(this._authService, this._guestStorage, this._session);
 
   Future<void> bootstrap() async {
-    state = state.copyWith(mode: AuthMode.loading, error: null);
+    _session.setLoading();
 
     if (await _guestStorage.isGuest()) {
-      state = state.copyWith(mode: AuthMode.guest);
+      _session.setMode(AuthMode.guest);
       return;
     }
 
     try {
       await _authService.refresh();
-      state = state.copyWith(mode: AuthMode.authenticated);
+      _session.setMode(AuthMode.authenticated);
     } catch (_) {
-      state = state.copyWith(mode: AuthMode.loggedOut);
+      _session.setMode(AuthMode.loggedOut);
+    }
+  }
+
+  Future<void> signup({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    _session.setLoading();
+
+    try {
+      await _authService.register(email: email, password: password, name: name);
+      await _guestStorage.clear();
+      _session.setMode(AuthMode.authenticated);
+    } on DioException catch (e) {
+      _session.setLoggedOut(e.message ?? 'Sign up failed');
+    } catch (_) {
+      _session.setLoggedOut('Sign up failed');
+    }
+  }
+
+  Future<void> login({required String email, required String password}) async {
+    _session.setLoading();
+    try {
+      await _authService.login(email: email, password: password);
+      await _guestStorage.clear();
+      _session.setMode(AuthMode.authenticated);
+    } on DioException catch (exception) {
+      _session.setLoggedOut(exception.message);
+    } catch (_) {
+      _session.setLoggedOut('Login failed');
     }
   }
 
   Future<void> guestLogin() async {
     await _authService.logout();
     await _guestStorage.setGuest(true);
-
-    state = state.copyWith(mode: AuthMode.guest, error: null);
+    _session.setMode(AuthMode.guest);
   }
 
-  Future<void> login({required String email, required String password}) async {
-    state = state.copyWith(mode: AuthMode.loading, error: null);
-
-    try {
-      await _authService.login(email: email, password: password);
-      await _guestStorage.clear();
-      state = state.copyWith(mode: AuthMode.authenticated);
-    } on DioException catch (exception) {
-      state = state.copyWith(
-        mode: AuthMode.loggedOut,
-        error: exception.message ?? 'Login failed',
-      );
-    } catch (_) {
-      state = state.copyWith(mode: AuthMode.loggedOut, error: 'Login failed');
-    }
-  }
-
-  Future<void> logout() async {
+  Future<void> logout({String? message}) async {
     await _authService.logout();
     await _guestStorage.clear();
-    state = state.copyWith(mode: AuthMode.loggedOut, error: null);
+    _session.setLoggedOut(message);
   }
 }
 
-final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
-  (ref) {
-    final authService = ref.read(authServiceProvider);
-    final guestStorage = ref.read(guestStorageProvider);
-    return AuthController(authService, guestStorage);
-  },
-);
+final authControllerProvider = Provider<AuthController>((ref) {
+  final authService = ref.read(authServiceProvider);
+  final session = ref.read(sessionProvider.notifier);
+  final guestStorage = ref.read(guestStorageProvider);
+
+  return AuthController(authService, guestStorage, session);
+});

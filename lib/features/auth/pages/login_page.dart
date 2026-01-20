@@ -165,7 +165,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       children: [
         const Spacer(),
         GestureDetector(
-          onTap: () => context.go(Routes.requestResetPassword),
+          onTap: () => context.go(Routes.resetPassword),
           child: Text("Forgot Password?", style: AuthTextStyles.body),
         ),
       ],
