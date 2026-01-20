@@ -1,9 +1,11 @@
 class AuthEndpoints {
-  static const login = "/api/auth/authentication";
-  static const register = "/api/auth/register";
-  static const refresh = "/api/auth/refresh";
+  static const baseUrl = "/api/auth";
+  static const login = "$baseUrl/authentication";
+  static const register = "$baseUrl/register";
+  static const refresh = "$baseUrl/refresh";
+  static const update = "$baseUrl/update";
 
   static String resetPassword(String emailAddress) {
-    return "/api/auth/$emailAddress/reset-password";
+    return "$baseUrl/$emailAddress/reset-password";
   }
 }
