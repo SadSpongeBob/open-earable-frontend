@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
+import 'package:gal/gal.dart';
+
 
 class RecordingController extends ChangeNotifier {
-
   RecordingController({this.initialCamera = CameraLensDirection.back});
   final CameraLensDirection initialCamera;
+
   CameraController? cameraController;
   List<CameraDescription> cameras = [];
   CameraLensDirection currentLens = CameraLensDirection.back;
@@ -46,12 +48,21 @@ class RecordingController extends ChangeNotifier {
 
   Future<void> _initCameraController(CameraLensDirection lens) async {
     if (cameras.isEmpty) return;
-    final camera = cameras.firstWhere((c) => c.lensDirection == lens, orElse: () => cameras.first);
+
+    final camera = cameras.firstWhere(
+          (c) => c.lensDirection == lens,
+      orElse: () => cameras.first,
+    );
+
     try {
       await cameraController?.dispose();
     } catch (_) {}
 
-    cameraController = CameraController(camera, ResolutionPreset.high, enableAudio: true);
+    cameraController = CameraController(
+      camera,
+      ResolutionPreset.high,
+      enableAudio: true,
+    );
 
     try {
       await cameraController!.initialize();
@@ -64,8 +75,10 @@ class RecordingController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
   Future<void> startRecording() async {
     if (!isInitialized || isRecording || cameraController == null) return;
+
     try {
       await cameraController!.startVideoRecording();
       isRecording = true;
@@ -78,26 +91,29 @@ class RecordingController extends ChangeNotifier {
 
   Future<String?> stopRecording() async {
     if (!isInitialized || !isRecording || cameraController == null) return null;
+
     try {
       final XFile file = await cameraController!.stopVideoRecording();
+
       isRecording = false;
       isPaused = false;
       notifyListeners();
-      final saved = await _saveVideo(file);
-      return saved;
+
+      final savedPath = await _saveVideo(file);
+      return savedPath;
     } catch (e) {
       error = 'Error stopping recording: $e';
       notifyListeners();
       return null;
     }
   }
-
-  // for now saving to a fixed path, later navigate to playback page
   Future<String?> _saveVideo(XFile file) async {
     try {
-      final dir = Directory('/storage/emulated/0/Pictures/OpenEarable');
-      await dir.create(recursive: true);
-      final newPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.mp4';
+      final picturesDir = Directory('/storage/emulated/0/Pictures/OpenEarable');
+      final folderName = DateTime.now().millisecondsSinceEpoch.toString();
+      final recordingDir = Directory('${picturesDir.path}/$folderName');
+      await recordingDir.create(recursive: true);
+      final newPath = '${recordingDir.path}/video.mp4';
       await File(file.path).copy(newPath);
       return newPath;
     } catch (e) {
@@ -106,15 +122,18 @@ class RecordingController extends ChangeNotifier {
       return null;
     }
   }
-
   Future<void> toggleCamera() async {
     if (cameras.isEmpty) return;
-    final next = currentLens == CameraLensDirection.front ? CameraLensDirection.back : CameraLensDirection.front;
+    final next = currentLens == CameraLensDirection.front
+        ? CameraLensDirection.back
+        : CameraLensDirection.front;
+
     isInitialized = false;
     currentLens = next;
     notifyListeners();
     await _initCameraController(next);
   }
+
   Future<void> pauseRecording() async {
     if (!isInitialized || !isRecording || isPaused || cameraController == null) return;
 
@@ -127,10 +146,9 @@ class RecordingController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
   Future<void> resumeRecording() async {
-    if (!isInitialized || !isRecording || !isPaused || cameraController == null) {
-      return;
-    }
+    if (!isInitialized || !isRecording || !isPaused || cameraController == null) return;
 
     try {
       await cameraController!.resumeVideoRecording();
@@ -141,6 +159,7 @@ class RecordingController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
   @override
   void dispose() {
     try {
@@ -149,4 +168,5 @@ class RecordingController extends ChangeNotifier {
     super.dispose();
   }
 }
+
 

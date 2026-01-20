@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:openearable/app/theme/appBar_styles.dart';
+import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import '../../auth/pages/login_page.dart';
 
 class SettingsAppBar extends StatelessWidget
@@ -25,7 +26,7 @@ class SettingsAppBar extends StatelessWidget
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const LoginPage(),
+                        builder: (_) => const RecordingPage(),
                       ),
                     );
                   },

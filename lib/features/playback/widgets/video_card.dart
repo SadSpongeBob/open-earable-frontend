@@ -10,7 +10,7 @@ class VideoCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       child: Card(
-        elevation: 6,
+        elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         clipBehavior: Clip.antiAlias,
         child: AspectRatio(aspectRatio: controller.value.aspectRatio, child: VideoPlayer(controller)),

@@ -1,6 +1,8 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:openearable/features/playback/pages/Playback.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
+import 'package:openearable/features/settings/pages/settings_page.dart';
 import '../../home/pages/home_page.dart';
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
@@ -44,7 +46,10 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _onShutterPressed() async {
     if (_controller.isRecording) {
       final path = await _controller.stopRecording();
-      if (path != null) widget.onVideoRecorded?.call(path);
+      if (path != null) {
+        widget.onVideoRecorded?.call(path);
+        _navigateToPlayBack(path);
+      }
     } else {
       await _controller.startRecording();
     }
@@ -60,6 +65,12 @@ class _RecordingPageState extends State<RecordingPage> {
         await _controller.pauseRecording();
       }
     }
+  }
+  void _navigateToPlayBack(String path) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => PlaybackPage(videoPath: path)),
+    );
   }
 
   void _navigateToHome() {
@@ -102,7 +113,13 @@ class _RecordingPageState extends State<RecordingPage> {
           ),
           HomeRecordingRightBar(
             onSettings: () async {
-              // TODO: navigate to settings page
+              if(!_controller.isRecording) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => SettingsPage()),
+                );
+              }
+
             },
             onWaveSound: () {
               // TODO: implement sensors data page and visualization

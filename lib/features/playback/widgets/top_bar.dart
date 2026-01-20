@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart';
+import 'package:openearable/app/theme/appBar_styles.dart';
+import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import '../controllers/playback_controller.dart';
 
 class TopBar extends StatelessWidget {
   final PlaybackController controller;
   final GlobalKey speedKey;
-  const TopBar({required this.controller, required this.speedKey, Key? key}) : super(key: key);
+  final String videoPath;
+  const TopBar({required this.controller, required this.speedKey,required this.videoPath, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Container(
         height: 88,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
-          boxShadow: [BoxShadow(color: const Color.fromRGBO(0, 0, 0, 0.06), blurRadius: 14)],
-        ),
+        decoration: GlobalAppBarStyles.appBarDecoration,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: AnimatedBuilder(
@@ -73,7 +73,7 @@ class TopBar extends StatelessWidget {
                 const SizedBox(width: 8),
                 speedBadge,
                 const SizedBox(width: 12),
-                const Text("Name", style: TextStyle(color: Colors.black87, fontSize: 20, fontWeight: FontWeight.w600)),
+                Text(controller.getVideoName(videoPath), style: const TextStyle(color: Colors.black87, fontSize: 20, fontWeight: FontWeight.w600)),
               ]);
 
               final centerControls = Row(mainAxisSize: MainAxisSize.min, children: [
@@ -104,7 +104,9 @@ class TopBar extends StatelessWidget {
               ]);
 
               final right = Row(mainAxisSize: MainAxisSize.min, children: [
-                TextButton(onPressed: () {}, child: const Text("Export", style: TextStyle(fontSize: 20))),
+                TextButton(onPressed: () {
+                  Gal.putVideo(videoPath);
+                }, child: const Text("Export", style: TextStyle(fontSize: 20))),
                 PopupMenuButton<String>(
                   color: Colors.white,
                   onSelected: (_) {},
@@ -117,7 +119,14 @@ class TopBar extends StatelessWidget {
                     child: Text("more", style: TextStyle(fontSize: 20, color: Colors.black87)),
                   ),
                 ),
-                TextButton(onPressed: () {}, child: const Text("Delete", style: TextStyle(fontSize: 20, color: Colors.redAccent))),
+                TextButton(onPressed: () {
+                  controller.deleteVideo(videoPath);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => RecordingPage()),
+                  );
+
+                }, child: const Text("Delete", style: GlobalAppBarStyles.appBarText)),
               ]);
 
               return Stack(

@@ -1,34 +1,24 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 
-/// Einfacher Controller, der die Videoplayback-Logik kapselt.
+
 class PlaybackController extends ChangeNotifier {
   VideoPlayerController? videoController;
   bool isMuted = false;
   double speed = 1.0;
   String speedString = "1.0x";
-
-  final ImagePicker _picker = ImagePicker();
-  /// Öffnet die Galerie, um ein Video auszuwählen, und initialisiert den Videoplayer.
-  /// to do hier mochte ich nur die funktionalitat sehen
-
-  Future<void> pickVideo() async {
-    final file = await _picker.pickVideo(source: ImageSource.gallery);
-    if (file == null) return;
+  Future<void> loadVideo(String path) async {
+    if (path.isEmpty) return;
 
     await videoController?.dispose();
-    final controller = VideoPlayerController.file(File(file.path));
-    videoController = controller;
 
-    try {
-      await controller.initialize();
-      controller.play();
-      notifyListeners();
-    } catch (_) {
-      // Fto do
-    }
+    final controller = VideoPlayerController.file(File(path));
+    videoController = controller;
+    await controller.initialize();
+    controller.play();
+    notifyListeners();
+
   }
 
   void togglePlay() {
@@ -74,6 +64,17 @@ class PlaybackController extends ChangeNotifier {
         : (newPos > total ? total : newPos);
     c.seekTo(clamped);
     notifyListeners();
+  }
+  Future<void> deleteVideo(String videoPath) async {
+    final file = File(videoPath);
+    final directory = file.parent;
+    if (await directory.exists()) {
+      await directory.delete(recursive: true);
+    }
+  }
+  String getVideoName(String path) {
+    final fileName = File(path).uri.pathSegments.last;
+    return fileName.split('.').first;
   }
 
   @override
