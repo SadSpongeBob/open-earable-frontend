@@ -64,12 +64,10 @@ class AuthService {
   }
 
   Future<void> resetPassword({
-    required String userId,
-    required String newPassword,
+    required String emailAddress
   }) async {
-    await _dio.post(
-      AuthEndpoints.resetPassword(userId),
-      data: {'password': newPassword},
+    await _dio.delete(
+      AuthEndpoints.resetPassword(emailAddress),
     );
   }
 
