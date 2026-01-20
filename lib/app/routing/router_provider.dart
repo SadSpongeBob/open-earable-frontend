@@ -59,6 +59,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isPublic =
           loc == Routes.login ||
           loc == Routes.signup ||
+          loc == Routes.requestResetPassword ||
           loc == Routes.resetPassword;
 
       if (session.isLoading) return null;
