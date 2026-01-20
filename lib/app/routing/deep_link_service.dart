@@ -33,13 +33,11 @@ class DeepLinkService {
     if (!isResetLink) return;
 
     final token = uri.queryParameters['token'];
-    if (token == null || token.isEmpty) {
-      router.go(Routes.requestResetPassword);
-    } else {
-      router.go(
-        '${Routes.resetPassword}?token=${Uri.encodeComponent(token)}',
-      );
-    }
+    final target = (token == null || token.isEmpty)
+        ? Routes.resetPassword
+        : '${Routes.resetPassword}?token=${Uri.encodeComponent(token)}';
+
+    router.go(target);
   }
 }
 
