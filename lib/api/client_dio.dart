@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/network_module.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
 import 'package:openearable/api/services/auth/token_storage.dart';
+import 'package:openearable/features/auth/controllers/auth_controller.dart';
 
 final _networkModuleProvider = Provider<NetworkModule>((ref) {
-  return NetworkModule.create();
+  return NetworkModule.create(
+    logout: ref.read(authControllerProvider.notifier).logout(),
+  );
 });
 
 final apiDioProvider = Provider<Dio>((ref) {
