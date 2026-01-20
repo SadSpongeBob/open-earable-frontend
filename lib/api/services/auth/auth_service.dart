@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:openearable/api/models/auth/auth_tokens.dart';
-import 'package:openearable/api/models/auth/user.dart';
 
 import 'auth_endpoints.dart';
 import 'token_storage.dart';
@@ -64,38 +63,12 @@ class AuthService {
     return tokens;
   }
 
-  Future<void> resetPassword({required String emailAddress}) async {
-    await _dio.delete(AuthEndpoints.resetPassword(emailAddress));
-  }
-
-  Future<void> updatePassword({
-    required String password,
-    required String authToken,
+  Future<void> resetPassword({
+    required String emailAddress
   }) async {
-    final user = await getUser(authToken: authToken);
-
-    await _dio.put(
-      AuthEndpoints.update,
-      data: {
-        'emailAddress': user.emailAddress,
-        'name': user.name,
-        'password': password
-      },
-      options: Options(extra: {'authTokenOverride': authToken}),
+    await _dio.delete(
+      AuthEndpoints.resetPassword(emailAddress),
     );
-  }
-
-  Future<User> getUser({String? authToken}) async {
-    Options? options;
-    if (authToken != null && authToken.isNotEmpty) {
-      options = Options(extra: {'authTokenOverride': authToken});
-    }
-
-    final res = await _dio.get(AuthEndpoints.baseUrl, options: options);
-
-    final data = requireMap(res);
-    final user = User.fromJson(data);
-    return user;
   }
 
   Future<void> logout() => _tokenStorage.clear();
