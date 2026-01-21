@@ -34,13 +34,6 @@ class DeepLinkService {
     if (!isResetLink) return;
 
     final token = uri.queryParameters['token'];
-    if (token == null || token.isEmpty) {
-      router.go(Routes.requestResetPassword);
-    } else {
-      router.go(
-        '${Routes.resetPassword}?token=${Uri.encodeComponent(token)}',
-      );
-    }
     if (kDebugMode) {
       debugPrint('DeepLink received: $uri');
       debugPrint('Parsed token: $token');
