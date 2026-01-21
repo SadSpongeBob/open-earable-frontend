@@ -30,7 +30,8 @@ class DeepLinkService {
     if (uri == null) return;
 
     final isResetLink =
-        uri.scheme == 'open-earable' && uri.host == 'reset-password';
+        uri.scheme == 'open-earable' && uri.host == 'app' &&
+            uri.path == Routes.resetPassword;
     if (!isResetLink) return;
 
     final token = uri.queryParameters['token'];
