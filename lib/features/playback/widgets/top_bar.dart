@@ -32,7 +32,7 @@ class TopBar extends StatelessWidget {
                   final offset = renderBox.localToGlobal(Offset.zero);
                   final size = renderBox.size;
                   final selected = await showMenu<double>(
-                    color: Colors.grey[200],
+                    color: Colors.white,
                     context: context,
                     position: RelativeRect.fromLTRB(
                       offset.dx,
@@ -41,16 +41,16 @@ class TopBar extends StatelessWidget {
                       offset.dy,
                     ),
                     items: const [
-                      PopupMenuItem(value: 0.25, child: Text("0.25x")),
-                      PopupMenuItem(value: 0.5, child: Text("0.5x")),
-                      PopupMenuItem(value: 1.0, child: Text("1x")),
-                      PopupMenuItem(value: 1.5, child: Text("1.5x")),
-                      PopupMenuItem(value: 2.0, child: Text("2x")),
+                      PopupMenuItem(value: 0.25, child: Text("0.25x", style: GlobalAppBarStyles.appBarBlackText)),
+                      PopupMenuItem(value: 0.5, child: Text("0.5x", style: GlobalAppBarStyles.appBarBlackText)),
+                      PopupMenuItem(value: 1.0, child: Text("1x", style: GlobalAppBarStyles.appBarBlackText)),
+                      PopupMenuItem(value: 1.5, child: Text("1.5x", style: GlobalAppBarStyles.appBarBlackText)),
+                      PopupMenuItem(value: 2.0, child: Text("2x", style: GlobalAppBarStyles.appBarBlackText)),
                     ],
                   );
                   if (selected != null) controller.setSpeed(selected);
                 },
-                child: Text(controller.speedString, style: const TextStyle(fontSize: 20, color: Colors.black87)),
+                child: Text(controller.speedString, style: GlobalAppBarStyles.appBarBlackText),
 
               );
 
@@ -58,22 +58,30 @@ class TopBar extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios),
                   onPressed: () {},
-                  color: Colors.black87,
+                  color: Color(0xFFFF4442),
                   splashRadius: 20,
                 ),
-                const SizedBox(width: 6),
-                Image.asset("assets/images/wave.png", width: 26, height: 26),
-                const SizedBox(width: 10),
                 IconButton(
-                  icon: Icon(controller.isMuted ? Icons.volume_off : Icons.volume_up),
+                  icon: Image.asset(
+                    'assets/buttons/wave-sound.png',
+                    width: 26,
+                    height: 26,
+                  ),
+                  onPressed: () {},
+                  splashRadius: 20,
+                ),
+                IconButton(
+                  icon: Icon(
+                    controller.isMuted ? Icons.volume_off : Icons.volume_up,
+                  ),
                   onPressed: controller.toggleMute,
                   color: Colors.black87,
                   splashRadius: 20,
                 ),
-                const SizedBox(width: 8),
+
                 speedBadge,
-                const SizedBox(width: 12),
-                Text(controller.getVideoName(videoPath), style: const TextStyle(color: Colors.black87, fontSize: 20, fontWeight: FontWeight.w600)),
+                const SizedBox(width: 10),
+                Text(controller.getVideoName(videoPath), style: GlobalAppBarStyles.appBarBlackText),
               ]);
 
               final centerControls = Row(mainAxisSize: MainAxisSize.min, children: [
@@ -91,7 +99,7 @@ class TopBar extends StatelessWidget {
 
                   onPressed: controller.togglePlay,
                   color: Colors.black87,
-                  splashRadius: 28,
+                  splashRadius: 20,
                 ),
                 const SizedBox(width: 8),
                 IconButton(
@@ -106,17 +114,17 @@ class TopBar extends StatelessWidget {
               final right = Row(mainAxisSize: MainAxisSize.min, children: [
                 TextButton(onPressed: () {
                   Gal.putVideo(videoPath);
-                }, child: const Text("Export", style: TextStyle(fontSize: 20))),
+                }, child: const Text("Export", style: GlobalAppBarStyles.appBarBlackText)),
                 PopupMenuButton<String>(
                   color: Colors.white,
                   onSelected: (_) {},
                   itemBuilder: (_) => const [
-                    PopupMenuItem(value: "Duplicate", child: Text('Duplicate')),
-                    PopupMenuItem(value: "Rename", child: Text('Rename')),
+                    PopupMenuItem(value: "Duplicate", child: Text('Duplicate', style: GlobalAppBarStyles.appBarBlackText)),
+                    PopupMenuItem(value: "Rename", child: Text('Rename', style: GlobalAppBarStyles.appBarBlackText)),
                   ],
                   child: const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text("more", style: TextStyle(fontSize: 20, color: Colors.black87)),
+                    child: Text("More", style: GlobalAppBarStyles.appBarBlackText),
                   ),
                 ),
                 TextButton(onPressed: () {

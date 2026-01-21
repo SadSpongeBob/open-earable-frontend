@@ -20,4 +20,10 @@ class GlobalAppBarStyles {
     color: Color(0xFF1F1F1F),
     fontFamily: "Roboto",
   );
+  static const appBarBlackText = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    color: Color(0xFF111111),
+    fontFamily: "Roboto",
+  );
 }
