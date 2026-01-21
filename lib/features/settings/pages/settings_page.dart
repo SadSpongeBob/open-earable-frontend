@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:openearable/app/utils/validators.dart';
-import 'package:openearable/features/auth/pages/login_page.dart';
+import 'package:openearable/features/home/pages/home_page.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../settings/widgets/download_method_dropdown.dart';
 import '../../auth/widgets/auth_card.dart';
 import '../../auth/widgets/text_field.dart';
-import '../widgets/SettingsAppBar.dart';
+import '../widgets/settings_app_bar.dart';
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -94,10 +94,9 @@ class _SettingsState extends State<SettingsPage> {
                       children: [
                         OutlinedButton(
                           onPressed: () {
-                            // return to login page
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (_) => const LoginPage()),
+                              MaterialPageRoute(builder: (_) => const HomePage()),
                             );
                           },
                           style: OutlinedButton.styleFrom(
@@ -144,5 +143,3 @@ class _SettingsState extends State<SettingsPage> {
   }
 
 }
-
-

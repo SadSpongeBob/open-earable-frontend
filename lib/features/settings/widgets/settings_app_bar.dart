@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:openearable/app/theme/appBar_styles.dart';
-import '../../auth/pages/login_page.dart';
+import '../../../app/theme/app_bar_styles.dart';
+import '../../home/pages/home_page.dart';
 
 class SettingsAppBar extends StatelessWidget
     implements PreferredSizeWidget {
@@ -25,7 +25,7 @@ class SettingsAppBar extends StatelessWidget
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const LoginPage(),
+                        builder: (_) => const HomePage(),
                       ),
                     );
                   },
