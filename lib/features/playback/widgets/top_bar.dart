@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:gal/gal.dart';
-import 'package:go_router/go_router.dart';
 import 'package:openearable/app/theme/appBar_styles.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
-import '../../../app/routing/routes.dart';
 import '../controllers/playback_controller.dart';
 
 class TopBar extends StatelessWidget {
@@ -59,7 +56,12 @@ class TopBar extends StatelessWidget {
               final left = Row(mainAxisSize: MainAxisSize.min, children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => RecordingPage()),
+                    );
+                  },
                   color: Color(0xFFFF4442),
                   splashRadius: 20,
                 ),
@@ -98,7 +100,6 @@ class TopBar extends StatelessWidget {
                 IconButton(
                   iconSize: 40,
                   icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-
                   onPressed: controller.togglePlay,
                   color: Colors.black87,
                   splashRadius: 20,
@@ -115,7 +116,7 @@ class TopBar extends StatelessWidget {
 
               final right = Row(mainAxisSize: MainAxisSize.min, children: [
                 TextButton(onPressed: () {
-                  Gal.putVideo(videoPath);
+                  controller.exportVideoFolder(videoPath);
                 }, child: const Text("Export", style: GlobalAppBarStyles.appBarBlackText)),
                 PopupMenuButton<String>(
                   color: Colors.white,
@@ -135,7 +136,6 @@ class TopBar extends StatelessWidget {
                     context,
                     MaterialPageRoute(builder: (_) => RecordingPage()),
                   );
-
                 }, child: const Text("Delete", style: GlobalAppBarStyles.appBarText)),
               ]);
 

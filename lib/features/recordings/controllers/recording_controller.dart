@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 
 
 
@@ -107,20 +108,15 @@ class RecordingController extends ChangeNotifier {
       return null;
     }
   }
+
   Future<String?> _saveVideo(XFile file) async {
-    try {
-      final picturesDir = Directory('/storage/emulated/0/Pictures/OpenEarable');
-      final folderName = DateTime.now().millisecondsSinceEpoch.toString();
-      final recordingDir = Directory('${picturesDir.path}/$folderName');
-      await recordingDir.create(recursive: true);
-      final newPath = '${recordingDir.path}/video.mp4';
-      await File(file.path).copy(newPath);
-      return newPath;
-    } catch (e) {
-      error = 'Error saving video: $e';
-      notifyListeners();
-      return null;
-    }
+    final appDir = await getApplicationDocumentsDirectory();
+    final folderName = DateTime.now().millisecondsSinceEpoch.toString();
+    final recordingDir = Directory('${appDir.path}/OpenEarable/$folderName');
+    await recordingDir.create(recursive: true);
+    final newPath = '${recordingDir.path}/video.mp4';
+    await File(file.path).copy(newPath);
+    return newPath;
   }
   Future<void> toggleCamera() async {
     if (cameras.isEmpty) return;
