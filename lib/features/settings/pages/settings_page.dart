@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/app/utils/validators.dart';
-import 'package:openearable/features/home/pages/home_page.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../settings/widgets/download_method_dropdown.dart';
 import '../../auth/widgets/auth_card.dart';
 import '../../auth/widgets/text_field.dart';
 import '../widgets/settings_app_bar.dart';
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsState();
+  ConsumerState<SettingsPage> createState() => _SettingsState();
 }
-class _SettingsState extends State<SettingsPage> {
+class _SettingsState extends ConsumerState<SettingsPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _pwController = TextEditingController();
@@ -93,11 +94,8 @@ class _SettingsState extends State<SettingsPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         OutlinedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (_) => const HomePage()),
-                            );
+                          onPressed: () async {
+                            await ref.read(authControllerProvider).logout();
                           },
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

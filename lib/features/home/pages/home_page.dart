@@ -1,37 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:openearable/features/auth/controllers/auth_controller.dart';
+import 'package:go_router/go_router.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
-import 'package:openearable/features/recordings/pages/recordings_page.dart';
-import 'package:openearable/features/settings/pages/settings_page.dart';
 import 'package:openearable/features/home/widgets/project_bar.dart';
+import '../../../app/routing/routes.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
-
-  void _navigateToRecording(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const RecordingPage()),
-    );
-  }
-
-  void _navigateToSettings(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const SettingsPage()),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SafeArea(
       child: Row(
         children: [
-          // ProjectBar: white empty bar with fixed width 500 on the far left
           const ProjectBar(folders: [],),
 
-          // Main content area: show background image only in this central area
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
@@ -43,13 +26,12 @@ class HomePage extends ConsumerWidget {
             ),
           ),
 
-          // Right-side recording controls
           HomeRecordingRightBar(
-            onSettings: () => _navigateToSettings(context),
+            onSettings: () => context.go(Routes.settings),
             onWaveSound: () {
               // TODO: open sensor data page
             },
-            onShutter: () => _navigateToRecording(context),
+            onShutter: () => context.go(Routes.recording),
             onBluetooth: () {
               // TODO: open bleutooth popup
             },

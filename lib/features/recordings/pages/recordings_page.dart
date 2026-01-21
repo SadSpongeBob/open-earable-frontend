@@ -1,7 +1,8 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
-import '../../home/pages/home_page.dart';
+import '../../../app/routing/routes.dart';
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
 
@@ -63,10 +64,7 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   void _navigateToHome() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-    );
+    context.go(Routes.home);
   }
 
   Widget _buildCameraPreview() {
@@ -101,9 +99,7 @@ class _RecordingPageState extends State<RecordingPage> {
             ),
           ),
           HomeRecordingRightBar(
-            onSettings: () async {
-              // TODO: navigate to settings page
-            },
+            onSettings: () => context.go(Routes.settings),
             onWaveSound: () {
               // TODO: implement sensors data page and visualization
             },

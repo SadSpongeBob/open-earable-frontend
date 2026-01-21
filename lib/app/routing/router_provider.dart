@@ -11,6 +11,7 @@ import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
+import 'package:openearable/features/settings/pages/guest_settings_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(sessionProvider);
@@ -43,7 +44,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.recording,
         builder: (_, _) => const RecordingPage(),
       ),
-      GoRoute(path: Routes.settings, builder: (_, _) => const SettingsPage()),
+      GoRoute(
+        path: Routes.settings,
+        builder: (context, state) {
+          final session = ref.read(sessionProvider);
+          return session.isAuthenticated
+              ? const SettingsPage()
+              : const GuestSettingsPage();
+        },
+      ),
       GoRoute(path: Routes.login, builder: (_, _) => const LoginPage()),
       GoRoute(path: Routes.signup, builder: (_, _) => const SignupPage()),
       GoRoute(
@@ -64,7 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (session.isLoading) return null;
 
-      if (session.isLoggedOut) {
+      if (session.isLoggedOut || !session.isAuthenticated) {
         return isPublic ? null : Routes.login;
       }
 
