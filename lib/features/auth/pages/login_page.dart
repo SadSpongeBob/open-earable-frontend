@@ -4,7 +4,7 @@ import 'package:openearable/features/auth/pages/request_reset_password_page.dart
 import 'package:openearable/features/auth/pages/signup_page.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/app/utils/validators.dart';
-import 'package:openearable/features/settings/pages/settings_page.dart';
+
 
 
 import '../../../app/theme/text_styles.dart';

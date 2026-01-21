@@ -22,21 +22,20 @@ class PlaybackController extends ChangeNotifier {
   }
 
   void togglePlay() {
-    final c = videoController;
-    if (c == null || !c.value.isInitialized) return;
-    if (c.value.isPlaying) {
-      c.pause();
+
+    if (videoController == null || !videoController!.value.isInitialized) return;
+    if (videoController!.value.isPlaying) {
+      videoController?.pause();
     } else {
-      c.play();
+      videoController?.play();
     }
     notifyListeners();
   }
 
   void toggleMute() {
-    final c = videoController;
-    if (c == null) return;
+    if (videoController == null) return;
     isMuted = !isMuted;
-    c.setVolume(isMuted ? 0 : 1);
+    videoController?.setVolume(isMuted ? 0 : 1);
     notifyListeners();
   }
 
@@ -44,25 +43,23 @@ class PlaybackController extends ChangeNotifier {
     final clamped = value.clamp(0.25, 2.0);
     speed = clamped;
     speedString = "${clamped}x";
-    final c = videoController;
-    if (c == null || !c.value.isInitialized) {
+    if (videoController == null || !videoController!.value.isInitialized) {
       notifyListeners();
       return;
     }
-    c.setPlaybackSpeed(clamped);
+    videoController?.setPlaybackSpeed(clamped);
     notifyListeners();
   }
 
   void seekBySeconds(int seconds) {
-    final c = videoController;
-    if (c == null || !c.value.isInitialized) return;
-    final current = c.value.position;
-    final total = c.value.duration;
-    final newPos = current + Duration(seconds: seconds);
+    if (videoController == null || !videoController!.value.isInitialized) return;
+    final current = videoController?.value.position;
+    final total = videoController?.value.duration;
+    final newPos = current! + Duration(seconds: seconds);
     final clamped = newPos < Duration.zero
         ? Duration.zero
-        : (newPos > total ? total : newPos);
-    c.seekTo(clamped);
+        : (newPos > total! ? total : newPos);
+    videoController?.seekTo(clamped);
     notifyListeners();
   }
   Future<void> deleteVideo(String videoPath) async {
