@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'app/constants/colors.dart';
-import 'features/auth/pages/login_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/routing//router_provider.dart';
+import 'package:openearable/app/routing/app_bootstrapper.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
 
-  // Force landscape orientation before the app starts.
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
 
-  runApp(const OpenEarableApp());
+  runApp(const ProviderScope(child: OpenEarableApp()));
 }
 
-class OpenEarableApp extends StatelessWidget {
+class OpenEarableApp extends ConsumerWidget {
   const OpenEarableApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'OpenEarable',
-
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: "Roboto",
@@ -34,8 +36,15 @@ class OpenEarableApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
       ),
-
-      home: const LoginPage(),
+      routerConfig: router,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            child!,
+            const AppBootstrapper(),
+          ],
+        );
+      },
     );
   }
 }
