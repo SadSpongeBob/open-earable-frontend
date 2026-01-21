@@ -3,6 +3,7 @@ import 'package:video_player/video_player.dart';
 
 class VideoCard extends StatelessWidget {
   final VideoPlayerController controller;
+
   const VideoCard({required this.controller, Key? key}) : super(key: key);
 
   @override
@@ -13,7 +14,31 @@ class VideoCard extends StatelessWidget {
         elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         clipBehavior: Clip.antiAlias,
-        child: AspectRatio(aspectRatio: controller.value.aspectRatio, child: VideoPlayer(controller)),
+        child: AspectRatio(
+          aspectRatio: controller.value.aspectRatio,
+          child: Stack(
+            children: [
+              VideoPlayer(controller),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: VideoProgressIndicator(
+                    controller,
+                    allowScrubbing: true,
+                    colors: const VideoProgressColors(
+                      playedColor: Colors.red,
+                      bufferedColor: Colors.white54,
+                      backgroundColor: Colors.white24,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

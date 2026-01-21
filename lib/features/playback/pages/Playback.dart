@@ -60,22 +60,6 @@ class _PlaybackPageState extends State<PlaybackPage> {
                 },
               ),
             ),
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) {
-                final vc = _controller.videoController;
-                if (vc == null || !vc.value.isInitialized) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: VideoProgressIndicator(
-                    vc,
-                    allowScrubbing: true,
-                    colors: const VideoProgressColors(playedColor: Colors.red),
-                  ),
-                );
-              },
-            ),
-
           ],
         ),
       ),
