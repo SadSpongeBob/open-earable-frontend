@@ -1,5 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:openearable/features/auth/pages/login_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:openearable/api/client_dio.dart';
+import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
 
 import '../../../app/theme/text_styles.dart';
@@ -7,17 +11,17 @@ import '../widgets/auth_button.dart';
 import '../widgets/auth_card.dart';
 import '../widgets/text_field.dart';
 
-class ResetPasswordPage extends StatefulWidget {
-  final String? authToken;
-  const ResetPasswordPage({super.key, this.authToken});
+class ResetPasswordPage extends ConsumerStatefulWidget {
+  final String authToken;
+
+  const ResetPasswordPage({super.key, required this.authToken});
 
   @override
-  State<ResetPasswordPage> createState() => _ResetState();
+  ConsumerState<ResetPasswordPage> createState() => _ResetState();
 }
 
-class _ResetState extends State<ResetPasswordPage> {
+class _ResetState extends ConsumerState<ResetPasswordPage> {
   final _pwController = TextEditingController();
-  final _confirmController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
   bool _showPassword = false;
@@ -28,7 +32,6 @@ class _ResetState extends State<ResetPasswordPage> {
   void initState() {
     super.initState();
     _pwController.addListener(_onFormChanged);
-    _confirmController.addListener(_onFormChanged);
   }
 
   void _onFormChanged() => setState(() {});
@@ -36,7 +39,6 @@ class _ResetState extends State<ResetPasswordPage> {
   @override
   void dispose() {
     _pwController.dispose();
-    _confirmController.dispose();
     super.dispose();
   }
 
@@ -96,7 +98,7 @@ class _ResetState extends State<ResetPasswordPage> {
                 AuthButton(
                   text: "Reset",
                   loading: _loading,
-                  enabled: _isFormFilled,
+                  enabled: _isFormFilled && !_loading,
                   onTap: _handleReset,
                 ),
               ],
@@ -112,32 +114,43 @@ class _ResetState extends State<ResetPasswordPage> {
 
     setState(() => _loading = true);
 
-    // TODO: Replace this with a real API call
-    // something like : AuthService().resetPassword(widget.authToken, _pwController.text)
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      await ref
+          .read(authServiceProvider)
+          .updatePassword(
+            password: _pwController.text,
+            authToken: widget.authToken,
+          );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() => _loading = false);
+      setState(() => _loading = false);
 
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Password Reset'),
-        content: const Text('Your password has been reset successfully.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-              );
-            },
-            child: const Text('Go to Login'),
-          ),
-        ],
-      ),
-    );
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Password Reset'),
+          content: const Text('Your password has been reset successfully.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+
+      if (!mounted) return;
+      context.go(Routes.login);
+    } on DioException catch (exception) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(exception.message ?? 'Request failed')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 }

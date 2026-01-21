@@ -1,5 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:openearable/features/auth/pages/login_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:openearable/api/client_dio.dart';
+import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
 import '../../../app/theme/text_styles.dart';
 import '../widgets/auth_button.dart';
@@ -7,14 +11,14 @@ import '../widgets/auth_card.dart';
 import '../widgets/auth_footer_link.dart';
 import '../widgets/text_field.dart';
 
-class RequestResetPage extends StatefulWidget {
+class RequestResetPage extends ConsumerStatefulWidget {
   const RequestResetPage({super.key});
 
   @override
-  State<RequestResetPage> createState() => _RequestResetState();
+  ConsumerState<RequestResetPage> createState() => _RequestResetState();
 }
 
-class _RequestResetState extends State<RequestResetPage> {
+class _RequestResetState extends ConsumerState<RequestResetPage> {
   final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
@@ -82,7 +86,7 @@ class _RequestResetState extends State<RequestResetPage> {
                 AuthButton(
                   text: "Send",
                   loading: _loading,
-                  enabled: _isFormFilled,
+                  enabled: _isFormFilled && !_loading,
                   onTap: _handleSendReset,
                 ),
 
@@ -90,12 +94,7 @@ class _RequestResetState extends State<RequestResetPage> {
 
                 AuthFooterLink(
                   text: "< Back to Log In",
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
-                    );
-                  },
+                  onTap: () => context.go(Routes.login),
                 ),
               ],
             ),
@@ -110,34 +109,38 @@ class _RequestResetState extends State<RequestResetPage> {
 
     setState(() => _loading = true);
 
-    // TODO: Replace this with a real API call when available
-    await Future.delayed(const Duration(seconds: 1));
+    final email = _emailController.text.trim();
 
-    if (!mounted) return;
+    try {
+      await ref.read(authServiceProvider).resetPassword(emailAddress: email);
 
-    setState(() => _loading = false);
+      if (!mounted) return;
 
-    // TODO: modify the dialog design
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Reset Link Sent'),
-        content: Text(
-          'If an account with ${_emailController.text.trim()} exists, a password reset link has been sent to that address.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-              );
-            },
-            child: const Text('Back to Login'),
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Reset Link Sent'),
+          content: Text(
+            'If an account with $email exists, a password reset link has been sent to that address.',
           ),
-        ],
-      ),
-    );
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+
+      if (!mounted) return;
+      context.go(Routes.login);
+    } on DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Request failed')));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 }

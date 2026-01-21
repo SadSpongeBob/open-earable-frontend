@@ -26,6 +26,4 @@ class User {
     'emailAddress': emailAddress,
     'photoUrl': photoUrl,
   };
-
-
 }
