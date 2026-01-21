@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:openearable/api/services/auth/auth_service.dart';
-import 'package:openearable/features/auth/pages/login_page.dart';
-import 'package:openearable/features/home/pages/home_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/auth/auth_state.dart';
+import 'package:openearable/app/routing/routes.dart';
+import 'package:openearable/features/auth/controllers/auth_controller.dart';
+import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/app/utils/validators.dart';
 import '../../../app/theme/text_styles.dart';
 import '../widgets/auth_button.dart';
@@ -10,20 +13,19 @@ import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_seperator.dart';
 import '../widgets/text_field.dart';
 
-
-class SignupPage extends StatefulWidget {
+class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
 
   @override
-  State<SignupPage> createState() => _SignupPageState();
+  ConsumerState<SignupPage> createState() => _SignupPageState();
 }
 
-class _SignupPageState extends State<SignupPage> {
+class _SignupPageState extends ConsumerState<SignupPage> {
   final _namecontroller = TextEditingController();
   final _emailController = TextEditingController();
   final _pwController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _loading = false;
+
   bool _showPassword = false;
 
   bool get _isFormFilled =>
@@ -39,9 +41,7 @@ class _SignupPageState extends State<SignupPage> {
     _pwController.addListener(_onFormChanged);
   }
 
-  void _onFormChanged() {
-    setState(() {});
-  }
+  void _onFormChanged() => setState(() {});
 
   @override
   void dispose() {
@@ -53,6 +53,19 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(sessionProvider);
+    final loading = session.isLoading;
+
+    // Show error once as a snackbar
+    ref.listen<AuthState>(sessionProvider, (prev, next) {
+      final msg = next.error;
+      if (msg != null && msg.isNotEmpty && msg != prev?.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+      }
+    });
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -117,9 +130,9 @@ class _SignupPageState extends State<SignupPage> {
 
                 AuthButton(
                   text: "Sign up",
-                  loading: _loading,
-                  enabled: _isFormFilled,
-                  onTap: _handleSingup,
+                  loading: loading,
+                  enabled: _isFormFilled && !loading,
+                  onTap: _handleSignup,
                 ),
 
                 const SizedBox(height: 10),
@@ -133,16 +146,8 @@ class _SignupPageState extends State<SignupPage> {
                       style: AuthTextStyles.body,
                     ),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoginPage()),
-                        );
-                      },
-                      child: Text(
-                        "Log in",
-                        style: AuthTextStyles.link,
-                      ),
+                      onTap: () => context.go(Routes.login),
+                      child: Text("Log in", style: AuthTextStyles.link),
                     ),
                   ],
                 ),
@@ -152,11 +157,9 @@ class _SignupPageState extends State<SignupPage> {
                 AuthFooterLink(
                   text: "Continue as Guest",
                   bold: true,
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomePage()),
-                    );
+                  onTap: () async {
+                    await ref.read(authControllerProvider).guestLogin();
+                    context.go(Routes.home);
                   },
                 ),
               ],
@@ -167,29 +170,13 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-
-  Future<void> _handleSingup() async {
+  Future<void> _handleSignup() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() => _loading = true);
-
-    final result = await AuthService().signup(
-      _namecontroller.text.trim(),
-      _emailController.text.trim(),
-      _pwController.text.trim(),
-
+    await ref.read(authControllerProvider).signup(
+      name: _namecontroller.text.trim(),
+      email: _emailController.text.trim(),
+      password: _pwController.text.trim(),
     );
-
-    setState(() => _loading = false);
-
-    if (!mounted) return;
-    print(result) ;
-    //result.success
-    if (true) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
-    }
   }
 }

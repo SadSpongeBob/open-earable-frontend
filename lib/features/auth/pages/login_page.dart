@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:openearable/api/services/auth/auth_service.dart';
-import 'package:openearable/features/auth/pages/request_reset_password_page.dart';
-import 'package:openearable/features/auth/pages/signup_page.dart';
-import 'package:openearable/features/home/pages/home_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/auth/auth_state.dart';
+import 'package:openearable/app/routing/routes.dart';
+import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/app/utils/validators.dart';
+import 'package:openearable/features/auth/state/session_provider.dart';
 
 
 
@@ -14,24 +16,23 @@ import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_seperator.dart';
 import '../widgets/text_field.dart';
 
-
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _pwController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  bool _loading = false;
   bool _showPassword = false;
+
   bool get _isFormFilled =>
-      _emailController.text.isNotEmpty &&
-          _pwController.text.isNotEmpty;
+      _emailController.text.isNotEmpty && _pwController.text.isNotEmpty;
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +43,7 @@ class _LoginPageState extends State<LoginPage> {
   void _onFormChanged() {
     setState(() {});
   }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -51,6 +53,18 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(sessionProvider);
+    final loading = session.isLoading;
+
+    ref.listen<AuthState>(sessionProvider, (prev, next) {
+      final msg = next.error;
+      if (msg != null && msg.isNotEmpty && msg != prev?.error) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    });
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -103,14 +117,14 @@ class _LoginPageState extends State<LoginPage> {
                 ),
 
                 const SizedBox(height: 10),
-                _buildRememberForgotRow(),
+                _buildRememberForgotRow(context),
                 const SizedBox(height: 35),
 
                 AuthButton(
                   text: "Log In",
-                  loading: _loading,
-                  enabled: _isFormFilled,
-                  onTap: _handleLogin,
+                  loading: loading,
+                  enabled: _isFormFilled && !loading,
+                  onTap: () => _handleLogin(),
                 ),
 
                 const SizedBox(height: 10),
@@ -124,16 +138,8 @@ class _LoginPageState extends State<LoginPage> {
                       style: AuthTextStyles.body,
                     ),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const SignupPage()),
-                        );
-                      },
-                      child: Text(
-                        "Sign Up",
-                        style: AuthTextStyles.link,
-                      ),
+                      onTap: () => context.go(Routes.signup),
+                      child: Text("Sign Up", style: AuthTextStyles.link),
                     ),
                   ],
                 ),
@@ -143,11 +149,9 @@ class _LoginPageState extends State<LoginPage> {
                 AuthFooterLink(
                   text: "Continue as Guest",
                   bold: true,
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomePage()),
-                    );
+                  onTap: () async {
+                    await ref.read(authControllerProvider).guestLogin();
+                    context.go(Routes.home);
                   },
                 ),
               ],
@@ -158,46 +162,26 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildRememberForgotRow() {
+  Widget _buildRememberForgotRow(BuildContext context) {
     return Row(
       children: [
         const Spacer(),
         GestureDetector(
-          onTap: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const RequestResetPage()),
-            );
-          },
-          child: Text(
-            "Forgot Password?",
-            style: AuthTextStyles.body,
-          ),
+          onTap: () => context.go(Routes.requestResetPassword),
+          child: Text("Forgot Password?", style: AuthTextStyles.body),
         ),
       ],
     );
   }
 
-
   Future<void> _handleLogin() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() => _loading = true);
-
-    final result = await AuthService().login(
-      _emailController.text.trim(),
-      _pwController.text.trim(),
-    );
-
-    setState(() => _loading = false);
-
-    if (!mounted) return;
-
-    if (result.success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
-    }
+    await ref
+        .read(authControllerProvider)
+        .login(
+          email: _emailController.text.trim(),
+          password: _pwController.text.trim(),
+        );
   }
 }

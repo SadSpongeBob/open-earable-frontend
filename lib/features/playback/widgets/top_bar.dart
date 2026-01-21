@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
+import 'package:go_router/go_router.dart';
 import 'package:openearable/app/theme/appBar_styles.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
+import '../../../app/routing/routes.dart';
 import '../controllers/playback_controller.dart';
 
 class TopBar extends StatelessWidget {

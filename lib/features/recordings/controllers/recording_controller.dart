@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
-import 'package:gal/gal.dart';
+
 
 
 class RecordingController extends ChangeNotifier {
