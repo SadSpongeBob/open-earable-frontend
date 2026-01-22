@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
+import 'package:openearable/api/models/auth/user.dart';
 
 final sessionProvider = StateNotifierProvider<SessionNotifier, AuthState>((
   ref,
@@ -10,14 +11,27 @@ final sessionProvider = StateNotifierProvider<SessionNotifier, AuthState>((
 class SessionNotifier extends StateNotifier<AuthState> {
   SessionNotifier() : super(AuthState.initial());
 
-  void setMode(AuthMode mode) =>
-      state = state.copyWith(mode: mode, error: null);
+  void setAuthenticated(User user) => state = state.copyWith(
+    mode: AuthMode.authenticated,
+    error: null,
+    user: user,
+  );
 
-  void setLoggedOut([String? message]) =>
-      state = state.copyWith(mode: AuthMode.loggedOut, error: message);
+  void setGuest() =>
+      state = state.copyWith(mode: AuthMode.guest, error: null, user: null);
 
-  void setLoading() =>
-      state = state.copyWith(mode: AuthMode.loading, error: null);
+  void setLoggedOut([String? message]) => state = state.copyWith(
+    mode: AuthMode.loggedOut,
+    error: message,
+    user: null,
+  );
 
-  void clearError() => state = state.copyWith(error: null);
+  void setLoading() => state = state.copyWith(
+    mode: AuthMode.loading,
+    error: null,
+    user: state.user,
+  );
+
+  void clearError() =>
+      state = state.copyWith(mode: state.mode, error: null, user: state.user);
 }
