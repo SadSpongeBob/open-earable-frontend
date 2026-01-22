@@ -15,7 +15,7 @@ class _AppBootstrapperState extends ConsumerState<AppBootstrapper> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final router = ref.read(routerProvider);
       await ref.read(deepLinkServiceProvider).init(router);
 

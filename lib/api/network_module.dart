@@ -5,16 +5,19 @@ import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/interceptors/refresh_token.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
 import 'package:openearable/api/services/auth/token_storage.dart';
+import 'package:openearable/api/services/user/user_service.dart';
 
 class NetworkModule {
   final TokenStorage tokenStorage;
   final Dio dio;
+  final UserService userService;
   final AuthService authService;
 
   NetworkModule._({
     required this.tokenStorage,
     required this.dio,
     required this.authService,
+    required this.userService,
   });
 
   factory NetworkModule.create({required Future<void> Function() logout}) {
@@ -32,7 +35,12 @@ class NetworkModule {
       ),
     );
 
-    final authService = AuthService(dio: dio, tokenStorage: tokenStorage);
+    final userService = UserService(dio);
+    final authService = AuthService(
+      dio: dio,
+      tokenStorage: tokenStorage,
+      userService: userService,
+    );
 
     dio.interceptors.addAll([
       AttachTokenInterceptor(tokenStorage: tokenStorage),
@@ -48,6 +56,7 @@ class NetworkModule {
     return NetworkModule._(
       tokenStorage: tokenStorage,
       dio: dio,
+      userService: userService,
       authService: authService,
     );
   }
