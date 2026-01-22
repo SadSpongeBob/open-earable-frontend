@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/models/auth/auth_tokens.dart';
-import 'package:openearable/api/models/auth/user.dart';
+import 'package:openearable/api/services/user/user_service.dart';
 
 import 'auth_endpoints.dart';
 import 'token_storage.dart';
@@ -8,10 +9,15 @@ import 'token_storage.dart';
 class AuthService {
   final Dio _dio;
   final TokenStorage _tokenStorage;
+  final UserService _userService;
 
-  AuthService({required Dio dio, required TokenStorage tokenStorage})
-    : _dio = dio,
-      _tokenStorage = tokenStorage;
+  AuthService({
+    required Dio dio,
+    required TokenStorage tokenStorage,
+    required UserService userService,
+  }) : _dio = dio,
+       _tokenStorage = tokenStorage,
+       _userService = userService;
 
   Future<Tokens> login({
     required String email,
@@ -22,7 +28,7 @@ class AuthService {
       data: {'emailAddress': email, 'password': password},
     );
 
-    final data = requireMap(res);
+    final data = res.asMap();
 
     final tokens = Tokens.fromJson(data);
     await _tokenStorage.saveTokens(tokens);
@@ -40,7 +46,7 @@ class AuthService {
       data: {'refreshToken': refreshToken},
     );
 
-    final data = requireMap(res);
+    final data = res.asMap();
 
     final tokens = Tokens.fromJson(data);
 
@@ -58,7 +64,7 @@ class AuthService {
       data: {'emailAddress': email, 'password': password, 'name': name},
     );
 
-    final data = requireMap(res);
+    final data = res.asMap();
     final tokens = Tokens.fromJson(data);
     await _tokenStorage.saveTokens(tokens);
     return tokens;
@@ -72,41 +78,18 @@ class AuthService {
     required String password,
     required String authToken,
   }) async {
-    final user = await getUser(authToken: authToken);
+    final user = await _userService.getUser(authToken: authToken);
 
     await _dio.put(
       AuthEndpoints.update,
       data: {
         'emailAddress': user.emailAddress,
         'name': user.name,
-        'password': password
+        'password': password,
       },
       options: Options(extra: {'authTokenOverride': authToken}),
     );
   }
 
-  Future<User> getUser({String? authToken}) async {
-    Options? options;
-    if (authToken != null && authToken.isNotEmpty) {
-      options = Options(extra: {'authTokenOverride': authToken});
-    }
-
-    final res = await _dio.get(AuthEndpoints.baseUrl, options: options);
-
-    final data = requireMap(res);
-    final user = User.fromJson(data);
-    return user;
-  }
-
   Future<void> logout() => _tokenStorage.clear();
-
-  Map<String, dynamic> requireMap(Response<dynamic> res) {
-    final data = res.data;
-    if (data is Map<String, dynamic>) return data;
-
-    throw DioException(
-      requestOptions: res.requestOptions,
-      message: 'Invalid response format',
-    );
-  }
 }
