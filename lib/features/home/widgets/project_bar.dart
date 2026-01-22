@@ -1,51 +1,37 @@
 import 'package:flutter/material.dart';
 
 @immutable
-class FolderItem {
+class ProjectItem {
   final String id;
   final String name;
-  final String assetPath;
-  final bool isDefault;
-  final bool canRename;
-  final bool canDelete;
 
-  const FolderItem({
+  const ProjectItem({
     required this.id,
     required this.name,
-    required this.assetPath,
-    this.isDefault = false,
-    this.canRename = true,
-    this.canDelete = true,
   });
-
-  FolderItem copyWith({String? name}) => FolderItem(
-    id: id,
-    name: name ?? this.name,
-    assetPath: assetPath,
-    isDefault: isDefault,
-    canRename: canRename,
-    canDelete: canDelete,
-  );
 }
 
 class ProjectBar extends StatelessWidget {
   const ProjectBar({
     super.key,
-    required this.folders,
-    this.selectedFolderId,
-    this.onAddFolder,
-    this.onSelectFolder,
-    this.onRenameFolder,
-    this.onDeleteFolder,
+    required this.projects,
+    required this.openProjectId,
+    required this.isSelectionMode,
+    required this.selectedProjectIds,
+    this.onAddProject,
+    this.onTapProject,
+    this.onLongPressProject,
   });
 
-  final List<FolderItem> folders;
-  final String? selectedFolderId;
+  final List<ProjectItem> projects;
+  final String openProjectId;
 
-  final VoidCallback? onAddFolder;
-  final ValueChanged<FolderItem>? onSelectFolder;
-  final ValueChanged<FolderItem>? onRenameFolder;
-  final ValueChanged<FolderItem>? onDeleteFolder;
+  final bool isSelectionMode;
+  final Set<String> selectedProjectIds;
+
+  final VoidCallback? onAddProject;
+  final ValueChanged<ProjectItem>? onTapProject;
+  final ValueChanged<ProjectItem>? onLongPressProject;
 
   @override
   Widget build(BuildContext context) {
@@ -55,13 +41,33 @@ class ProjectBar extends StatelessWidget {
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: _FolderGrid(
-            folders: folders,
-            selectedFolderId: selectedFolderId,
-            onAddFolder: onAddFolder,
-            onSelectFolder: onSelectFolder,
-            onRenameFolder: onRenameFolder,
-            onDeleteFolder: onDeleteFolder,
+          child: GridView.builder(
+            padding: EdgeInsets.zero,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 181.5 / 149.0,
+            ),
+            itemCount: projects.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return _AddProjectTile(onTap: onAddProject);
+              }
+
+              final project = projects[index - 1];
+              final isOpen= project.id == openProjectId;
+              final isSelectable = project.id != 'default';
+              final isChecked = selectedProjectIds.contains(project.id);
+              return _ProjectTile(
+                name: project.name,
+                isOpen: isOpen,
+                showSelectionCircle: isSelectionMode && isSelectable,
+                isChecked: isChecked,
+                onTap: () => onTapProject?.call(project),
+                onLongPress: () => onLongPressProject?.call(project),
+              );
+            },
           ),
         ),
       ),
@@ -69,63 +75,8 @@ class ProjectBar extends StatelessWidget {
   }
 }
 
-class _FolderGrid extends StatelessWidget {
-  const _FolderGrid({
-    required this.folders,
-    required this.selectedFolderId,
-    required this.onAddFolder,
-    required this.onSelectFolder,
-    required this.onRenameFolder,
-    required this.onDeleteFolder,
-  });
-
-  final List<FolderItem> folders;
-  final String? selectedFolderId;
-
-  final VoidCallback? onAddFolder;
-  final ValueChanged<FolderItem>? onSelectFolder;
-  final ValueChanged<FolderItem>? onRenameFolder;
-  final ValueChanged<FolderItem>? onDeleteFolder;
-
-  static const _crossAxisCount = 2;
-  static const _spacing = 16.0;
-
-  @override
-  Widget build(BuildContext context) {
-    final itemCount = folders.length + 1;
-
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: _crossAxisCount,
-        mainAxisSpacing: _spacing,
-        crossAxisSpacing: _spacing,
-        childAspectRatio: 181.5 / 149.0,
-      ),
-      itemCount: itemCount,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return _AddFolderTile(onTap: onAddFolder);
-        }
-
-        final folder = folders[index - 1];
-        final isSelected = folder.id == selectedFolderId;
-
-        return _FolderTile(
-          folder: folder,
-          isSelected: isSelected,
-          onTap: () => onSelectFolder?.call(folder),
-          onRename: folder.canRename ? () => onRenameFolder?.call(folder) : null,
-          onDelete: folder.canDelete ? () => onDeleteFolder?.call(folder) : null,
-        );
-      },
-    );
-  }
-}
-
-class _AddFolderTile extends StatelessWidget {
-  const _AddFolderTile({required this.onTap});
-
+class _AddProjectTile extends StatelessWidget {
+  const _AddProjectTile({required this.onTap});
   final VoidCallback? onTap;
 
   @override
@@ -144,103 +95,112 @@ class _AddFolderTile extends StatelessWidget {
   }
 }
 
-class _FolderTile extends StatelessWidget {
-  const _FolderTile({
-    required this.folder,
-    required this.isSelected,
+class _ProjectTile extends StatelessWidget {
+  const _ProjectTile({
+    required this.name,
+    required this.isOpen,
+    required this.showSelectionCircle,
+    required this.isChecked,
     required this.onTap,
-    required this.onRename,
-    required this.onDelete,
+    required this.onLongPress,
   });
 
-  final FolderItem folder;
-  final bool isSelected;
+  final String name;
+  final bool isOpen;
+
+  final bool showSelectionCircle;
+  final bool isChecked;
+
   final VoidCallback onTap;
-  final VoidCallback? onRename;
-  final VoidCallback? onDelete;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = isSelected ? Colors.black87 : Colors.transparent;
+    final iconAsset = isOpen
+        ? 'assets/buttons/home/open_folder.png'
+        : 'assets/buttons/home/folder.png';
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(10),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: borderColor, width: 2),
-          ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Image.asset(folder.assetPath),
-              ),
-
-              if (onRename != null || onDelete != null)
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: _FolderMenuButton(
-                    onRename: onRename,
-                    onDelete: onDelete,
+        child: Stack(
+          children: [
+            // content
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: Image.asset(iconAsset, fit: BoxFit.contain),
                   ),
+                  const SizedBox(height: 3),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // selection circle overlay
+            if (showSelectionCircle)
+              Positioned(
+                bottom: 80,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: _SelectionCircle(isChecked: isChecked, isOpen: isOpen),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _FolderMenuButton extends StatelessWidget {
-  const _FolderMenuButton({this.onRename, this.onDelete});
+class _SelectionCircle extends StatelessWidget {
+  const _SelectionCircle({
+    required this.isChecked,
+    required this.isOpen,
+  });
 
-  final VoidCallback? onRename;
-  final VoidCallback? onDelete;
+  final bool isChecked;
+  final bool isOpen;
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<_FolderMenuAction>(
-      tooltip: 'Folder actions',
-      icon: const Icon(Icons.more_vert, size: 18),
-      padding: EdgeInsets.zero,
-      itemBuilder: (context) {
-        final items = <PopupMenuEntry<_FolderMenuAction>>[];
-        if (onRename != null) {
-          items.add(
-            const PopupMenuItem(
-              value: _FolderMenuAction.rename,
-              child: Text('Rename'),
-            ),
-          );
-        }
-        if (onDelete != null) {
-          items.add(
-            const PopupMenuItem(
-              value: _FolderMenuAction.delete,
-              child: Text('Delete'),
-            ),
-          );
-        }
-        return items;
-      },
-      onSelected: (action) {
-        switch (action) {
-          case _FolderMenuAction.rename:
-            onRename?.call();
-            break;
-          case _FolderMenuAction.delete:
-            onDelete?.call();
-            break;
-        }
-      },
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(width: 2, color: isOpen ? Colors.pink.shade600 : Colors.grey.shade700),
+        color: isChecked
+            ? (isOpen ? Colors.pink.shade600 : Colors.grey.shade700)
+            : Colors.transparent,
+      ),
+      child: isChecked ? const Center(
+        child: Icon(
+          Icons.check,
+          size: 30,
+          color: Colors.white,
+        ),
+      )
+          : null,
     );
   }
 }
-
-enum _FolderMenuAction { rename, delete }

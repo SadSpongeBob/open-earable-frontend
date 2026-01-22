@@ -1,14 +1,11 @@
 class ProjectEndpoints {
-  static const String projects = '/projects';
+  static const String base = '/api/project';
 
-  static String project(String projectId) => '/projects/$projectId';
+  static const String projects = base;
 
-  static String duplicateProject(String projectId) =>
-      '/projects/$projectId/duplicate';
+  static String project(String projectId) => '$base/$projectId';
 
-  static String projectUsers(String projectId) => '/projects/$projectId/users';
+  static String projectUsers(String projectId) => '$base/$projectId/user';
 
-  static String projectUser(String projectId, String userId) =>
-      '/projects/$projectId/users/$userId';
-  
+  static String deleteProject(String projectId) => '$base/$projectId/delete';
 }
