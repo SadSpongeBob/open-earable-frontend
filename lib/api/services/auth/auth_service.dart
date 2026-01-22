@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/models/auth/auth_tokens.dart';
 import 'package:openearable/api/models/auth/user.dart';
 
@@ -22,7 +23,7 @@ class AuthService {
       data: {'emailAddress': email, 'password': password},
     );
 
-    final data = requireMap(res);
+    final data = res.asMap();
 
     final tokens = Tokens.fromJson(data);
     await _tokenStorage.saveTokens(tokens);
@@ -40,7 +41,7 @@ class AuthService {
       data: {'refreshToken': refreshToken},
     );
 
-    final data = requireMap(res);
+    final data = res.asMap();
 
     final tokens = Tokens.fromJson(data);
 
@@ -58,7 +59,7 @@ class AuthService {
       data: {'emailAddress': email, 'password': password, 'name': name},
     );
 
-    final data = requireMap(res);
+    final data = res.asMap();
     final tokens = Tokens.fromJson(data);
     await _tokenStorage.saveTokens(tokens);
     return tokens;
@@ -93,20 +94,10 @@ class AuthService {
 
     final res = await _dio.get(AuthEndpoints.baseUrl, options: options);
 
-    final data = requireMap(res);
+    final data = res.asMap();
     final user = User.fromJson(data);
     return user;
   }
 
   Future<void> logout() => _tokenStorage.clear();
-
-  Map<String, dynamic> requireMap(Response<dynamic> res) {
-    final data = res.data;
-    if (data is Map<String, dynamic>) return data;
-
-    throw DioException(
-      requestOptions: res.requestOptions,
-      message: 'Invalid response format',
-    );
-  }
 }
