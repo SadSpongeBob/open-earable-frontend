@@ -91,5 +91,16 @@ class AuthService {
     );
   }
 
+  Future<void> updateUser({
+    required String emailAddress,
+    required String name,
+    String? password,
+  }) async {
+    await _dio.put(
+      AuthEndpoints.update,
+      data: {'emailAddress': emailAddress, 'name': name, 'password': password},
+    );
+  }
+
   Future<void> logout() => _tokenStorage.clear();
 }
