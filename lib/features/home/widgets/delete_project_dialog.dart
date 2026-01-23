@@ -56,7 +56,7 @@ class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
                 padding: const EdgeInsets.only(top: 20, left: 16, right: 16),
                 child: Center(
                   child: Text(
-                    'Do you really want to \ndelete this project?',
+                    'Do you really want to \ndelete these projects?',
                     textAlign: TextAlign.center,
                     style: AuthTextStyles.title.copyWith(fontSize: 20, fontWeight: FontWeight.w800),
                   ),

@@ -145,6 +145,12 @@ class HomeController extends StateNotifier<HomeState> {
   Future<void> renameProject(String projectId, String name) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
+    if (_projectNameExists(trimmed)) {
+      state = state.copyWith(
+        errorMessage: 'A project with this name already exists',
+      );
+      return;
+    }
 
     _setLoading(true);
     try {
