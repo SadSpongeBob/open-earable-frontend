@@ -6,8 +6,10 @@ import 'package:openearable/features/home/widgets/project_bar.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
 import 'package:openearable/features/home/widgets/delete_project_dialog.dart';
 import '../../../app/routing/routes.dart';
+import '../../../app/ui/popup_toast.dart';
+import '../../../app/ui/toast_controller.dart';
+import '../../../app/ui/toast_event.dart';
 import '../controllers/home_controller.dart';
-import '../state/home_state.dart';
 import '../widgets/rename_project_dialog.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -28,16 +30,20 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<HomeState>(homeControllerProvider, (prev, next) {
-      final msg = next.errorMessage;
-      final prevMsg = prev?.errorMessage;
 
-      if (msg != null && msg.isNotEmpty && msg != prevMsg) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(msg)));
-      }
+    // Toast event listener
+    // TODO: Move to a higher level widget if needed globally
+    ref.listen<ToastEvent?>(toastProvider, (prev, next) {
+      if (next == null) return;
+
+      PopupToast.show(
+        context,
+        message: next.message,
+      );
+
+      ref.read(toastProvider.notifier).state = null;
     });
+
 
     final state = ref.watch(homeControllerProvider);
     final controller = ref.read(homeControllerProvider.notifier);
