@@ -20,4 +20,8 @@ class UserService {
     final user = User.fromJson(data);
     return user;
   }
+
+  Future<void> deleteUser() async {
+    await _dio.delete(UserEndpoints.baseUrl);
+  }
 }
