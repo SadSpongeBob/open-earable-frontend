@@ -8,4 +8,12 @@ class ProjectEndpoints {
   static String projectUsers(String projectId) => '$base/$projectId/user';
 
   static String deleteProject(String projectId) => '$base/$projectId/delete';
+
+  static String addProjectUser(String projectId) => '$base/$projectId/user';
+
+  static String updateProjectUser(String projectId, String userId) =>
+      '$base/$projectId/user/$userId';
+
+  static String removeProjectUser(String projectId, String userId) =>
+      '$base/$projectId/user/$userId';
 }

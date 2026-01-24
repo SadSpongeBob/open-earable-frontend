@@ -3,6 +3,8 @@ import '../../models/auth/user.dart';
 import '../../models/project.dart';
 import 'project_endpoints.dart';
 
+enum ProjectRole { owner, editor, viewer }
+
 class ProjectService {
   final Dio dioClient;
 
@@ -63,5 +65,52 @@ class ProjectService {
     return data
         .map((e) => User.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<void> addUserToProject({
+    required String projectId,
+    required String emailAddress,
+    required ProjectRole role,
+  }) async {
+    await dioClient.post<dynamic>(
+      ProjectEndpoints.addProjectUser(projectId),
+      data: {
+        'emailAddress': emailAddress,
+        'role': _roleToApi(role),
+      },
+    );
+  }
+
+  Future<void> updateUserRole({
+    required String projectId,
+    required String userId,
+    required ProjectRole role,
+  }) async {
+    await dioClient.put<dynamic>(
+      ProjectEndpoints.updateProjectUser(projectId, userId),
+      data: {
+        'role': _roleToApi(role),
+      },
+    );
+  }
+
+  Future<void> removeUserFromProject({
+    required String projectId,
+    required String userId,
+  }) async {
+    await dioClient.delete<dynamic>(
+      ProjectEndpoints.removeProjectUser(projectId, userId),
+    );
+  }
+
+  String _roleToApi(ProjectRole role) {
+    switch (role) {
+      case ProjectRole.owner:
+        return 'OWNER';
+      case ProjectRole.editor:
+        return 'EDITOR';
+      case ProjectRole.viewer:
+        return 'VIEWER';
+    }
   }
 }

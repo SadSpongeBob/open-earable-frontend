@@ -9,8 +9,11 @@ import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
+import '../../auth/state/session_provider.dart';
 import '../controllers/home_controller.dart';
+import '../widgets/project_action_bar.dart';
 import '../widgets/rename_project_dialog.dart';
+import '../widgets/users_button.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -94,7 +97,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      child: _ProjectSelectionActionBar(
+                      child: ProjectSelectionActionBar(
                         selectedCount: selectedCount,
 
                         onDelete: () {
@@ -146,13 +149,34 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
 
             Expanded(
-              child: Container(
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/background.png'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final session = ref.watch(sessionProvider);
+                  final showUsersButton = session.isAuthenticated;
+
+                  return Stack(
+                    children: [
+                      Container(
+                        decoration: const BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/background.png'),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+
+                      if (showUsersButton)
+                        Positioned(
+                          top: 600,
+                          left: 560,
+                          child: UsersButton(
+                            onTap: () {
+                            },
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
 
@@ -168,75 +192,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ProjectSelectionActionBar extends StatelessWidget {
-  const _ProjectSelectionActionBar({
-    required this.selectedCount,
-    required this.onDelete,
-    required this.onDuplicate,
-    required this.onRename,
-    required this.onDone,
-  });
-
-  final int selectedCount;
-  final VoidCallback onDelete;
-  final VoidCallback onDuplicate;
-  final VoidCallback onRename;
-  final VoidCallback onDone;
-
-  @override
-  Widget build(BuildContext context) {
-    final showRename = selectedCount == 1;
-
-    return Container(
-      height: 52,
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: Row(
-        children: [
-          TextButton(
-            onPressed: selectedCount == 0 ? null : onDelete,
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red, fontSize: 16),
-            ),
-          ),
-
-          const SizedBox(width: 10),
-
-          TextButton(
-            onPressed: selectedCount == 0 ? null : onDuplicate,
-            child: const Text(
-              'Duplicate',
-              style: TextStyle(color: Colors.black, fontSize: 16),
-            ),
-          ),
-
-          if (showRename) ...[
-            const SizedBox(width: 10),
-            TextButton(
-              onPressed: onRename,
-              child: const Text(
-                'Rename',
-                style: TextStyle(color: Colors.black, fontSize: 16),
-              ),
-            ),
-          ],
-
-          const Spacer(),
-
-          TextButton(
-            onPressed: onDone,
-            child: const Text(
-              'Done',
-              style: TextStyle(color: Colors.black, fontSize: 16),
-            ),
-          ),
-        ],
       ),
     );
   }

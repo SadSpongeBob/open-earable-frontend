@@ -27,3 +27,33 @@ class User {
     'photoUrl': photoUrl,
   };
 }
+
+enum ProjectRole { owner, editor, viewer }
+
+extension ProjectRoleLabel on ProjectRole {
+  String get label => switch (this) {
+    ProjectRole.owner => 'Owner',
+    ProjectRole.editor => 'Editor',
+    ProjectRole.viewer => 'Viewer',
+  };
+}
+
+class ProjectUserEntry {
+  final User user;
+  final ProjectRole role;
+
+  const ProjectUserEntry({
+    required this.user,
+    required this.role,
+  });
+
+  ProjectUserEntry copyWith({
+    User? user,
+    ProjectRole? role,
+  }) {
+    return ProjectUserEntry(
+      user: user ?? this.user,
+      role: role ?? this.role,
+    );
+  }
+}
