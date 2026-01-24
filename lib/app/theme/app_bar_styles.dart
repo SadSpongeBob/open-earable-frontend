@@ -9,8 +9,18 @@ class GlobalAppBarStyles {
       ),
     ],
   );
-  static const appBarText = TextStyle(
+  static const appBarSecondaryText = TextStyle(
     color: Color(0xFFFF4442),
+    fontSize: 16,
+    fontFamily: 'Roboto',
+  );
+  static const appBarMainText = TextStyle(
+    color: Color(0xFF1F1F1F),
+    fontSize: 16,
+    fontFamily: 'Roboto',
+  );
+  static const appBarInactiveText = TextStyle(
+    color: Color(0xFF8F8F8F),
     fontSize: 16,
     fontFamily: 'Roboto',
   );
