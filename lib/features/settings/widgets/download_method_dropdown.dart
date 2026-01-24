@@ -1,25 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/services/user/user_preference_storage.dart';
 import '../../../app/theme/text_styles.dart';
 
-class CustomDropdown extends StatefulWidget {
+class CustomDropdown extends ConsumerStatefulWidget {
   const CustomDropdown({super.key});
 
   @override
-  State<CustomDropdown> createState() => _CustomDropdownState();
+  ConsumerState<CustomDropdown> createState() => _CustomDropdownState();
 }
 
-class _CustomDropdownState extends State<CustomDropdown> {
-  String _selected = 'Download with WiFi';
+class _CustomDropdownState extends ConsumerState<CustomDropdown> {
+  static const String _wifiOnlyText = 'Download with WiFi';
+  static const String _mobileAndWifiText = 'Download with mobile data and WiFi';
 
   static const List<String> _options = [
-    'Download with WiFi',
-    'Download with mobile data and WiFi',
+    _wifiOnlyText,
+    _mobileAndWifiText,
   ];
+
+  String _selected = _wifiOnlyText;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreference();
+  }
+
+  Future<void> _loadPreference() async {
+    final storage = ref.read(userPreferenceStorage);
+    final wifiOnly = await storage.isWifiOnly();
+
+    if (!mounted) return;
+    setState(() {
+      _selected = wifiOnly ? _wifiOnlyText : _mobileAndWifiText;
+      _loading = false;
+    });
+  }
+
+  Future<void> _onSelected(String value) async {
+    setState(() {
+      _selected = value;
+    });
+
+    final storage = ref.read(userPreferenceStorage);
+    final wifiOnly = value == _wifiOnlyText;
+    await storage.setWifiOnly(wifiOnly);
+  }
 
   @override
   Widget build(BuildContext context) {
     final itemStyle = AuthTextStyles.fieldInput.copyWith(fontSize: 18);
-    // itemstyle for dropdown items
     final dropdownItemStyle = AuthTextStyles.fieldInput.copyWith(fontSize: 14);
 
     return Container(
@@ -32,15 +64,11 @@ class _CustomDropdownState extends State<CustomDropdown> {
       child: Row(
         children: [
           Expanded(
-            child: Text(_selected, style: itemStyle),
+            child: Text(_loading ? 'Loading' : _selected, style: itemStyle),
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.arrow_drop_down),
-            onSelected: (value) {
-              setState(() {
-                _selected = value;
-              });
-            },
+            onSelected: _onSelected,
             itemBuilder: (context) => _options.map((opt) {
               return PopupMenuItem<String>(
                 value: opt,

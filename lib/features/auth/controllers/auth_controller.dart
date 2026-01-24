@@ -1,30 +1,37 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/client_dio.dart';
-import 'package:openearable/api/models/auth/auth_state.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
 import 'package:openearable/api/services/auth/guest_storage.dart';
+import 'package:openearable/api/services/user/user_service.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 
 class AuthController {
   final AuthService _authService;
   final GuestStorage _guestStorage;
   final SessionNotifier _session;
+  final UserService _userService;
 
-  AuthController(this._authService, this._guestStorage, this._session);
+  AuthController(
+    this._authService,
+    this._userService,
+    this._guestStorage,
+    this._session,
+  );
 
   Future<void> bootstrap() async {
     _session.setLoading();
     try {
       if (await _guestStorage.isGuest()) {
-        _session.setMode(AuthMode.guest);
+        _session.setGuest();
         return;
       }
 
       await _authService.refresh();
-      _session.setMode(AuthMode.authenticated);
+      final user = await _userService.getUser();
+      _session.setAuthenticated(user);
     } catch (_) {
-      _session.setMode(AuthMode.loggedOut);
+      _session.setLoggedOut();
     }
   }
 
@@ -38,7 +45,8 @@ class AuthController {
     try {
       await _authService.register(email: email, password: password, name: name);
       await _guestStorage.clear();
-      _session.setMode(AuthMode.authenticated);
+      final user = await _userService.getUser();
+      _session.setAuthenticated(user);
     } on DioException catch (e) {
       _session.setLoggedOut(e.message ?? 'Sign up failed');
     } catch (_) {
@@ -51,7 +59,8 @@ class AuthController {
     try {
       await _authService.login(email: email, password: password);
       await _guestStorage.clear();
-      _session.setMode(AuthMode.authenticated);
+      final user = await _userService.getUser();
+      _session.setAuthenticated(user);
     } on DioException catch (exception) {
       _session.setLoggedOut(exception.message);
     } catch (_) {
@@ -62,7 +71,7 @@ class AuthController {
   Future<void> guestLogin() async {
     await _authService.logout();
     await _guestStorage.setGuest(true);
-    _session.setMode(AuthMode.guest);
+    _session.setGuest();
   }
 
   Future<void> logout({String? message}) async {
@@ -74,8 +83,9 @@ class AuthController {
 
 final authControllerProvider = Provider<AuthController>((ref) {
   final authService = ref.read(authServiceProvider);
+  final userService = ref.read(userServiceProvider);
   final session = ref.read(sessionProvider.notifier);
   final guestStorage = ref.read(guestStorageProvider);
 
-  return AuthController(authService, guestStorage, session);
+  return AuthController(authService, userService, guestStorage, session);
 });
