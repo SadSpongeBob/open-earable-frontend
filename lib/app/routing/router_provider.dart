@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,10 +15,8 @@ import 'package:openearable/features/settings/pages/settings_page.dart';
 import 'package:openearable/features/settings/pages/guest_settings_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(sessionProvider);
-
   final refresh = GoRouterRefreshStream(
-    ref.watch(sessionProvider.notifier).stream,
+    ref.read(sessionProvider.notifier).stream,
   );
   ref.onDispose(refresh.dispose);
 
@@ -64,6 +63,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
       final loc = state.matchedLocation;
+
+      if (kDebugMode) {
+        debugPrint(
+          'redirect | loc=$loc '
+              'path=${state.uri.path} '
+              'loggedOut=${session.isLoggedOut}',
+        );
+      }
+
 
       final isPublic =
           loc == Routes.login ||
