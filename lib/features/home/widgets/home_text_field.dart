@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/text_styles.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 import '../../../app/constants/colors.dart';
 
-class AuthTextField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final String? Function(String?)? validator;
-  final bool obscureText;
-  final Widget? suffixIcon;
-  final TextInputType keyboardType;
-  final TextAlign textAlign;
-
-  const AuthTextField({
+class HomeTextField extends StatelessWidget {
+  const HomeTextField({
     super.key,
     required this.controller,
     required this.hint,
@@ -20,7 +12,23 @@ class AuthTextField extends StatelessWidget {
     this.suffixIcon,
     this.keyboardType = TextInputType.text,
     this.textAlign = TextAlign.start,
+
+    this.focusNode,
+    this.textInputAction,
+    this.onSubmitted,
   });
+
+  final TextEditingController controller;
+  final String hint;
+  final String? Function(String?)? validator;
+  final bool obscureText;
+  final Widget? suffixIcon;
+  final TextInputType keyboardType;
+  final TextAlign textAlign;
+
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -30,12 +38,16 @@ class AuthTextField extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       textAlign: textAlign,
+
+      focusNode: focusNode,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onSubmitted,
+
       style: AuthTextStyles.fieldInput,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: AuthTextStyles.fieldHint,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         border: _border(),
         enabledBorder: _border(),
         focusedBorder: _border(),
