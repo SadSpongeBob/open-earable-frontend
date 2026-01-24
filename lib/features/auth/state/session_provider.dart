@@ -17,6 +17,18 @@ class SessionNotifier extends StateNotifier<AuthState> {
     user: user,
   );
 
+  void setUser(User user) => state = state.copyWith(
+    mode: state.mode,
+    error: null,
+    user: user,
+  );
+
+  void clearUser() => state = state.copyWith(
+    mode: state.mode,
+    error: null,
+    user: null
+  );
+
   void setGuest() =>
       state = state.copyWith(mode: AuthMode.guest, error: null, user: null);
 
