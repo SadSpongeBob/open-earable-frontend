@@ -4,6 +4,7 @@ import 'image_button.dart';
 class MenuSidebar extends StatelessWidget {
   final GlobalKey bluetoothKey;
   final VoidCallback onSettingsPressed;
+  final VoidCallback onSensorPressed;
   final VoidCallback onRecordingPressed;
   final VoidCallback onBluetoothPressed;
 
@@ -12,6 +13,7 @@ class MenuSidebar extends StatelessWidget {
     super.key,
     required this.bluetoothKey,
     required this.onSettingsPressed,
+    required this.onSensorPressed,
     required this.onRecordingPressed,
     required this.onBluetoothPressed,
   });
@@ -42,6 +44,17 @@ class MenuSidebar extends StatelessWidget {
               onPressed: onSettingsPressed,
               width: 70,
               height: 70,
+            ),
+          ),
+
+          Align(
+            alignment: Alignment(0, -0.3),
+            child: ImageButton(
+              image: 'assets/images/sensor.png',
+              activeImage: 'assets/images/sensor_active.png',
+              onPressed: onSensorPressed,
+              width: 52,
+              height: 52,
             ),
           ),
 

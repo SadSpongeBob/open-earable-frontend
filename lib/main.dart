@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import 'app/constants/colors.dart';
 import 'package:logger/logger.dart';
 import 'package:openearable/api/models/device/wearable_connector.dart';
-import 'package:openearable/features/home/controllers/home_controller.dart';
+import 'package:openearable/features/home/controllers/wearables_provider.dart';
+import 'package:openearable/features/home/controllers/sensor_recorder_provider.dart';
+import 'package:openearable/features/home/controllers/recording_chart_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +25,12 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => WearablesProvider(), lazy: true),
         Provider.value(value: WearableConnector()),
+        ChangeNotifierProvider(
+          create: (context) => SensorRecorderProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => RecordingChartProvider(),
+        ),
       ],
       child: const OpenEarableApp()
     ),

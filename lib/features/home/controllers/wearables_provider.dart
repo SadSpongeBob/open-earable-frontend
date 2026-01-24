@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
-import 'package:openearable/features/sensors/controllers/sensors_controller.dart';
+import 'package:openearable/features/home/controllers/sensor_configurations_provider.dart';
+import 'package:openearable/features/home/controllers/sensor_data_provider.dart';
 
 import 'package:openearable/app/utils/logger.dart';
 
@@ -79,6 +80,8 @@ class WearablesProvider with ChangeNotifier {
   final List<Wearable> _wearables = [];
   final Map<Wearable, SensorConfigurationProvider>
       _sensorConfigurationProviders = {};
+  final Map<Wearable, List<SensorDataProvider>> sensorDataProviders = {};
+  List<SensorDataProvider> getSensorDataProviders(Wearable wearable) => sensorDataProviders[wearable] ?? [];
 
   List<Wearable> get wearables => _wearables;
   Map<Wearable, SensorConfigurationProvider> get sensorConfigurationProviders =>
@@ -159,22 +162,39 @@ class WearablesProvider with ChangeNotifier {
 
     _wearables.add(wearable);
 
+    if (wearable.hasCapability<SensorConfigurationManager>()) {
+      _ensureSensorConfigProvider(wearable);
+    }
+
     _capabilitySubscriptions[wearable] = wearable.capabilityRegistered.listen((addedCapabilities) {
       _handleCapabilitiesChanged(wearable: wearable, addedCapabilites: addedCapabilities);
     });
 
-    // Init SensorConfigurationProvider synchronously (no awaits here)
-    if (wearable.hasCapability<SensorConfigurationManager>()) {
-      _ensureSensorConfigProvider(wearable);
-      final notifier = _sensorConfigurationProviders[wearable]!;
-      for (final config
-          in (wearable.requireCapability<SensorConfigurationManager>()).sensorConfigurations) {
-        if (notifier.getSelectedConfigurationValue(config) == null &&
-            config.values.isNotEmpty) {
-          notifier.addSensorConfiguration(config, config.values.first);
+    if (wearable.hasCapability<SensorManager>()) {
+      final sensorManager = wearable.requireCapability<SensorManager>();
+      sensorDataProviders[wearable] = [];
+
+      for (int i = 0; i < sensorManager.sensors.length; i++) {
+        final sensor = sensorManager.sensors[i];
+
+        if (wearable.hasCapability<SensorConfigurationManager>()) {
+          final manager = wearable.requireCapability<SensorConfigurationManager>();
+          if (i < manager.sensorConfigurations.length) {
+            final config = manager.sensorConfigurations[i];
+            if (config.values.isNotEmpty) {
+              config.setConfiguration(config.values.first);
+            }
+          }
         }
+
+        final dataProvider = SensorDataProvider(sensor: sensor);
+        sensorDataProviders[wearable]!.add(dataProvider);
       }
+
+      notifyListeners();
     }
+
+
     if (wearable.hasCapability<TimeSynchronizable>()) {
       _scheduleMicrotask(() => _syncTimeAndEmit(
             wearable: wearable,
@@ -217,6 +237,11 @@ class WearablesProvider with ChangeNotifier {
         sensorConfigurationManager: wearable.requireCapability<SensorConfigurationManager>(),
       );
     }
+  }
+
+  void updateSensorDataProviders(Wearable wearable, List<SensorDataProvider> providers) {
+    sensorDataProviders[wearable] = providers;
+    notifyListeners(); // This works here because we are inside the class
   }
 
   /// Attempts to pair a stereo device with a matching partner among the

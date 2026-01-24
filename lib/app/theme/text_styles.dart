@@ -43,6 +43,13 @@ class AppTextStyles {
     fontFamily: "Roboto",
   );
 
+  static const headerMedium = TextStyle(
+    fontSize: 32,
+    fontWeight: FontWeight.w500,
+    color: Color(0xFF1F1F1F),
+    fontFamily: "Roboto",
+  );
+
   static const headerBold = TextStyle(
     fontSize: 32,
     fontWeight: FontWeight.w700,

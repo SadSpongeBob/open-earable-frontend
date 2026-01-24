@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
-import 'package:openearable/features/home/controllers/home_controller.dart';
+import 'package:openearable/features/home/controllers/wearables_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'package:openearable/app/utils/logger.dart';
@@ -42,110 +42,125 @@ class _DevicesPopup extends State<DevicesPopup> {
     return SizedBox(
       height: 550,
       width: 300,
-      child: ListView.builder(
-        itemCount: discoveredDevices.length,
-        itemBuilder: (context, index) {
-          final device = discoveredDevices[index];
+      child: Column(
+        children: [
+          const SizedBox(height: 30),
 
-          bool isConnecting = connectingDevices[device.id] ?? false;
-          bool isConnected = connectedDevices.contains(device.id);
-          bool isConnectionFailed = failedDevices.contains(device.id);
+          Text(
+            "Devices",
+            style: AppTextStyles.headerMedium,
+          ),
 
-          String? statusText;
+          const SizedBox(height: 30),
 
-          if (isConnecting) {
-            statusText = "Connecting...";
-          } else if (isConnected) {
-            statusText = "Connected";
-          } else if (isConnectionFailed) {
-            statusText = "Connection failed";
-          }
+          Expanded(
+            child: ListView.builder(
+              itemCount: discoveredDevices.length,
+              itemBuilder: (context, index) {
+                final device = discoveredDevices[index];
 
-          return InkWell(
-            onTap: isConnected || isConnecting ? null : () => _connectToDevice(device, context),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Image.asset(
-                        'assets/images/device.png',
-                        width: 65,
-                        height: 65,
-                        fit: BoxFit.contain,
-                      ),
+                bool isConnecting = connectingDevices[device.id] ?? false;
+                bool isConnected = connectedDevices.contains(device.id);
+                bool isConnectionFailed = failedDevices.contains(device.id);
 
-                      if (isConnecting)
-                        Positioned(
-                          right: -15,
-                          top: -15,
-                          child: SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                String? statusText;
+
+                if (isConnecting) {
+                  statusText = "Connecting...";
+                } else if (isConnected) {
+                  statusText = "Connected";
+                } else if (isConnectionFailed) {
+                  statusText = "Connection failed";
+                }
+
+                return InkWell(
+                  onTap: isConnected || isConnecting ? null : () => _connectToDevice(device, context),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Image.asset(
+                              'assets/images/device.png',
+                              width: 65,
+                              height: 65,
+                              fit: BoxFit.contain,
                             ),
-                          ),
-                        ),
+
+                            if (isConnecting)
+                              Positioned(
+                                right: -15,
+                                top: -15,
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
                         
-                      if (!isConnecting && isConnected)
-                        Positioned(
-                          right: -15,
-                          top: -15,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: const BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
+                            if (!isConnecting && isConnected)
+                              Positioned(
+                                right: -15,
+                                top: -15,
+                                child: Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+
+                            if (isConnectionFailed)
+                              Positioned(
+                                right: -15,
+                                top: -15,
+                                child: Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.redAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              )
+                          ],
                         ),
 
-                      if (isConnectionFailed)
-                        Positioned(
-                          right: -15,
-                          top: -15,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: const BoxDecoration(
-                              color: Colors.redAccent,
-                              shape: BoxShape.circle,
-                            ),
+                        const SizedBox(height: 4),
+
+                        Text(
+                          device.name,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.text,
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        if (statusText != null)
+                          Text(
+                            statusText,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.footnoteDevices,
                           ),
-                        )
-                    ],
-                  ),
 
-                  const SizedBox(height: 4),
-
-                  Text(
-                    device.name,
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.text,
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  if (statusText != null)
-                    Text(
-                      statusText,
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.footnoteDevices,
+                        const SizedBox(height: 30),
+                      ],
                     ),
-
-                  const SizedBox(height: 33),
-                ],
-              ),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -156,7 +171,7 @@ class _DevicesPopup extends State<DevicesPopup> {
     _scanSubscription?.cancel();
     _scanSubscription = _wearableManager.scanStream.listen((incomingDevice) {
       // bool isTargetDevice = incomingDevice.name.toLowerCase().contains("esense") || 
-                            incomingDevice.name.toLowerCase().contains("openearable");
+      //                      incomingDevice.name.toLowerCase().contains("openearable");
       if (incomingDevice.name.isNotEmpty &&
           !discoveredDevices.any((d) => d.id == incomingDevice.id)) {
         setState(() {
@@ -179,7 +194,11 @@ class _DevicesPopup extends State<DevicesPopup> {
 
   try {
     final connector = context.read<WearableConnector>();
-    await connector.connect(device);
+    final wearablesProvider = context.read<WearablesProvider>();
+
+    final wearable = await connector.connect(device);
+
+    wearablesProvider.addWearable(wearable);
 
     setState(() {
       failedDevices.remove(device.id);
