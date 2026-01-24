@@ -151,7 +151,7 @@ class HomeController extends StateNotifier<HomeState> {
         clearError: true,
       );
 
-      _success('Renamed to "$trimmed"');
+      _success('Rename Successful');
     } catch (e) {
       _setError(e, userMessage: 'Failed to rename project');
     }
@@ -178,7 +178,7 @@ class HomeController extends StateNotifier<HomeState> {
         clearError: true,
       );
 
-      _success('Project deleted');
+      _success('Project Deleted');
     } catch (e) {
       _setError(e, userMessage: 'Failed to delete project');
     }
