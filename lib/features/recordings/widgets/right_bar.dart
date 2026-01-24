@@ -6,23 +6,26 @@ class HomeRecordingRightBar extends StatelessWidget {
     required this.onSettings,
     required this.onWaveSound,
     required this.onShutter,
-    required this.onFlipCamera,
+    this.onFlipCamera,
     required this.onBluetooth,
     this.padding = const EdgeInsets.symmetric(vertical: 24),
     this.isRecording = false,
     this.isPaused = false,
-  });
+    this.showFlipButton = true,
+  })  : assert(!showFlipButton || onFlipCamera != null,
+            'onFlipCamera must be provided when showFlipButton is true');
 
   final VoidCallback onSettings;
   final VoidCallback onWaveSound;
   final VoidCallback onShutter;
-  final VoidCallback onFlipCamera;
+  final VoidCallback? onFlipCamera;
   final VoidCallback onBluetooth;
 
   final EdgeInsets padding;
 
   final bool isRecording;
   final bool isPaused;
+  final bool showFlipButton;
 
   @override
   Widget build(BuildContext context) {
@@ -59,20 +62,19 @@ class HomeRecordingRightBar extends StatelessWidget {
                 isRecording ? 'Stop recording' : 'Record',
               ),
 
-              Btn(
-                asset: isRecording
-                    ? (isPaused
-                    ? 'assets/buttons/pause_true.png'
-                    : 'assets/buttons/pause_flase.png')
-                    : 'assets/buttons/flip_camera.png',
-                size: 52,
-                onTap: onFlipCamera,
-                semanticLabel: isRecording
-                    ? (isPaused
-                    ? 'Resume recording'
-                    : 'Pause recording')
-                    : 'Flip camera',
-              ),
+              if (showFlipButton)
+                Btn(
+                  asset: isRecording
+                      ? (isPaused
+                          ? 'assets/buttons/pause_true.png'
+                          : 'assets/buttons/pause_flase.png')
+                      : 'assets/buttons/flip_camera.png',
+                  size: 52,
+                  onTap: onFlipCamera,
+                  semanticLabel: isRecording
+                      ? (isPaused ? 'Resume recording' : 'Pause recording')
+                      : 'Flip camera',
+                ),
             ],
           ),
 
@@ -99,7 +101,7 @@ class Btn extends StatelessWidget {
   });
 
   final String asset;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final String semanticLabel;
   final double size;
 

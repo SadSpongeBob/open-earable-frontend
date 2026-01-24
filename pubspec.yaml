@@ -75,6 +75,7 @@ flutter:
     - assets/.env
     - assets/icons/
     - assets/buttons/
+    - assets/buttons/home/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
