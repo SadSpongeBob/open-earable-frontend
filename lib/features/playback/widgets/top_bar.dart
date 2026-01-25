@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:openearable/app/theme/appBar_styles.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
+import '../../../app/theme/app_bar_styles.dart';
 import '../controllers/playback_controller.dart';
 
 class TopBar extends StatelessWidget {
@@ -136,7 +136,7 @@ class TopBar extends StatelessWidget {
                     context,
                     MaterialPageRoute(builder: (_) => RecordingPage()),
                   );
-                }, child: const Text("Delete", style: GlobalAppBarStyles.appBarText)),
+                }, child: Text("Delete", style: GlobalAppBarStyles.appBarSecondaryText)),
               ]);
 
               return Stack(

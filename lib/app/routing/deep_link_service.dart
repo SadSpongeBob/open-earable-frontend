@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,17 +30,24 @@ class DeepLinkService {
     if (uri == null) return;
 
     final isResetLink =
-        uri.scheme == 'open-earable' && uri.host == 'reset-password';
+        uri.scheme == 'open-earable' && uri.host == 'app' &&
+            uri.path == Routes.resetPassword;
     if (!isResetLink) return;
 
     final token = uri.queryParameters['token'];
-    if (token == null || token.isEmpty) {
-      router.go(Routes.requestResetPassword);
-    } else {
-      router.go(
-        '${Routes.resetPassword}?token=${Uri.encodeComponent(token)}',
-      );
+    if (kDebugMode) {
+      debugPrint('DeepLink received: $uri');
+      debugPrint('Parsed token: $token');
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (token == null || token.isEmpty) {
+        router.go(Routes.requestResetPassword);
+      } else {
+        router.go(
+            '${Routes.resetPassword}?token=${Uri.encodeComponent(token)}');
+      }
+    });
   }
 }
 

@@ -47,3 +47,27 @@ class MapResponseInterceptor extends Interceptor {
     return null;
   }
 }
+
+extension ResponseGuards on Response<dynamic> {
+  Map<String, dynamic> asMap() {
+    final d = data;
+    if (d is Map<String, dynamic>) return d;
+    throw DioException(
+      requestOptions: requestOptions,
+      type: DioExceptionType.badResponse,
+      message: 'Expected Map<String, dynamic>, got ${d.runtimeType}',
+      response: this,
+    );
+  }
+
+  List<dynamic> asList() {
+    final d = data;
+    if (d is List) return d;
+    throw DioException(
+      requestOptions: requestOptions,
+      type: DioExceptionType.badResponse,
+      message: 'Expected List, got ${d.runtimeType}',
+      response: this,
+    );
+  }
+}

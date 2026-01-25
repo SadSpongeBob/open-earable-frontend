@@ -1,0 +1,259 @@
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:openearable/api/services/project/project_service.dart';
+import '../../../api/client_dio.dart';
+import '../../../api/models/project.dart';
+import '../../../app/ui/toast_controller.dart';
+import '../../../app/ui/toast_event.dart';
+import '../state/home_state.dart';
+
+final homeControllerProvider =
+StateNotifierProvider<HomeController, HomeState>((ref) {
+  final projectService = ref.read(projectServiceProvider);
+
+  void toast(ToastEvent event) => emitToast(ref, event);
+
+  return HomeController(
+    projectService: projectService,
+    toast: toast,
+  );
+});
+
+typedef ToastSink = void Function(ToastEvent);
+
+class HomeController extends StateNotifier<HomeState> {
+  HomeController({
+    required ProjectService projectService,
+    required ToastSink toast,
+  })  : _projectService = projectService,
+        _toast = toast,
+        super(HomeState.initial());
+
+  final ProjectService _projectService;
+  final ToastSink _toast;
+
+  void _setLoading(bool value) =>
+      state = state.copyWith(isLoading: value, clearError: value);
+
+  void _setError(Object e, {String? userMessage}) {
+    final msg = userMessage ?? e.toString();
+    state = state.copyWith(isLoading: false, errorMessage: msg);
+    _toast(ToastEvent.error(msg));
+  }
+
+  void _success(String message) => _toast(ToastEvent.success(message));
+
+  bool _projectExists(String projectId, List<Project> projects) =>
+      projects.any((p) => p.id == projectId);
+
+  bool _nameExists(String name, {String? excludeProjectId}) {
+    final normalized = name.trim().toLowerCase();
+    return state.projects.any((p) {
+      if (excludeProjectId != null && p.id == excludeProjectId) return false;
+      return p.name.trim().toLowerCase() == normalized || normalized == 'default';
+    });
+  }
+
+  Project? _findById(String id) {
+    for (final p in state.projects) {
+      if (p.id == id) return p;
+    }
+    return null;
+  }
+
+  Future<void> loadProjects() async {
+    _setLoading(true);
+    try {
+      final projects = await _projectService.getProjects();
+
+      final currentOpenId = state.openProjectId;
+      final openStillValid =
+          currentOpenId == 'default' || _projectExists(currentOpenId, projects);
+
+      state = state.copyWith(
+        isLoading: false,
+        projects: projects,
+        openProjectId: openStillValid ? currentOpenId : 'default',
+      );
+    } catch (e) {
+      _setError(e, userMessage: 'Failed to load projects');
+    }
+  }
+
+  void openProject(String projectId) {
+    if (projectId != 'default') {
+      final exists = _findById(projectId) != null;
+      if (!exists) return;
+    }
+
+    state = state.copyWith(
+      openProjectId: projectId,
+      videos: const [],
+      clearSelectedVideoId: true,
+      clearError: true,
+    );
+  }
+
+  void openDefaultProject() => openProject('default');
+
+  Future<void> createProject(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      _toast(const ToastEvent.error('Project name can’t be empty'));
+      return;
+    }
+
+    if (_nameExists(trimmed)) {
+      _toast(const ToastEvent.error('A project with this name already exists'));
+      return;
+    }
+
+    _setLoading(true);
+    try {
+      final created = await _projectService.createProject(trimmed);
+
+      state = state.copyWith(
+        isLoading: false,
+        projects: [...state.projects, created],
+        openProjectId: created.id,
+        clearError: true,
+      );
+
+      _success('Project "$trimmed" created');
+    } catch (e) {
+      _setError(e, userMessage: 'Failed to create project');
+    }
+  }
+
+  Future<void> renameProject(String projectId, String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      _toast(const ToastEvent.error('Project name can’t be empty'));
+      return;
+    }
+
+    if (_nameExists(trimmed, excludeProjectId: projectId)) {
+      _toast(const ToastEvent.error('A project with this name already exists'));
+      return;
+    }
+
+    _setLoading(true);
+    try {
+      await _projectService.renameProject(projectId, trimmed);
+
+      final updatedProjects = state.projects.map((p) {
+        if (p.id != projectId) return p;
+        return p.copyWith(name: trimmed);
+      }).toList();
+
+      state = state.copyWith(
+        isLoading: false,
+        projects: updatedProjects,
+        clearError: true,
+      );
+
+      _success('Rename Successful');
+    } catch (e) {
+      _setError(e, userMessage: 'Failed to rename project');
+    }
+  }
+
+  Future<void> deleteProject(String projectId) async {
+    _setLoading(true);
+    try {
+      await _projectService.deleteProject(projectId);
+
+      final updated = state.projects.where((p) => p.id != projectId).toList();
+      final newOpenId =
+      state.openProjectId == projectId ? 'default' : state.openProjectId;
+
+      final nextSelected = Set<String>.from(state.selectedProjectIds)
+        ..remove(projectId);
+
+      state = state.copyWith(
+        isLoading: false,
+        projects: updated,
+        openProjectId: newOpenId,
+        selectedProjectIds: nextSelected,
+        isSelectionMode: nextSelected.isNotEmpty && state.isSelectionMode,
+        clearError: true,
+      );
+
+      _success('Project Deleted');
+    } catch (e) {
+      _setError(e, userMessage: 'Failed to delete project');
+    }
+  }
+
+  void enterSelectionMode({String? initialProjectId}) {
+    final ids = <String>{};
+    if (initialProjectId != null && initialProjectId != 'default') {
+      ids.add(initialProjectId);
+    }
+
+    state = state.copyWith(
+      isSelectionMode: true,
+      selectedProjectIds: ids,
+      clearError: true,
+    );
+  }
+
+  void exitSelectionMode() {
+    state = state.copyWith(
+      isSelectionMode: false,
+      selectedProjectIds: <String>{},
+      clearError: true,
+    );
+  }
+
+  void toggleProjectSelection(String projectId) {
+
+    final next = Set<String>.from(state.selectedProjectIds);
+    if (next.contains(projectId)) {
+      next.remove(projectId);
+    } else {
+      next.add(projectId);
+    }
+
+    state = state.copyWith(
+      isSelectionMode: next.isNotEmpty,
+      selectedProjectIds: next,
+      clearError: true,
+    );
+  }
+
+  void handleProjectTap(String projectId) {
+    if (state.isSelectionMode) {
+      toggleProjectSelection(projectId);
+      return;
+    }
+    openProject(projectId);
+  }
+
+  void handleProjectLongPress(String projectId) {
+    if (projectId == 'default') return;
+    if (!state.isSelectionMode) {
+      enterSelectionMode(initialProjectId: projectId);
+    }
+  }
+
+  Future<void> duplicateProject(String projectId) async {
+    if (projectId == 'default') return;
+
+    final project = _findById(projectId);
+    if (project == null) {
+      _toast(const ToastEvent.error('Project not found'));
+      return;
+    }
+
+    String base = '${project.name} (Copy)';
+    String candidate = base;
+    int i = 2;
+    while (_nameExists(candidate)) {
+      candidate = '${base} $i';
+      i++;
+    }
+
+    await createProject(candidate);
+  }
+}
+
