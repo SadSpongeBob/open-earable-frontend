@@ -35,7 +35,15 @@ class HomePage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const SensorPage(),
+                    builder: (_) => SensorPage(
+                      source: SensorPageSource.home,
+                      onBluetoothPressed: () {
+                        showDevicesPopup(
+                          context: context,
+                          isSensorPage: true,
+                        );
+                      },
+                    ),
                   ),
                 );
               },
@@ -50,7 +58,7 @@ class HomePage extends StatelessWidget {
               onBluetoothPressed: () {
                 showDevicesPopup(
                   context: context,
-                  offset: Offset(165, 30),
+                  isSensorPage: false,
                 );
               },
             ),

@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 import 'package:openearable/features/home/controllers/sensor_configurations_provider.dart';
 import 'package:openearable/features/home/controllers/sensor_data_provider.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'package:openearable/app/utils/logger.dart';
 
@@ -77,6 +79,13 @@ class WearableErrorEvent extends WearableEvent {
 // MARK: WearablesProvider
 
 class WearablesProvider with ChangeNotifier {
+  List<DiscoveredDevice> discoveredDevices = [];
+  Map<String, bool> connectingDevices = {};
+  Set<String> failedDevices = {};
+
+  final WearableManager _wearableManager = WearableManager();
+  StreamSubscription? _scanSubscription;
+
   final List<Wearable> _wearables = [];
   final Map<Wearable, SensorConfigurationProvider>
       _sensorConfigurationProviders = {};
@@ -119,6 +128,26 @@ class WearablesProvider with ChangeNotifier {
         description: description,
       ),
     );
+  }
+
+  void startScanning() async {
+    try {
+      await _wearableManager.startScan();
+      _scanSubscription?.cancel();
+      _scanSubscription = _wearableManager.scanStream.listen((incomingDevice) {
+        if (incomingDevice.name.isNotEmpty &&
+          !discoveredDevices.any((d) => d.id == incomingDevice.id)) {
+          addDiscoveredDevice(incomingDevice);
+        }
+      });
+    } catch (e) {
+      logger.e('Failed to start scan: $e');
+    }
+  }
+
+  void stopScanning() {
+    _scanSubscription?.cancel();
+    _scanSubscription = null;
   }
 
   void _scheduleMicrotask(FutureOr<void> Function() work) {
@@ -244,6 +273,27 @@ class WearablesProvider with ChangeNotifier {
     notifyListeners(); // This works here because we are inside the class
   }
 
+  void addDiscoveredDevice(DiscoveredDevice device) {
+    if (!discoveredDevices.any((d) => d.id == device.id)) {
+      discoveredDevices.add(device);
+      notifyListeners(); // triggers UI updates in popups
+    }
+  }
+
+  void setConnecting(String deviceId, bool connecting) {
+    connectingDevices[deviceId] = connecting;
+    notifyListeners();
+  }
+
+  void setFailed(String deviceId, bool failed) {
+    if (failed) {
+      failedDevices.add(deviceId);
+    } else {
+      failedDevices.remove(deviceId);
+    }
+    notifyListeners();
+  }
+
   /// Attempts to pair a stereo device with a matching partner among the
   /// already-known wearables. Runs asynchronously and logs results.
   /// Non-blocking for the caller.
@@ -343,6 +393,22 @@ class WearablesProvider with ChangeNotifier {
         'Firmware version check failed for ${(dev as Wearable).name}: $e\n$st',
       );
     }
+  }
+
+  /// Checks if the bluetooth is on.
+  Future<bool> get isBluetoothOn async {
+    return await FlutterBluePlus.adapterState
+      .first
+      .then((state) => state == BluetoothAdapterState.on);
+  }
+
+  /// Checks if the location is on.
+  Future<bool> get isLocationOn async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    final permission = await Geolocator.checkPermission();
+    return serviceEnabled &&
+      (permission == LocationPermission.always ||
+       permission == LocationPermission.whileInUse);
   }
 
   void removeWearable(Wearable wearable) {

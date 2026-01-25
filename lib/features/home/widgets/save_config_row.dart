@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:openearable/features/home/controllers/sensor_configurations_provider.dart';
 import 'package:openearable/features/home/controllers/sensor_configuration_storage.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 import 'package:openearable/app/utils/logger.dart';
 class SaveConfigRow extends StatefulWidget {
@@ -30,11 +31,16 @@ class _SaveConfigRowState extends State<SaveConfigRow> {
           });
         },
         onTapOutside: (event) => FocusScope.of(context).unfocus(),
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           hintText: 'Save as...',
+          hintStyle: AppTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
         ),
+        style: AppTextStyles.footnote,
       ),
       trailing: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFFF2F2F2),
+        ),
         onPressed: () async {
           SensorConfigurationProvider provider =
               Provider.of<SensorConfigurationProvider>(context, listen: false);
@@ -52,13 +58,20 @@ class _SaveConfigRowState extends State<SaveConfigRow> {
               context: context,
               builder: (context) {
                 return AlertDialog(
-                  title: Text("Configuration Name Required"),
+                  title: Text(
+                    "Configuration Name Required", 
+                    style: AppTextStyles.subHeaderMedium,
+                  ),
                   content: Text(
                     "Please enter a name for the configuration.",
+                    style: AppTextStyles.text,
                   ),
                   actions: [
                     TextButton(
-                      child: const Text("OK"),
+                      child: Text(
+                        "OK", 
+                        style: AppTextStyles.subHeader.copyWith(color: Color(0XFF6E6E6E)),
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -67,7 +80,10 @@ class _SaveConfigRowState extends State<SaveConfigRow> {
             );
           }
         },
-        child: Text("Save"),
+        child: Text(
+          "Save", 
+          style: AppTextStyles.footnote,
+        ),
       ),
     );
   }

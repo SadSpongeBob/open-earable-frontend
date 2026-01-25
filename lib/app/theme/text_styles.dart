@@ -57,10 +57,24 @@ class AppTextStyles {
     fontFamily: "Roboto",
   );
 
-  static const footnoteDevices = TextStyle(
+   static const titleBold = TextStyle(
+    fontSize: 36,
+    fontWeight: FontWeight.w700,
+    color: Color(0xFF1F1F1F),
+    fontFamily: "Roboto",
+  );
+
+  static const footnote = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    color: Color(0xFF6E6E6E),
+    color: Color(0xFF1F1F1F),
+    fontFamily: "Roboto",
+  );
+
+  static const footnoteMedium = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: Color(0xFF1F1F1F),
     fontFamily: "Roboto",
   );
 }

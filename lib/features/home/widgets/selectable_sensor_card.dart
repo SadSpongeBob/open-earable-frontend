@@ -4,6 +4,7 @@ import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 
 import 'package:openearable/features/home/widgets/sensor_value_card.dart';
 import 'package:openearable/features/home/controllers/recording_chart_provider.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 class SelectableSensorCard extends StatelessWidget {
   final Sensor sensor;
@@ -25,12 +26,13 @@ class SelectableSensorCard extends StatelessWidget {
     final isSelected = recordingProvider.activeChartId == chartId;
 
     return Card(
+      color: Color(0xFFF2F2F2),
       elevation: 3,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -40,10 +42,7 @@ class SelectableSensorCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     sensor.sensorName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTextStyles.footnoteMedium,
                   ),
                 ),
 
@@ -63,10 +62,12 @@ class SelectableSensorCard extends StatelessWidget {
 
             /// Chart
             SizedBox(
-              height: 220, // fixed height prevents layout explosion
-              child: SensorValueCard(
-                sensor: sensor,
-                wearable: wearable,
+              height: 220,
+              child: Center(
+                child: SensorValueCard(
+                  sensor: sensor,
+                  wearable: wearable,
+                ),
               ),
             ),
           ],

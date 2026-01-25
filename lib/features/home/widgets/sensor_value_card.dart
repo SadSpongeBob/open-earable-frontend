@@ -21,7 +21,7 @@ class SensorValueCard extends StatelessWidget {
         return Column(
           children: [
             SizedBox(
-              height: 180,
+              height: 200,
               child: SensorChart(
                 allowToggleAxes: false,
               ),

@@ -5,9 +5,8 @@ import 'package:openearable/features/home/widgets/edge_recorder_prefix_row.dart'
 import 'package:openearable/features/home/widgets/save_config_row.dart';
 import 'package:openearable/features/home/widgets/sensor_configuration_value_row.dart';
 import 'package:provider/provider.dart';
-
 import 'package:openearable/features/home/controllers/sensor_configurations_provider.dart';
-import 'package:openearable/features/home/widgets/stereo_pos_label.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 /// A widget that displays a list of sensor configurations for a device.
 class SensorConfigurationDeviceRow extends StatefulWidget {
@@ -47,29 +46,19 @@ class _SensorConfigurationDeviceRowState
 
   @override
   Widget build(BuildContext context) {
-    final device = widget.device;
-
     return Card(
+      color: Color(0xFFF2F2F2),
+      elevation: 4,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ListTile(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  device.name,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                if (device.hasCapability<StereoDevice>())
-                  StereoPosLabel(device: device.requireCapability<StereoDevice>()),
-              ],
+          if (widget.device.hasCapability<SensorConfigurationManager>())
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: _buildTabBar(context),
+              ),
             ),
-            trailing: _buildTabBar(context),
-          ),
           ..._content,
         ],
       ),
@@ -201,12 +190,15 @@ class _SensorConfigurationDeviceRowState
     if (!widget.device.hasCapability<SensorConfigurationManager>()) return null;
 
     return SizedBox(
-      width: MediaQuery.of(context).size.width * 0.4,
+      width: MediaQuery.of(context).size.width,
       child: TabBar.secondary(
         controller: _tabController,
+        labelStyle: AppTextStyles.footnoteMedium,
+        unselectedLabelStyle: AppTextStyles.footnoteMedium,
+        unselectedLabelColor: Color(0xFF6E6E6E),
         tabs: const [
           Tab(text: 'New'),
-          Tab(text: 'Load'),
+          Tab(text: 'Saved'),
         ],
       ),
     );

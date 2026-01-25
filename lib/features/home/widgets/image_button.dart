@@ -8,6 +8,7 @@ class ImageButton extends StatefulWidget  {
   final VoidCallback onPressed;
   final double width;
   final double height;
+  final bool isActive;
 
   const ImageButton({
     super.key,
@@ -18,6 +19,7 @@ class ImageButton extends StatefulWidget  {
     required this.width,
     required this.height,
     this.pressDuration = const Duration(milliseconds: 100),
+    this.isActive = false,
   });
 
   @override
@@ -45,6 +47,8 @@ class _ImageButtonState extends State<ImageButton> {
 
   @override
   Widget build(BuildContext context) {
+     bool showActive = _isPressed || widget.isActive;
+
     return GestureDetector(
       onTap: _handleTap,
       child: SizedBox(
@@ -57,7 +61,7 @@ class _ImageButtonState extends State<ImageButton> {
             Image.asset(widget.image, fit: BoxFit.contain,),
 
             AnimatedOpacity(
-              opacity: _isPressed ? 1.0 : 0.0,
+              opacity: showActive ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 100),
               curve: Curves.easeInOut,
               child: Image.asset(

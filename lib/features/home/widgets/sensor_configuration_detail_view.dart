@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/features/home/controllers/sensor_configurations_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../widgets/sensor_config_option_icon_factory.dart';
+import 'sensor_config_option_icon_factory.dart';
 
 class SensorConfigurationDetailView extends StatefulWidget {
   final SensorConfiguration sensorConfiguration;
@@ -32,8 +33,8 @@ class _SensorConfigurationDetailViewState extends State<SensorConfigurationDetai
         if (widget.sensorConfiguration is ConfigurableSensorConfiguration)
           ...(widget.sensorConfiguration as ConfigurableSensorConfiguration).availableOptions.map((option) {
             return ListTile(
-              leading: Icon(getSensorConfigurationOptionIcon(option)),
-              title: Text(option.name),
+              leading: Icon(getSensorConfigurationOptionIcon(option), color: Color(0xFF1F1F1F),),
+              title: Text(option.name, style: AppTextStyles.text,),
               trailing: Switch(
                 value: sensorConfigNotifier.getSelectedConfigurationOptions(widget.sensorConfiguration).contains(option),
                 onChanged: (value) {
@@ -47,8 +48,8 @@ class _SensorConfigurationDetailViewState extends State<SensorConfigurationDetai
             );
           }),
         ListTile(
-          leading: Icon(Icons.speed_outlined),
-          title: Text("Sampling Rate"),
+          leading: Icon(Icons.speed_outlined, color: Color(0xFF1F1F1F),),
+          title: Text("Sampling Rate", style: AppTextStyles.text,),
           trailing: Material(
             child: DropdownButton<SensorConfigurationValue>(
               value: sensorConfigNotifier.getSelectedConfigurationValue(widget.sensorConfiguration),
@@ -65,12 +66,18 @@ class _SensorConfigurationDetailViewState extends State<SensorConfigurationDetai
                 if (value is SensorFrequencyConfigurationValue) {
                   return DropdownMenuItem<SensorConfigurationValue>(
                     value: value,
-                      child: Text(value.frequencyHz.toStringAsFixed(2)),
+                      child: Text(
+                        value.frequencyHz.toStringAsFixed(2), 
+                        style: AppTextStyles.text.copyWith(color: Color(0xFF6F6F6F)),
+                      ),
                   );
                 }
                 return DropdownMenuItem<SensorConfigurationValue>(
                   value: value,
-                  child: Text(value.key),
+                  child: Text(
+                    value.key, 
+                    style: AppTextStyles.text.copyWith(color: Color(0xFF6F6F6F)),
+                  ),
                 );
               }).toList(),
               onChanged: (value) {

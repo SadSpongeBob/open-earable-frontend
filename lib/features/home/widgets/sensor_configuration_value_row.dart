@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
 import 'package:openearable/features/home/controllers/sensor_configurations_provider.dart';
-import 'package:openearable/features/home/pages/sensor_configuration_detail_view.dart';
+import 'package:openearable/features/home/widgets/sensor_configuration_detail_view.dart';
 import 'package:provider/provider.dart';
-
 import 'sensor_config_option_icon_factory.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 /// A row that displays a sensor configuration and allows the user to select a value.
 ///
@@ -23,6 +23,7 @@ class SensorConfigurationValueRow extends StatelessWidget {
         Provider.of<SensorConfigurationProvider>(context);
 
     return ListTile(
+      tileColor: Color(0xFFF2F2F2),
       onTap: () {
         showModalBottomSheet(
           context: context,
@@ -31,7 +32,7 @@ class SensorConfigurationValueRow extends StatelessWidget {
               value: sensorConfigNotifier,
               child: Scaffold(
                 appBar: AppBar(
-                  title: Text(sensorConfiguration.name),
+                  title: Text(sensorConfiguration.name, style: AppTextStyles.subHeaderMedium,),
                   leading: IconButton(
                     icon: Icon(Icons.close),
                     onPressed: () => Navigator.of(modalContext).pop(),
@@ -53,9 +54,7 @@ class SensorConfigurationValueRow extends StatelessWidget {
                   null) {
                 return Text(
                   "Internal Error",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
+                  style: AppTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
                 );
               }
               SensorConfigurationValue value = sensorConfigNotifier
@@ -73,15 +72,13 @@ class SensorConfigurationValueRow extends StatelessWidget {
                         (option) {
                           return Icon(
                             getSensorConfigurationOptionIcon(option),
-                            color: Theme.of(context).colorScheme.secondary,
+                            color: Color(0xFF6F6F6F),
                           );
                         },
                       ),
                     Text(
                       "${freqValue.frequencyHz} Hz",
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
+                      style: AppTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
                     ),
                   ],
                 );
@@ -89,14 +86,12 @@ class SensorConfigurationValueRow extends StatelessWidget {
 
               return Text(
                 value.toString(),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
+                style: AppTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
               );
             }()
           : Text(
               "Off",
-              style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+              style: AppTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
             ),
     );
   }

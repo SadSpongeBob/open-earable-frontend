@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:openearable/features/home/controllers/wearables_provider.dart';
+
 import 'image_button.dart';
 
 class MenuSidebar extends StatelessWidget {
@@ -6,6 +9,8 @@ class MenuSidebar extends StatelessWidget {
   final VoidCallback onSettingsPressed;
   final VoidCallback onSensorPressed;
   final VoidCallback onRecordingPressed;
+  final bool showFlipButton;
+  final VoidCallback? onFlipPressed;
   final VoidCallback onBluetoothPressed;
 
 
@@ -15,6 +20,8 @@ class MenuSidebar extends StatelessWidget {
     required this.onSettingsPressed,
     required this.onSensorPressed,
     required this.onRecordingPressed,
+    this.showFlipButton = false,
+    this.onFlipPressed,
     required this.onBluetoothPressed,
   });
 
@@ -69,15 +76,33 @@ class MenuSidebar extends StatelessWidget {
             ),
           ),
 
+          if (showFlipButton)
+            Align(
+              alignment: Alignment(0, 0.3),
+              child: ImageButton(
+                image: 'assets/images/camera_flip.png',
+                activeImage: 'assets/images/camera_flip_active.png',
+                onPressed: onFlipPressed ?? () {},
+                width: 52,
+                height: 52,
+              ),
+            ),
+
           Align(
             alignment: Alignment.bottomCenter,
-            child: ImageButton(
-              buttonKey: bluetoothKey,
-              image: 'assets/images/bluetooth.png',
-              activeImage: 'assets/images/bluetooth_active.png',
-              onPressed: onBluetoothPressed,
-              width: 70,
-              height: 70,
+            child: Consumer<WearablesProvider>(
+              builder: (context, provider, _) {
+                bool isConnected = provider.wearables.isNotEmpty;
+                return ImageButton(
+                  buttonKey: bluetoothKey,
+                  image: 'assets/images/bluetooth.png',
+                  activeImage: 'assets/images/bluetooth_active.png',
+                  isActive: isConnected,
+                  onPressed: onBluetoothPressed,
+                  width: 70,
+                  height: 70,
+                );
+              }
             ),
           ),
         ],
