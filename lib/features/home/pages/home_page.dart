@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/home/widgets/project_bar.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
@@ -48,14 +49,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     final state = ref.watch(homeControllerProvider);
     final controller = ref.read(homeControllerProvider.notifier);
 
-    const defaultProjectItem = ProjectItem(
+    const defaultProjectItem = ProjectMetadata(
       id: 'default',
       name: 'Default',
+      recordingAmount: 0,
+      userAmount: 0
     );
 
-    final projectItems = <ProjectItem>[
+    final projectItems = <ProjectMetadata>[
       defaultProjectItem,
-      ...state.projects.map((p) => ProjectItem(id: p.id, name: p.name)),
+      ...state.projects,
     ];
 
     final selectedCount = state.selectedProjectIds.length;
