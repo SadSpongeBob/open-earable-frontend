@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:openearable/api/interceptors/map_response.dart';
 import '../../models/auth/user.dart';
 import '../../models/project.dart';
 import 'project_endpoints.dart';
@@ -10,11 +11,7 @@ class ProjectService {
 
   Future<List<Project>> getProjects() async {
     final res = await dioClient.get<dynamic>(ProjectEndpoints.projects);
-    final data = res.data;
-
-    if (data is! List) {
-      throw StateError('Expected List from GET ${ProjectEndpoints.projects}');
-    }
+    final data = res.asList();
 
     return data
         .map((e) => Project.fromJson(e as Map<String, dynamic>))
@@ -27,10 +24,7 @@ class ProjectService {
       data: {'name': name},
     );
 
-    final data = res.data;
-    if (data is! Map<String, dynamic>) {
-      throw StateError('Expected object from POST ${ProjectEndpoints.projects}');
-    }
+    final data = res.asMap();
 
     return Project.fromJson(data);
   }
@@ -53,12 +47,7 @@ class ProjectService {
       ProjectEndpoints.projectUsers(projectId),
     );
 
-    final data = res.data;
-    if (data is! List) {
-      throw StateError(
-        'Expected List from GET ${ProjectEndpoints.projectUsers(projectId)}',
-      );
-    }
+    final data = res.asList();
 
     return data
         .map((e) => User.fromJson(e as Map<String, dynamic>))
