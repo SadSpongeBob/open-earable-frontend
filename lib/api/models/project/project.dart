@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
-import 'package:openearable/api/models/project/project_role.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 
 @immutable
@@ -83,5 +82,20 @@ class ProjectUser {
     final role = ProjectRole.fromString(json['role'] as String);
 
     return ProjectUser(userId: userId, role: role);
+  }
+}
+
+enum ProjectRole {
+  owner,
+  editor,
+  viewer;
+
+  factory ProjectRole.fromString(String value) {
+    return switch (value) {
+      'OWNER' => ProjectRole.owner,
+      'EDITOR' => ProjectRole.editor,
+      'VIEWER' => ProjectRole.viewer,
+      _ => throw ArgumentError.value(value, 'value', 'Invalid ProjectRole'),
+    };
   }
 }
