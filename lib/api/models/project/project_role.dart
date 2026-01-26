@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'auth/user.dart';
+import '../auth/user.dart';
 
 @immutable
 abstract class ProjectRole {

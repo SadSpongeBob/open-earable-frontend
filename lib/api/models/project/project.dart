@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:openearable/api/models/project_role.dart';
-import 'package:openearable/api/models/video.dart';
-import 'auth/user.dart';
+import 'package:openearable/api/models/project/project_role.dart';
+import 'package:openearable/api/models/recording/video.dart';
+import '../auth/user.dart';
 
 @immutable
 class Project {
@@ -49,11 +49,11 @@ class Project {
   }
 
   factory Project.fromJson(Map<String, dynamic> json) {
-    final id = (json['projectId'] ?? json['id'] ?? '') as String;
-    final name = (json['name'] as String?) ?? '';
+    final id = json['projectId'] as String;
+    final name = json['name'] as String;
 
 
-    final ownerId = (json['ownerId'] as String?) ?? '';
+    final ownerId = json['ownerId'] as String;
     final ownerUser = _placeholderUser(ownerId);
     final ownerRole = Owner(user: ownerUser);
 
