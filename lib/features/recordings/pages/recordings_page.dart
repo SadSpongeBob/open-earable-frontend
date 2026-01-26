@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/features/playback/pages/Playback.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
@@ -7,7 +10,7 @@ import '../../home/pages/home_page.dart';
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
 
-class RecordingPage extends StatefulWidget {
+class RecordingPage extends ConsumerStatefulWidget {
   const RecordingPage({
     super.key,
     this.onVideoRecorded,
@@ -18,10 +21,10 @@ class RecordingPage extends StatefulWidget {
   final CameraLensDirection initialCamera;
 
   @override
-  State<RecordingPage> createState() => _RecordingPageState();
+  ConsumerState<RecordingPage> createState() => _RecordingPageState();
 }
 
-class _RecordingPageState extends State<RecordingPage> {
+class _RecordingPageState extends ConsumerState<RecordingPage> {
   late final RecordingController _controller;
 
   @override
@@ -40,16 +43,16 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   void _onControllerChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+
+    // Nur State aktualisieren, keine SnackBars mehr
+    setState(() {});
   }
 
   Future<void> _onShutterPressed() async {
     if (_controller.isRecording) {
-      final path = await _controller.stopRecording();
-      if (path != null) {
-        widget.onVideoRecorded?.call(path);
-        _navigateToPlayBack(path);
-      }
+      final svc = ref.read(recordingServiceProvider);
+      await _controller.stopAndUpload(recordingService: svc);
     } else {
       await _controller.startRecording();
     }
@@ -66,6 +69,7 @@ class _RecordingPageState extends State<RecordingPage> {
       }
     }
   }
+
   void _navigateToPlayBack(String path) {
     Navigator.pushReplacement(
       context,
@@ -108,18 +112,17 @@ class _RecordingPageState extends State<RecordingPage> {
           Expanded(
             child: Container(
               color: Colors.black,
-              child: Stack(children: [ _buildCameraPreview() ]),
+              child: Stack(children: [_buildCameraPreview()]),
             ),
           ),
           HomeRecordingRightBar(
             onSettings: () async {
-              if(!_controller.isRecording) {
+              if (!_controller.isRecording) {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (_) => SettingsPage()),
                 );
               }
-
             },
             onWaveSound: () {
               // TODO: implement sensors data page and visualization

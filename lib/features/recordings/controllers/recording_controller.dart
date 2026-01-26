@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-
-
+import 'package:dio/dio.dart';
+import 'package:openearable/api/services/recording/recording_service.dart';
+import 'package:openearable/api/models/recording/upload_recording_request.dart';
+import 'package:openearable/api/models/recording/recording_dto.dart';
 
 class RecordingController extends ChangeNotifier {
   RecordingController({this.initialCamera = CameraLensDirection.back});
@@ -12,157 +15,137 @@ class RecordingController extends ChangeNotifier {
   CameraController? cameraController;
   List<CameraDescription> cameras = [];
   CameraLensDirection currentLens = CameraLensDirection.back;
-  bool isInitialized = false;
-  bool isRecording = false;
-  bool isPaused = false;
-  String? error;
+  bool isInitialized = false, isRecording = false, isPaused = false;
+  String? error, uploadingRecordingId, lastSavedPath;
 
   Future<void> init() async {
     currentLens = initialCamera;
-    await _loadCameras();
-  }
-
-  Future<void> disposeController() async {
-    try {
-      await cameraController?.dispose();
-    } catch (_) {}
-    cameraController = null;
-    isInitialized = false;
-    isRecording = false;
+    cameras = await availableCameras();
+    if (cameras.isNotEmpty) {
+      await _initCameraController(currentLens);
+    } else {
+      error = 'No cameras found on device';
+    }
     notifyListeners();
   }
 
-  Future<void> _loadCameras() async {
-    try {
-      cameras = await availableCameras();
-      if (cameras.isEmpty) {
-        error = 'No cameras found on device.';
-        notifyListeners();
-        return;
-      }
-      await _initCameraController(currentLens);
-    } catch (e) {
-      error = 'Error loading cameras: $e';
-      notifyListeners();
-    }
+  Future<void> disposeController() async {
+    await cameraController?.dispose();
+    cameraController = null;
+    isInitialized = isRecording = false;
+    notifyListeners();
   }
 
   Future<void> _initCameraController(CameraLensDirection lens) async {
-    if (cameras.isEmpty) return;
-
-    final camera = cameras.firstWhere(
-          (c) => c.lensDirection == lens,
-      orElse: () => cameras.first,
-    );
-
-    try {
-      await cameraController?.dispose();
-    } catch (_) {}
-
-    cameraController = CameraController(
-      camera,
-      ResolutionPreset.high,
-      enableAudio: true,
-    );
-
-    try {
-      await cameraController!.initialize();
-      isInitialized = true;
-      error = null;
-      notifyListeners();
-    } catch (e) {
-      error = 'Error initializing camera: $e';
-      isInitialized = false;
-      notifyListeners();
-    }
+    final camera = cameras.firstWhere((c) => c.lensDirection == lens, orElse: () => cameras.first);
+    await cameraController?.dispose();
+    cameraController = CameraController(camera, ResolutionPreset.high, enableAudio: true);
+    await cameraController!.initialize();
+    isInitialized = true;
+    error = null;
+    notifyListeners();
   }
 
   Future<void> startRecording() async {
-    if (!isInitialized || isRecording || cameraController == null) return;
-
-    try {
+    if (isInitialized && !isRecording) {
       await cameraController!.startVideoRecording();
       isRecording = true;
-      notifyListeners();
-    } catch (e) {
-      error = 'Error starting recording: $e';
       notifyListeners();
     }
   }
 
   Future<String?> stopRecording() async {
-    if (!isInitialized || !isRecording || cameraController == null) return null;
-
-    try {
-      final XFile file = await cameraController!.stopVideoRecording();
-
-      isRecording = false;
-      isPaused = false;
+    if (isInitialized && isRecording) {
+      final file = await cameraController!.stopVideoRecording();
+      isRecording = isPaused = false;
       notifyListeners();
-
-      final savedPath = await _saveVideo(file);
-      return savedPath;
-    } catch (e) {
-      error = 'Error stopping recording: $e';
-      notifyListeners();
-      return null;
+      return _saveVideo(file);
     }
+    return null;
   }
 
   Future<String?> _saveVideo(XFile file) async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final folderName = DateTime.now().millisecondsSinceEpoch.toString();
-    final recordingDir = Directory('${appDir.path}/OpenEarable/$folderName');
-    await recordingDir.create(recursive: true);
-    final newPath = '${recordingDir.path}/video.mp4';
-    await File(file.path).copy(newPath);
-    return newPath;
+    final dir = Directory('${(await getApplicationDocumentsDirectory()).path}/OpenEarable/${DateTime.now().millisecondsSinceEpoch}');
+    await dir.create(recursive: true);
+    final path = '${dir.path}/video.mp4';
+    await File(file.path).copy(path);
+    lastSavedPath = path;
+    return path;
   }
-  Future<void> toggleCamera() async {
-    if (cameras.isEmpty) return;
-    final next = currentLens == CameraLensDirection.front
-        ? CameraLensDirection.back
-        : CameraLensDirection.front;
 
-    isInitialized = false;
-    currentLens = next;
-    notifyListeners();
-    await _initCameraController(next);
+  Future<void> toggleCamera() async {
+    if (cameras.isNotEmpty) {
+      currentLens = currentLens == CameraLensDirection.front ? CameraLensDirection.back : CameraLensDirection.front;
+      isInitialized = false;
+      notifyListeners();
+      await _initCameraController(currentLens);
+    }
   }
 
   Future<void> pauseRecording() async {
-    if (!isInitialized || !isRecording || isPaused || cameraController == null) return;
-
-    try {
+    if (isInitialized && isRecording && !isPaused) {
       await cameraController!.pauseVideoRecording();
       isPaused = true;
-      notifyListeners();
-    } catch (e) {
-      error = 'Error pausing recording: $e';
       notifyListeners();
     }
   }
 
   Future<void> resumeRecording() async {
-    if (!isInitialized || !isRecording || !isPaused || cameraController == null) return;
-
-    try {
+    if (isInitialized && isRecording && isPaused) {
       await cameraController!.resumeVideoRecording();
       isPaused = false;
-      notifyListeners();
-    } catch (e) {
-      error = 'Error resuming recording: $e';
       notifyListeners();
     }
   }
 
+  Future<bool> stopAndUpload({RecordingService? recordingService, Dio? dioClient}) async {
+    try {
+      final path = await stopRecording();
+      if (path == null) return false;
+      return await uploadVideo(path, recordingService: recordingService, dioClient: dioClient) != null;
+    } catch (e) {
+      error = 'stopAndUpload failed: $e';
+      return false;
+    }
+  }
+
+  Future<RecordingDto?> uploadVideo(String filePath, {RecordingService? recordingService, Dio? dioClient, String? thumbnailPath}) async {
+    try {
+      final file = File(filePath);
+      final req = UploadRecordingRequest(
+        name: "recording_${DateTime.now().millisecondsSinceEpoch}",
+        video: RecordingFile(
+          filename: 'video.mp4',
+          contentType: 'MP4',
+          sizeBytes: await file.length(),
+          timestamp: DateTime.now().toUtc().subtract(const Duration(seconds: 5)).toIso8601String(),
+        ),
+        sensors: const [],
+        projectId: null,
+        thumbnailContent: null,
+      );
+      final service = recordingService ?? RecordingService(dioClient: dioClient ?? Dio());
+      final uploadResp = await service.startUpload(req);
+
+      await _uploadFile(file, uploadResp.videoUpload.uploadUrl, uploadResp.videoUpload.requiredHeaders, dioClient);
+      if (uploadResp.thumbnailUpload != null && thumbnailPath != null) {
+        await _uploadFile(File(thumbnailPath), uploadResp.thumbnailUpload!.uploadUrl, uploadResp.thumbnailUpload!.requiredHeaders, dioClient);
+      }
+
+      await service.completeUpload(uploadResp.recordingId);
+    } catch (_) {
+      return null;
+    }
+    return null;
+  }
+
+  Future<void> _uploadFile(File file, String url, Map<String, String> headers, Dio? dioClient) async {
+    await (dioClient ?? Dio()).put(url, data: await file.readAsBytes(), options: Options(headers: headers));
+  }
+
   @override
   void dispose() {
-    try {
-      cameraController?.dispose();
-    } catch (_) {}
+    cameraController?.dispose();
     super.dispose();
   }
 }
-
-

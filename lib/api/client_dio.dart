@@ -6,6 +6,7 @@ import 'package:openearable/api/services/project/project_service.dart';
 import 'package:openearable/api/services/user/user_service.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/api/services/auth/token_storage.dart';
+import 'package:openearable/api/services/recording/recording_service.dart';
 
 final _networkModuleProvider = Provider<NetworkModule>((ref) {
   return NetworkModule.create(
@@ -36,6 +37,11 @@ final authServiceProvider = Provider<AuthService>((ref) {
 final projectServiceProvider = Provider<ProjectService>((ref) {
   final dio = ref.read(apiDioProvider);
   return ProjectService(dioClient: dio);
+});
+
+final recordingServiceProvider = Provider<RecordingService>((ref) {
+  final dio = ref.read(apiDioProvider);
+  return RecordingService(dioClient: dio);
 });
 
 final awsDioProvider = Provider<Dio>((ref) {
