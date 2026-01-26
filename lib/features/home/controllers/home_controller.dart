@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/services/project/project_service.dart';
 import '../../../api/client_dio.dart';
-import '../../../api/models/project.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 import '../state/home_state.dart';
@@ -42,7 +42,7 @@ class HomeController extends StateNotifier<HomeState> {
 
   void _success(String message) => _toast(ToastEvent.success(message));
 
-  bool _projectExists(String projectId, List<Project> projects) =>
+  bool _projectExists(String projectId, List<ProjectMetadata> projects) =>
       projects.any((p) => p.id == projectId);
 
   bool _nameExists(String name, {String? excludeProjectId}) {
@@ -53,7 +53,7 @@ class HomeController extends StateNotifier<HomeState> {
     });
   }
 
-  Project? _findById(String id) {
+  ProjectMetadata? _findById(String id) {
     for (final p in state.projects) {
       if (p.id == id) return p;
     }
@@ -113,7 +113,7 @@ class HomeController extends StateNotifier<HomeState> {
 
       state = state.copyWith(
         isLoading: false,
-        projects: [...state.projects, created],
+        projects: [...state.projects, created.toMetadata()],
         openProjectId: created.id,
         clearError: true,
       );
@@ -249,7 +249,7 @@ class HomeController extends StateNotifier<HomeState> {
     String candidate = base;
     int i = 2;
     while (_nameExists(candidate)) {
-      candidate = '${base} $i';
+      candidate = '$base $i';
       i++;
     }
 
