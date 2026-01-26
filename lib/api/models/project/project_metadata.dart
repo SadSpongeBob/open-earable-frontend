@@ -24,4 +24,13 @@ class ProjectMetadata {
       userAmount: userAmount,
     );
   }
+
+  ProjectMetadata copyWith({required String name}) {
+    return ProjectMetadata(
+      id: id,
+      name: name,
+      recordingAmount: recordingAmount,
+      userAmount: userAmount,
+    );
+  }
 }
