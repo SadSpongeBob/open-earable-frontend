@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import '../../models/recording/recording.dart';
 import '../../models/recording/upload_recording_request.dart';
 import '../../models/recording/upload_recording_response.dart';
-import '../../models/recording/recording_dto.dart';
 import 'recording_endpoints.dart';
 
 class RecordingService {
@@ -32,21 +32,20 @@ class RecordingService {
     }
     throw Exception('startUpload: unexpected response shape: ${raw.runtimeType}');
   }
-  Future<RecordingDto?> completeUpload(String recordingId) async {
+  Future<Recording?> completeUpload(String recordingId) async {
     final res = await dioClient.put(
       RecordingEndpoints.complete(recordingId),
       options: Options(validateStatus: (status) => true),
     );
-
     final raw = res.data;
     if (raw == null) return null;
 
     if (raw is Map<String, dynamic>) {
-      if (raw.containsKey('data') && raw['data'] is Map<String, dynamic>) {
-        return RecordingDto.fromJson(raw['data']);
+      if (raw.containsKey('data') && raw['data'] is Map<dynamic, dynamic>) {
+        return Recording.fromJson(raw['data']);
       }
       try {
-        return RecordingDto.fromJson(raw);
+        return Recording.fromJson(raw);
       } catch (_) {
         throw Exception('completeUpload: unexpected data shape');
       }
@@ -57,9 +56,9 @@ class RecordingService {
         final decoded = jsonDecode(raw);
         if (decoded is Map<String, dynamic>) {
           if (decoded.containsKey('data') && decoded['data'] is Map<String, dynamic>) {
-            return RecordingDto.fromJson(decoded['data']);
+            return Recording.fromJson(decoded['data']);
           }
-          return RecordingDto.fromJson(decoded);
+          return Recording.fromJson(decoded);
         }
       } catch (_) {
         throw Exception('completeUpload: failed to decode response');
@@ -67,17 +66,17 @@ class RecordingService {
     }
     throw Exception('completeUpload: unexpected response type ${raw.runtimeType}');
   }
-  Future<List<RecordingDto>> getRecordings({Map<String, dynamic>? query}) async {
+  Future<List<Recording>> getRecordings({Map<String, dynamic>? query}) async {
     final res = await dioClient.get(RecordingEndpoints.base, queryParameters: query);
     final data = res.data;
     if (data is! List) {
       throw StateError('Expected List from GET ${RecordingEndpoints.base}');
     }
-    return data.map((e) => RecordingDto.fromJson(e as Map<String, dynamic>)).toList();
+    return data.map((e) => Recording.fromJson(e as Map<String, dynamic>)).toList();
   }
-  Future<RecordingDto> getRecording(String recordingId) async {
+  Future<Recording> getRecording(String recordingId) async {
     final res = await dioClient.get(RecordingEndpoints.recording(recordingId));
-    return RecordingDto.fromJson(res.data as Map<String, dynamic>);
+    return Recording.fromJson(res.data as Map<String, dynamic>);
   }
   Future<void> deleteRecording(String recordingId) async {
     await dioClient.delete(RecordingEndpoints.deleteRecording(recordingId));

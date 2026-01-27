@@ -1,17 +1,17 @@
 import 'package:flutter/foundation.dart';
-import '../../../api/models/project.dart';
-import '../../../api/models/video.dart';
+import 'package:openearable/api/models/project/project_metadata.dart';
+import '../../../api/models/recording/recording.dart';
 
 @immutable
 class HomeState {
-  final List<Project> projects;
+  final List<ProjectMetadata> projects;
 
   final String openProjectId;
 
   final bool isSelectionMode;
   final Set<String> selectedProjectIds;
 
-  final List<Video> videos;
+  final List<Recording> videos;
   final String? selectedVideoId;
 
   final bool isLoading;
@@ -40,11 +40,11 @@ class HomeState {
   );
 
   HomeState copyWith({
-    List<Project>? projects,
+    List<ProjectMetadata>? projects,
     String? openProjectId,
     bool? isSelectionMode,
     Set<String>? selectedProjectIds,
-    List<Video>? videos,
+    List<Recording>? videos,
     String? selectedVideoId,
     bool clearSelectedVideoId = false,
     bool? isLoading,

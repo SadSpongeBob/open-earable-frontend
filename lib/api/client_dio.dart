@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/network_module.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
 import 'package:openearable/api/services/project/project_service.dart';
+import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/services/user/user_service.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/api/services/auth/token_storage.dart';
-import 'package:openearable/api/services/recording/recording_service.dart';
 
 final _networkModuleProvider = Provider<NetworkModule>((ref) {
   return NetworkModule.create(
