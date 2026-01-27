@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import '../../models/auth/user.dart';
@@ -62,3 +64,8 @@ class ProjectService {
         .toList();
   }
 }
+
+final projectServiceProvider = Provider<ProjectService>((ref) {
+  final dio = ref.read(apiDioProvider);
+  return ProjectService(dioClient: dio);
+});
