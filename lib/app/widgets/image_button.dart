@@ -30,21 +30,6 @@ class _ImageButtonState extends State<ImageButton> {
   bool _isPressed = false;
   bool _isLocked = false;
 
-  Future<void> _handleTap() async {
-    if (_isLocked) return;
-
-    _isLocked = true;
-    setState(() => _isPressed = true);
-    await Future.delayed(widget.pressDuration);
-
-    if (!mounted) return;
-
-    setState(() => _isPressed = false);
-    _isLocked = false;
-
-    widget.onPressed();
-  }
-
   @override
   Widget build(BuildContext context) {
      bool showActive = _isPressed || widget.isActive;
@@ -73,5 +58,20 @@ class _ImageButtonState extends State<ImageButton> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleTap() async {
+    if (_isLocked) return;
+
+    _isLocked = true;
+    setState(() => _isPressed = true);
+    await Future.delayed(widget.pressDuration);
+
+    if (!mounted) return;
+
+    setState(() => _isPressed = false);
+    _isLocked = false;
+
+    widget.onPressed();
   }
 }

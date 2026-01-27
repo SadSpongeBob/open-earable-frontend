@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/features/home/widgets/sensor_configuration_view.dart';
 import 'package:openearable/features/home/widgets/sensors_values_card.dart';
-import 'package:openearable/features/home/widgets/image_button.dart';
+import 'package:openearable/app/widgets/image_button.dart';
 import 'package:provider/provider.dart';
 import 'package:openearable/features/home/controllers/wearables_provider.dart';
 import 'package:openearable/app/theme/text_styles.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/features/recordings/pages/recording_page.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
-import 'package:openearable/features/home/widgets/menu_sidebar.dart';
+import 'package:openearable/app/widgets/menu_sidebar.dart';
 import 'package:openearable/features/home/pages/sensor_page.dart';
 import 'package:openearable/app/utils/helpers.dart';
 
