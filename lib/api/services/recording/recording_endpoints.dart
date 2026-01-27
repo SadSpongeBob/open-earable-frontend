@@ -29,9 +29,4 @@ class RecordingEndpoints {
   static String userRecordings(String userId) => '$base/user/$userId';
 
 
-  static const String qPage = 'page';
-  static const String qSize = 'size';
-  static const String qSort = 'sort';
-  static const String qProjectId = 'projectId';
-  static const String qSearch = 'search';
 }

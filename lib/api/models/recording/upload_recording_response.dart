@@ -1,7 +1,3 @@
-// DTO: UploadRecordingResponse
-// Enthält die Upload-URLs und Metadaten, die das Backend zurückgibt, wenn ein Upload gestartet wird.
-// Vereinfachtes und robusteres DTO für die Upload-Antwort des Backends.
-
 class UploadRecordingResponse {
   final String recordingId;
   final String name;
@@ -19,14 +15,11 @@ class UploadRecordingResponse {
     this.thumbnailUpload,
   });
 
-  /// Akzeptiert sowohl `{ "data": { ... } }` als auch `{ ... }` (direktes Objekt).
   factory UploadRecordingResponse.fromJson(Map<String, dynamic>? json) {
     if (json == null) throw Exception('Invalid response: json is null');
 
-    // Wenn die API direkt das innere Objekt zurückgibt, verwenden wir es.
     final rawData = (json['data'] is Map<String, dynamic>) ? json['data'] as Map<String, dynamic> : json;
 
-    // Lese Felder mit Fallbacks, aber videoUpload ist verpflichtend.
     final recordingId = (rawData['recordingId'] as String?) ?? '';
     final name = rawData['name'] as String? ?? '';
     final projectId = rawData['projectId'] as String?;

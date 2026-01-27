@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:video_player/video_player.dart';
-
 import '../controllers/playback_controller.dart';
 import '../widgets/top_bar.dart';
 import '../widgets/video_card.dart';
