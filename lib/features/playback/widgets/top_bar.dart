@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
@@ -75,8 +77,7 @@ class _TopBarState extends ConsumerState<TopBar> {
                   icon: const Icon(Icons.arrow_back_ios),
                   onPressed: () async {
                     final svc = ref.read(recordingServiceProvider);
-                    await controller.stopAndUpload(recordingService: svc, path: videoPath);
-                    await controller.deleteVideo(videoPath);
+                    unawaited(controller.stopAndUpload(recordingService: svc, path: videoPath));
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (_) => RecordingPage()),

@@ -19,9 +19,6 @@ class RecordingService {
       options: Options(validateStatus: (status) => true),
     );
     final raw = res.data;
-    if ((res.statusCode ?? 0) < 200 || (res.statusCode ?? 0) >= 300) {
-      throw Exception('startUpload failed: status=${res.statusCode} body=${raw}');
-    }
     if (raw is Map<String, dynamic>) {
       return UploadRecordingResponse.fromJson(raw.containsKey('data') ? raw : {'data': raw});
     }
@@ -41,13 +38,7 @@ class RecordingService {
       options: Options(validateStatus: (status) => true),
     );
 
-    final status = res.statusCode ?? 0;
     final raw = res.data;
-
-    if (status < 200 || status >= 300) {
-      throw Exception('completeUpload failed: status=$status body=$raw');
-    }
-
     if (raw == null) return null;
 
     if (raw is Map<String, dynamic>) {
@@ -77,10 +68,10 @@ class RecordingService {
     throw Exception('completeUpload: unexpected response type ${raw.runtimeType}');
   }
   Future<List<RecordingDto>> getRecordings({Map<String, dynamic>? query}) async {
-    final res = await dioClient.get(RecordingEndpoints.recordings, queryParameters: query);
+    final res = await dioClient.get(RecordingEndpoints.base, queryParameters: query);
     final data = res.data;
     if (data is! List) {
-      throw StateError('Expected List from GET ${RecordingEndpoints.recordings}');
+      throw StateError('Expected List from GET ${RecordingEndpoints.base}');
     }
     return data.map((e) => RecordingDto.fromJson(e as Map<String, dynamic>)).toList();
   }

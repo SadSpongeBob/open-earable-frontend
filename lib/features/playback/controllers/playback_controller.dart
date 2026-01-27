@@ -1,12 +1,11 @@
+
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:video_player/video_player.dart';
-import 'package:path/path.dart' as p;
 import 'package:dio/dio.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
-import 'package:openearable/api/models/recording/recording_dto.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 
 class PlaybackController extends ChangeNotifier {
@@ -15,14 +14,15 @@ class PlaybackController extends ChangeNotifier {
   double speed = 1.0;
   String speedString = "1.0x";
   String videoName = "video.mp4";
+  DateTime? recordingStartedAt;
   Future<void> loadVideo(String path) async {
+    recordingStartedAt = DateTime.now().toUtc();
     if (path.isEmpty) return;
     await videoController?.dispose();
     final controller = VideoPlayerController.file(File(path));
     videoController = controller;
     await controller.initialize();
     controller.play();
-    // set videoName from path
     videoName = File(path).uri.pathSegments.last.split('.').first;
     notifyListeners();
   }
@@ -73,37 +73,34 @@ class PlaybackController extends ChangeNotifier {
     }
   }
   Future<void> exportVideoFolder(String videoPath) async {
-    final file = File(videoPath);
-    final sourceDir = file.parent;
-    final picturesDir = Directory('/storage/emulated/0/Pictures/OpenEarable');
+    final sourceFile = File(videoPath);
+
+    final picturesDir =
+    Directory('/storage/emulated/0/Pictures/OpenEarable');
     await picturesDir.create(recursive: true);
-    final folderName = p.basename(sourceDir.path);
+    final folderName = DateTime.now().millisecondsSinceEpoch.toString();
     final targetDir = Directory('${picturesDir.path}/$folderName');
     await targetDir.create(recursive: true);
-    for (var f in sourceDir.listSync()) {
-      if (f is File) {
-        await f.copy('${targetDir.path}/${p.basename(f.path)}');
-      }
-    }
+    final targetFile =
+    File('${targetDir.path}/$videoName.mp4');
+    await sourceFile.copy(targetFile.path);
   }
   String getVideoName([String? path]) {
 
     return videoName;
   }
-  Future<String> stopAndUpload({required RecordingService recordingService, Dio? dioClient, required String path}) async {
-    final res = await uploadVideo(path, recordingService: recordingService, dioClient: dioClient);
-    if (res != null) return path;
-
-    return 'error';
+  Future<void> stopAndUpload({required RecordingService recordingService, Dio? dioClient, required String path}) async {
+    await uploadVideo(path, recordingService: recordingService, dioClient: dioClient);
+    await deleteVideo(path);
   }
-  Future<RecordingDto?> uploadVideo(
+  Future<void> uploadVideo(
       String filePath, {
         required RecordingService recordingService,
         Dio? dioClient,
       }) async {
     try {
       final dio = dioClient ?? Dio();
-      final service = recordingService;
+
       final videoFile = File(filePath);
       final Uint8List? thumbnailBytes = await generateThumbnail(filePath);
       File? thumbnailFile;
@@ -112,31 +109,30 @@ class PlaybackController extends ChangeNotifier {
         thumbnailFile = File('${tempDir.path}/thumbnail.jpg');
         await thumbnailFile.writeAsBytes(thumbnailBytes);
       }
+      final timestamp = recordingStartedAt ?? DateTime.now().toUtc();
       final req = UploadRecordingRequest(
         name: "recording_${DateTime.now().millisecondsSinceEpoch}",
         video: RecordingFile(
           filename: videoName,
           contentType: 'MP4',
           sizeBytes: await videoFile.length(),
-          timestamp: DateTime.now().toUtc().subtract(const Duration(seconds: 5)).toIso8601String(),
+          timestamp: timestamp.toIso8601String(),
         ),
         sensors: const [],
         projectId: null,
         thumbnailContent: thumbnailBytes != null ? 'JPEG' : null,
       );
-      final uploadResp = await service.startUpload(req);
+      final uploadResp = await recordingService.startUpload(req);
       await _uploadFile(videoFile, uploadResp.videoUpload.uploadUrl, uploadResp.videoUpload.requiredHeaders, dio);
       if (uploadResp.thumbnailUpload != null && thumbnailFile != null) {
         await _uploadFile(thumbnailFile, uploadResp.thumbnailUpload!.uploadUrl, uploadResp.thumbnailUpload!.requiredHeaders, dio);
       }
-
-      return await service.completeUpload(uploadResp.recordingId);
+      await recordingService.completeUpload(uploadResp.recordingId);
     } catch (e, s) {
       if (kDebugMode) {
         debugPrint(e.toString());
         debugPrint(s.toString());
       }
-      return null;
     }
   }
   Future<Response> _uploadFile(File file, String url, Map<String, String> headers, Dio dio) async {

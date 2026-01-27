@@ -1,11 +1,13 @@
-import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:openearable/features/playback/pages/Playback.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
-import '../../home/pages/home_page.dart';
+import '../../../app/routing/routes.dart';
+
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
 
@@ -43,8 +45,6 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
 
   void _onControllerChanged() {
     if (!mounted) return;
-
-    // Nur State aktualisieren, keine SnackBars mehr
     setState(() {});
   }
 
@@ -79,10 +79,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   }
 
   void _navigateToHome() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-    );
+    context.go(Routes.home);
   }
 
   Widget _buildCameraPreview() {
