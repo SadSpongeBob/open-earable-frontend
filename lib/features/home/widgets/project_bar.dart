@@ -1,15 +1,5 @@
 import 'package:flutter/material.dart';
-
-@immutable
-class ProjectItem {
-  final String id;
-  final String name;
-
-  const ProjectItem({
-    required this.id,
-    required this.name,
-  });
-}
+import 'package:openearable/api/models/project/project_metadata.dart';
 
 class ProjectBar extends StatelessWidget {
   const ProjectBar({
@@ -23,15 +13,15 @@ class ProjectBar extends StatelessWidget {
     this.onLongPressProject,
   });
 
-  final List<ProjectItem> projects;
+  final List<ProjectMetadata> projects;
   final String openProjectId;
 
   final bool isSelectionMode;
   final Set<String> selectedProjectIds;
 
   final VoidCallback? onAddProject;
-  final ValueChanged<ProjectItem>? onTapProject;
-  final ValueChanged<ProjectItem>? onLongPressProject;
+  final ValueChanged<ProjectMetadata>? onTapProject;
+  final ValueChanged<ProjectMetadata>? onLongPressProject;
 
   @override
   Widget build(BuildContext context) {

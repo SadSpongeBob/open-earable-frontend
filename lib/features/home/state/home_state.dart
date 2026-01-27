@@ -2,19 +2,20 @@ import 'package:flutter/foundation.dart';
 import '../../../api/models/auth/user.dart';
 import '../../../api/models/project.dart';
 import '../../../api/models/video.dart';
+import 'package:openearable/api/models/project/project_metadata.dart';
+import '../../../api/models/recording/recording.dart';
 
 @immutable
 class HomeState {
-  // projects
-  final List<Project> projects;
-  final String? openProjectId;
+  final List<ProjectMetadata> projects;
+
+  final String openProjectId;
 
   // selection
   final bool isSelectionMode;
   final Set<String> selectedProjectIds;
 
-  // videos
-  final List<Video> videos;
+  final List<Recording> videos;
   final String? selectedVideoId;
 
   // general loading / error
@@ -50,7 +51,7 @@ class HomeState {
 
   factory HomeState.initial() => const HomeState(
     projects: [],
-    openProjectId: null,
+    openProjectId: 'default',
     isSelectionMode: false,
     selectedProjectIds: {},
     videos: [],
@@ -66,16 +67,13 @@ class HomeState {
   );
 
   HomeState copyWith({
-    // projects
-    List<Project>? projects,
+    List<ProjectMetadata>? projects,
     String? openProjectId,
 
     // selection
     bool? isSelectionMode,
     Set<String>? selectedProjectIds,
-
-    // videos
-    List<Video>? videos,
+    List<Recording>? videos,
     String? selectedVideoId,
     bool clearSelectedVideoId = false,
 
@@ -114,4 +112,3 @@ class HomeState {
     );
   }
 }
-

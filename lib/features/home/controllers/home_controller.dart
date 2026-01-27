@@ -4,6 +4,8 @@ import 'package:openearable/app/utils/validators.dart';
 import '../../../api/client_dio.dart';
 import '../../../api/models/auth/user.dart';
 import '../../../api/services/user/user_service.dart';
+import 'package:openearable/api/models/project/project_metadata.dart';
+import 'package:openearable/api/services/project/project_service.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 import '../state/home_state.dart';
@@ -49,8 +51,8 @@ class HomeController extends StateNotifier<HomeState> {
 
   void _success(String message) => _toast(ToastEvent.success(message));
 
-  bool _projectExists(String projectId, List projects) =>
-      projects.any((p) => (p as dynamic).id == projectId);
+  bool _projectExists(String projectId, List<ProjectMetadata> projects) =>
+      projects.any((p) => p.id == projectId);
 
   bool _nameExists(String name, {String? excludeProjectId}) {
     final normalized = name.trim().toLowerCase();
@@ -60,7 +62,7 @@ class HomeController extends StateNotifier<HomeState> {
     });
   }
 
-  dynamic _findById(String id) {
+  ProjectMetadata? _findById(String id) {
     for (final p in state.projects) {
       if (p.id == id) return p;
     }
@@ -72,7 +74,7 @@ class HomeController extends StateNotifier<HomeState> {
     try {
       final projects = await _projectService.getProjects();
 
-      final currentOpenId = state.openProjectId ?? 'default';
+      final currentOpenId = state.openProjectId;
       final openStillValid =
           currentOpenId == 'default' || _projectExists(currentOpenId, projects);
 
@@ -126,7 +128,7 @@ class HomeController extends StateNotifier<HomeState> {
 
       state = state.copyWith(
         isLoading: false,
-        projects: [...state.projects, created],
+        projects: [...state.projects, created.toMetadata()],
         openProjectId: created.id,
         clearError: true,
       );
@@ -176,8 +178,8 @@ class HomeController extends StateNotifier<HomeState> {
       await _projectService.deleteProject(projectId);
 
       final updated = state.projects.where((p) => p.id != projectId).toList();
-      final currentOpenId = state.openProjectId ?? 'default';
-      final newOpenId = currentOpenId == projectId ? 'default' : currentOpenId;
+      final newOpenId =
+      state.openProjectId == projectId ? 'default' : state.openProjectId;
 
       final nextSelected = Set<String>.from(state.selectedProjectIds)
         ..remove(projectId);
@@ -219,6 +221,7 @@ class HomeController extends StateNotifier<HomeState> {
   }
 
   void toggleProjectSelection(String projectId) {
+
     final next = Set<String>.from(state.selectedProjectIds);
     if (next.contains(projectId)) {
       next.remove(projectId);
