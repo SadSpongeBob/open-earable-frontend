@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/services/project/project_service.dart';
-import '../../../api/client_dio.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 import '../state/home_state.dart';
