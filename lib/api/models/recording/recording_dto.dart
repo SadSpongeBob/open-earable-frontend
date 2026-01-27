@@ -19,15 +19,14 @@ class RecordingDto {
   });
 
   factory RecordingDto.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] as Map<String, dynamic>;
     return RecordingDto(
-      recordingId: data['recordingId'] as String,
-      name: data['name'] as String,
-      thumbnailUrl: data['thumbnailUrl'] as String?,
-      videoTimestamp: data['videoTimestamp'] as String,
-      projectId: data['projectId'] as String?,
-      userId: data['userId'] as String,
-      uploadStatus: data['uploadStatus'] as String,
+      recordingId: json['recordingId'] as String,
+      name: json['name'] as String,
+      thumbnailUrl: json['thumbnailUrl'] as String?,
+      videoTimestamp: json['videoTimestamp'] as String,
+      projectId: json['projectId'] as String?,
+      userId: json['userId'] as String,
+      uploadStatus: json['uploadStatus'] as String,
     );
   }
 }

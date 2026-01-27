@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 
 import '../controllers/playback_controller.dart';
 import '../widgets/top_bar.dart';
 import '../widgets/video_card.dart';
 
-class PlaybackPage extends StatefulWidget {
+class PlaybackPage extends ConsumerStatefulWidget {
   final String videoPath;
   const PlaybackPage({super.key, required this.videoPath});
 
   @override
-  State<PlaybackPage> createState() => _PlaybackPageState();
+  ConsumerState<PlaybackPage> createState() => _PlaybackPageState();
 }
 
-class _PlaybackPageState extends State<PlaybackPage> {
+class _PlaybackPageState extends ConsumerState<PlaybackPage> {
   final PlaybackController _controller = PlaybackController();
   final GlobalKey _speedKey = GlobalKey();
 
@@ -23,6 +24,7 @@ class _PlaybackPageState extends State<PlaybackPage> {
     super.initState();
     if (widget.videoPath.isNotEmpty) {
       _controller.loadVideo(widget.videoPath);
+
     }
   }
 

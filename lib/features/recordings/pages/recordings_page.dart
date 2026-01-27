@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/features/playback/pages/Playback.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
@@ -51,8 +50,10 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
 
   Future<void> _onShutterPressed() async {
     if (_controller.isRecording) {
-      final svc = ref.read(recordingServiceProvider);
-      await _controller.stopAndUpload(recordingService: svc);
+
+
+      String? path = await _controller.stopRecording();
+      _navigateToPlayBack(path!);
     } else {
       await _controller.startRecording();
     }

@@ -1,13 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
+import 'package:openearable/api/client_dio.dart';
 import '../../../app/theme/app_bar_styles.dart';
+import 'rename_dialog.dart';
 import '../controllers/playback_controller.dart';
 
-class TopBar extends StatelessWidget {
+class TopBar extends ConsumerStatefulWidget {
   final PlaybackController controller;
   final GlobalKey speedKey;
   final String videoPath;
-  const TopBar({required this.controller, required this.speedKey,required this.videoPath, Key? key}) : super(key: key);
+
+  const TopBar({
+    required this.controller,
+    required this.speedKey,
+    required this.videoPath,
+    super.key,
+  });
+
+  @override
+  ConsumerState<TopBar> createState() => _TopBarState();
+}
+
+class _TopBarState extends ConsumerState<TopBar> {
+  PlaybackController get controller => widget.controller;
+  GlobalKey get speedKey => widget.speedKey;
+  String get videoPath => widget.videoPath;
 
   @override
   Widget build(BuildContext context) {
@@ -50,42 +68,37 @@ class TopBar extends StatelessWidget {
                   if (selected != null) controller.setSpeed(selected);
                 },
                 child: Text(controller.speedString, style: GlobalAppBarStyles.appBarBlackText),
-
               );
 
               final left = Row(mainAxisSize: MainAxisSize.min, children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios),
-                  onPressed: () {
+                  onPressed: () async {
+                    final svc = ref.read(recordingServiceProvider);
+                    await controller.stopAndUpload(recordingService: svc, path: videoPath);
+                    await controller.deleteVideo(videoPath);
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (_) => RecordingPage()),
                     );
                   },
-                  color: Color(0xFFFF4442),
+                  color: const Color(0xFFFF4442),
                   splashRadius: 20,
                 ),
                 IconButton(
-                  icon: Image.asset(
-                    'assets/buttons/wave-sound.png',
-                    width: 26,
-                    height: 26,
-                  ),
+                  icon: Image.asset('assets/buttons/wave-sound.png', width: 26, height: 26),
                   onPressed: () {},
                   splashRadius: 20,
                 ),
                 IconButton(
-                  icon: Icon(
-                    controller.isMuted ? Icons.volume_off : Icons.volume_up,
-                  ),
+                  icon: Icon(controller.isMuted ? Icons.volume_off : Icons.volume_up),
                   onPressed: controller.toggleMute,
                   color: Colors.black87,
                   splashRadius: 20,
                 ),
-
                 speedBadge,
                 const SizedBox(width: 10),
-                Text(controller.getVideoName(videoPath), style: GlobalAppBarStyles.appBarBlackText),
+                Text(controller.getVideoName(), style: GlobalAppBarStyles.appBarBlackText),
               ]);
 
               final centerControls = Row(mainAxisSize: MainAxisSize.min, children: [
@@ -115,12 +128,20 @@ class TopBar extends StatelessWidget {
               ]);
 
               final right = Row(mainAxisSize: MainAxisSize.min, children: [
-                TextButton(onPressed: () {
-                  controller.exportVideoFolder(videoPath);
-                }, child: const Text("Export", style: GlobalAppBarStyles.appBarBlackText)),
+                TextButton(
+                  onPressed: () => controller.exportVideoFolder(videoPath),
+                  child: const Text("Export", style: GlobalAppBarStyles.appBarBlackText),
+                ),
                 PopupMenuButton<String>(
                   color: Colors.white,
-                  onSelected: (_) {},
+                  onSelected: (value) async {
+                    if (value == "Rename") {
+                      final newName = await showRenameDialog(context, oldName: controller.getVideoName(videoPath));
+                      if (newName != null && newName.isNotEmpty) {
+                        controller.renameVideo(newName);
+                      }
+                    }
+                  },
                   itemBuilder: (_) => const [
                     PopupMenuItem(value: "Duplicate", child: Text('Duplicate', style: GlobalAppBarStyles.appBarBlackText)),
                     PopupMenuItem(value: "Rename", child: Text('Rename', style: GlobalAppBarStyles.appBarBlackText)),
@@ -130,13 +151,16 @@ class TopBar extends StatelessWidget {
                     child: Text("More", style: GlobalAppBarStyles.appBarBlackText),
                   ),
                 ),
-                TextButton(onPressed: () {
-                  controller.deleteVideo(videoPath);
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => RecordingPage()),
-                  );
-                }, child: Text("Delete", style: GlobalAppBarStyles.appBarSecondaryText)),
+                TextButton(
+                  onPressed: () {
+                    controller.deleteVideo(videoPath);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => RecordingPage()),
+                    );
+                  },
+                  child: Text("Delete", style: GlobalAppBarStyles.appBarSecondaryText),
+                ),
               ]);
 
               return Stack(
@@ -154,4 +178,3 @@ class TopBar extends StatelessWidget {
     );
   }
 }
-
