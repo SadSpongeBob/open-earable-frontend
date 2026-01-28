@@ -8,6 +8,7 @@ import 'package:openearable/api/services/project/project_service.dart';
 import 'package:openearable/api/services/recording//recording_service.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
+import 'package:uuid/uuid.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 import '../state/home_state.dart';
@@ -49,6 +50,7 @@ class HomeController {
   final HomeStateNotifier _state;
   final AuthState _authState;
   final ToastSink _toast;
+  final _uuid = Uuid();
 
   HomeState get state => _state.current;
 
@@ -202,10 +204,18 @@ class HomeController {
 
     _state.setLoading(true);
     try {
-      final created = await _projectService.createProject(trimmed);
-      _state.addProject(created.toMetadata());
-
-      // Open the new project and reset videos/selected video.
+      final ProjectMetadata created;
+      if (_authState.isGuest) {
+        created = ProjectMetadata(
+          id: _uuid.v6(),
+          name: trimmed,
+          recordingAmount: 0,
+          userAmount: 0,
+        );
+      } else {
+        created = (await _projectService.createProject(trimmed)).toMetadata();
+      }
+      _state.addProject(created);
       _state.setOpenProject(projectId: created.id, videos: const []);
 
       _state.clearError();
