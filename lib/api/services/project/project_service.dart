@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
-import '../../models/auth/user.dart';
 import '../../models/project/project.dart';
+import '../../models/project/project_user_dto.dart';
 import 'project_endpoints.dart';
 
 class ProjectService {
@@ -52,17 +52,60 @@ class ProjectService {
     );
   }
 
-  Future<List<User>> getProjectUsers(String projectId) async {
+  // Project Users Management
+
+  Future<List<ProjectUserDto>> getProjectUsers(String projectId) async {
     final res = await dioClient.get<dynamic>(
       ProjectEndpoints.projectUsers(projectId),
     );
 
-    final data = res.asList();
+    final map = res.asMap();
+    final data = map['data'];
+
+    if (data is! List) {
+      throw StateError('Expected {data: List} from GET ${ProjectEndpoints.projectUsers(projectId)}');
+    }
 
     return data
-        .map((e) => User.fromJson(e as Map<String, dynamic>))
+        .map((e) => ProjectUserDto.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<List<ProjectUserDto>> addProjectUser({
+    required String projectId,
+    required String emailAddress,
+    required String role, // 'VIEWER' | 'EDITOR'
+  }) async {
+    final res = await dioClient.post<dynamic>(
+      ProjectEndpoints.projectUsers(projectId),
+      data: {
+        'emailAddress': emailAddress.trim(),
+        'role': role.trim().toUpperCase(),
+      },
+    );
+
+    final map = res.asMap();
+    final data = map['data'];
+
+    if (data is! List) {
+      throw StateError('Expected {data: List} from POST ${ProjectEndpoints.projectUsers(projectId)}');
+    }
+
+    return data
+        .map((e) => ProjectUserDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+
+  Future<void> removeUserFromProject({
+    required String projectId,
+    required String userId,
+  }) async {
+    await dioClient.delete<dynamic>(
+      ProjectEndpoints.removeProjectUser(projectId, userId),
+    );
+  }
+
 }
 
 final projectServiceProvider = Provider<ProjectService>((ref) {

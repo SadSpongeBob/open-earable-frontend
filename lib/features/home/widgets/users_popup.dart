@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/auth/widgets/auth_button.dart';
 import 'package:openearable/features/home/widgets/home_text_field.dart';
-
 import '../../../app/constants/colors.dart';
 import '../../../app/theme/text_styles.dart';
+import '../../auth/state/session_provider.dart';
+import '../controllers/home_controller.dart';
 
-enum ProjectRole { editor, viewer }
+enum ProjectUserRole { editor, viewer }
 
-extension ProjectRoleLabel on ProjectRole {
+extension ProjectRoleLabel on ProjectUserRole {
   String get label {
     switch (this) {
-      case ProjectRole.editor:
+      case ProjectUserRole.editor:
         return 'Editor';
-      case ProjectRole.viewer:
+      case ProjectUserRole.viewer:
         return 'Viewer';
     }
   }
@@ -25,8 +27,8 @@ class RoleDropdownPill extends StatelessWidget {
     required this.onChanged,
   });
 
-  final ProjectRole? value;
-  final ValueChanged<ProjectRole> onChanged;
+  final ProjectUserRole? value;
+  final ValueChanged<ProjectUserRole> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -44,15 +46,15 @@ class RoleDropdownPill extends StatelessWidget {
         ),
 
         child: DropdownButtonHideUnderline(
-          child: DropdownButton<ProjectRole>(
+          child: DropdownButton<ProjectUserRole>(
             value: value,
             isExpanded: true,
             icon: const Icon(Icons.arrow_drop_down),
             hint: Text('Role', style: AuthTextStyles.fieldHint),
             style: AuthTextStyles.fieldInput,
-            items: ProjectRole.values
+            items: ProjectUserRole.values
                 .map(
-                  (r) => DropdownMenuItem<ProjectRole>(
+                  (r) => DropdownMenuItem<ProjectUserRole>(
                 value: r,
                 child: Text(r.label),
               ),
@@ -68,7 +70,7 @@ class RoleDropdownPill extends StatelessWidget {
   }
 }
 
-class UsersPopup extends StatefulWidget {
+class UsersPopup extends ConsumerStatefulWidget {
   const UsersPopup({super.key});
 
   static Future<void> show(BuildContext context) {
@@ -80,12 +82,19 @@ class UsersPopup extends StatefulWidget {
   }
 
   @override
-  State<UsersPopup> createState() => _UsersPopupState();
+  ConsumerState<UsersPopup> createState() => _UsersPopupState();
 }
 
-class _UsersPopupState extends State<UsersPopup> {
+class _UsersPopupState extends ConsumerState<UsersPopup> {
   final _emailController = TextEditingController();
-  ProjectRole _role = ProjectRole.viewer;
+  ProjectUserRole _role = ProjectUserRole.viewer;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
@@ -93,8 +102,12 @@ class _UsersPopupState extends State<UsersPopup> {
     super.dispose();
   }
 
+  bool get _canAdd => _emailController.text.trim().isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
+    final controller = ref.read(homeControllerProvider.notifier);
+
     return Dialog(
       insetPadding: const EdgeInsets.all(18),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -111,11 +124,9 @@ class _UsersPopupState extends State<UsersPopup> {
             child: Column(
               children: [
                 const SizedBox(height: 6),
-                const Text(
-                  'Users',
-                  style: GlobalTextStyles.cardTitle,
-                ),
+                const Text('Users', style: GlobalTextStyles.cardTitle),
                 const SizedBox(height: 18),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -128,9 +139,7 @@ class _UsersPopupState extends State<UsersPopup> {
                         keyboardType: TextInputType.emailAddress,
                       ),
                     ),
-
                     const SizedBox(width: 12),
-
                     RoleDropdownPill(
                       value: _role,
                       onChanged: (v) => setState(() => _role = v),
@@ -143,27 +152,39 @@ class _UsersPopupState extends State<UsersPopup> {
                 SizedBox(
                   width: 490,
                   height: 55,
-                  child: AuthButton(
-                    text: 'Add',
-                    onTap: () {
-                      // TODO : Add user logic
-                    },
+                  child: Opacity(
+                    opacity: _canAdd ? 1.0 : 0.45,
+                    child: IgnorePointer(
+                      ignoring: !_canAdd,
+                      child: AuthButton(
+                        text: 'Add',
+                        onTap: () async {
+                          final session = ref.read(sessionProvider);
+                          final myUserId = session.user?.userId;
+                          if (myUserId == null) return;
+
+                          await controller.addUserToOpenProject(
+                            myUserId: myUserId,
+                            emailAddress: _emailController.text,
+                            role: _role == ProjectUserRole.editor ? 'EDITOR' : 'VIEWER',
+                          );
+
+                          _emailController.clear();
+                          setState(() => _role = ProjectUserRole.viewer);
+                        },
+                      ),
+                    ),
                   ),
                 ),
+
                 const SizedBox(height: 14),
 
                 Expanded(
                   child: Container(
                     decoration: const BoxDecoration(
                       border: Border(
-                        top: BorderSide(
-                          color: Colors.black12,
-                          width: 2,
-                        ),
-                        bottom: BorderSide(
-                          color: Colors.black12,
-                          width: 2,
-                        ),
+                        top: BorderSide(color: Colors.black12, width: 2),
+                        bottom: BorderSide(color: Colors.black12, width: 2),
                       ),
                     ),
                     child: const Padding(
@@ -198,6 +219,9 @@ class _UsersPopupState extends State<UsersPopup> {
   }
 }
 
+// Placeholder list and user card for demonstration purposes
+// This would be replaced with actual data in a real implementation
+// TODO: Implement actual user list fetching and display logic
 class _UsersPlaceholderList extends StatelessWidget {
   const _UsersPlaceholderList();
 

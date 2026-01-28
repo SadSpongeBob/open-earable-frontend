@@ -1,6 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/services/project/project_service.dart';
+import 'package:openearable/api/services/user/user_service.dart';
+import '../../../api/client_dio.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 import '../state/home_state.dart';
@@ -8,11 +11,13 @@ import '../state/home_state.dart';
 final homeControllerProvider =
 StateNotifierProvider<HomeController, HomeState>((ref) {
   final projectService = ref.read(projectServiceProvider);
+  final userService = ref.read(userServiceProvider);
 
   void toast(ToastEvent event) => emitToast(ref, event);
 
   return HomeController(
     projectService: projectService,
+    userService: userService,
     toast: toast,
   );
 });
@@ -22,6 +27,7 @@ typedef ToastSink = void Function(ToastEvent);
 class HomeController extends StateNotifier<HomeState> {
   HomeController({
     required ProjectService projectService,
+    required UserService userService,
     required ToastSink toast,
   })  : _projectService = projectService,
         _toast = toast,
@@ -89,6 +95,9 @@ class HomeController extends StateNotifier<HomeState> {
       videos: const [],
       clearSelectedVideoId: true,
       clearError: true,
+      clearOpenProject: true,
+      clearProjectUsers: true,
+      clearUsersError: true,
     );
   }
 
@@ -253,5 +262,121 @@ class HomeController extends StateNotifier<HomeState> {
     }
 
     await createProject(candidate);
+  }
+
+  Future<void> loadUsersForOpenProject({
+    required String myUserId,
+  }) async {
+    final projectId = state.openProjectId;
+    if (projectId == 'default') return;
+
+    state = state.copyWith(
+      isUsersLoading: true,
+      clearUsersError: true,
+    );
+
+    try {
+      final project = await _projectService.getProject(projectId);
+      final users = await _projectService.getProjectUsers(projectId); // returns List<ProjectUserDto>
+
+      state = state.copyWith(
+        isUsersLoading: false,
+        openProject: project,
+        projectUsers: users,
+      );
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final msg = code == 404 ? 'Project not found' : 'Failed to load project users';
+
+      state = state.copyWith(
+        isUsersLoading: false,
+        usersErrorMessage: msg,
+      );
+      _toast(ToastEvent.error(msg));
+    } catch (_) {
+      const msg = 'Failed to load project users';
+      state = state.copyWith(
+        isUsersLoading: false,
+        usersErrorMessage: msg,
+      );
+      _toast(const ToastEvent.error(msg));
+    }
+  }
+
+  void clearUsersPopupState() {
+    state = state.copyWith(
+      isUsersLoading: false,
+      clearUsersError: true,
+      clearProjectUsers: true,
+    );
+  }
+
+  bool canManageUsers({required String myUserId}) {
+    final p = state.openProject;
+    if (p == null) return false;
+    return p.isOwner(myUserId);
+  }
+
+  Future<void> addUserToOpenProject({
+    required String myUserId,
+    required String emailAddress,
+    required String role, // 'EDITOR' | 'VIEWER'
+  }) async {
+    final projectId = state.openProjectId;
+    if (projectId == 'default') {
+      _toast(const ToastEvent.error('Select a project first'));
+      return;
+    }
+
+    final email = emailAddress.trim();
+    if (email.isEmpty) return;
+
+    final roleApi = role.trim().toUpperCase() == 'EDITOR' ? 'EDITOR' : 'VIEWER';
+
+    try {
+      state = state.copyWith(isUsersLoading: true, clearUsersError: true);
+
+      final project = await _projectService.getProject(projectId);
+      if (!project.isOwner(myUserId)) {
+        state = state.copyWith(isUsersLoading: false);
+        _toast(const ToastEvent.error('Only the owner can add users'));
+        return;
+      }
+
+      final updatedUsers = await _projectService.addProjectUser(
+        projectId: projectId,
+        emailAddress: email,
+        role: roleApi,
+      );
+
+      state = state.copyWith(
+        isUsersLoading: false,
+        openProject: project,
+        projectUsers: updatedUsers,
+      );
+
+      _toast(const ToastEvent.success('User added'));
+    } on DioException catch (e) {
+      state = state.copyWith(isUsersLoading: false);
+
+      final code = e.response?.statusCode;
+      if (code == 409) {
+        _toast(const ToastEvent.error('User is already a member of this project'));
+        return;
+      }
+      if (code == 403) {
+        _toast(const ToastEvent.error('You do not have permission to add users'));
+        return;
+      }
+      if (code == 404) {
+        _toast(const ToastEvent.error('Project or user not found'));
+        return;
+      }
+
+      _toast(const ToastEvent.error('Failed to add user'));
+    } catch (_) {
+      state = state.copyWith(isUsersLoading: false);
+      _toast(const ToastEvent.error('Failed to add user'));
+    }
   }
 }
