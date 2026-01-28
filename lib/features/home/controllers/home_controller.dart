@@ -246,12 +246,11 @@ class HomeController {
 
     _state.setLoading(true);
     try {
-      if (project.projectSource == ProjectSource.local) {
-        final updatedProject = project.copyWith(name: trimmed);
-        _projectService.updateLocalProject(project: updatedProject);
-      } else {
+      final updatedProject = project.copyWith(name: trimmed);
+      if (project.projectSource == ProjectSource.cloud) {
         await _projectService.renameProject(projectId, trimmed);
       }
+      await _projectService.updateLocalProject(project: updatedProject);
       _state.renameProjectInList(projectId, trimmed);
 
       _state.clearError();

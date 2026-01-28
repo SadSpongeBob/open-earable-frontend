@@ -123,35 +123,40 @@ class ProjectService {
   /// Otherwise, the existing metadata is overwritten in place.
   Future<void> updateLocalProject({
     required ProjectMetadata project,
-    String? projectId,
+    String? oldProjectId,
   }) async {
-    final oldId = projectId;
     final newId = project.id;
 
-    if (oldId != null && oldId != newId) {
-      final oldDir = _localMedia.projectDir(oldId);
-      final newDir = _localMedia.projectDir(newId);
-
-      if (await oldDir.exists()) {
-        await newDir.parent.create(recursive: true);
-
-        if (await newDir.exists()) {
-          // Invariant violation
-          throw StateError(
-            'Target project directory already exists: ${newDir.path}',
-          );
-        }
-
-        await oldDir.rename(newDir.path);
-      }
+    if (oldProjectId != null && oldProjectId != newId) {
+      await _migrateProjectDirIfExists(oldProjectId, newId);
     }
 
-    await overwriteMeta(newId, project);
+    await overwriteMetaIfProjectDirExists(newId, project);
   }
 
-  Future<void> overwriteMeta(String projectId, ProjectMetadata project) async {
+  Future<void> _migrateProjectDirIfExists(String oldId, String newId) async {
+    final oldDir = _localMedia.projectDir(oldId);
+    if (!await oldDir.exists()) return;
+
+    final newDir = _localMedia.projectDir(newId);
+    if (await newDir.exists()) {
+      throw StateError(
+        'Target project directory already exists: ${newDir.path}',
+      );
+    }
+
+    await newDir.parent.create(recursive: true);
+    await oldDir.rename(newDir.path);
+  }
+
+  Future<void> overwriteMetaIfProjectDirExists(
+    String projectId,
+    ProjectMetadata project,
+  ) async {
+    final dir = _localMedia.projectDir(projectId);
+    if (!await dir.exists()) return;
+
     final metaFile = _localMedia.projectMetaFile(projectId);
-    await metaFile.parent.create(recursive: true);
 
     final jsonString = const JsonEncoder.withIndent(
       '  ',
