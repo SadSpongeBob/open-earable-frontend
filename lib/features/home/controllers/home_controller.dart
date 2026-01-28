@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/local_media.dart';
+import 'package:openearable/api/models/auth/auth_state.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/services/project/project_service.dart';
 import 'package:openearable/api/services/recording//recording_service.dart';
+import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
@@ -13,6 +16,7 @@ final homeControllerProvider = Provider<HomeController>((ref) {
   final projectService = ref.read(projectServiceProvider);
   final recordingService = ref.read(recordingServiceProvider);
   final homeState = ref.read(homeStateProvider.notifier);
+  final authState = ref.read(sessionProvider);
 
   void toast(ToastEvent event) => emitToast(ref, event);
 
@@ -20,6 +24,7 @@ final homeControllerProvider = Provider<HomeController>((ref) {
     projectService: projectService,
     recordingService: recordingService,
     homeState: homeState,
+    authState: authState,
     toast: toast,
   );
 });
@@ -31,15 +36,18 @@ class HomeController {
     required ProjectService projectService,
     required RecordingService recordingService,
     required HomeStateNotifier homeState,
+    required AuthState authState,
     required ToastSink toast,
   }) : _projectService = projectService,
        _recordingService = recordingService,
        _state = homeState,
+       _authState = authState,
        _toast = toast;
 
   final ProjectService _projectService;
   final RecordingService _recordingService;
   final HomeStateNotifier _state;
+  final AuthState _authState;
   final ToastSink _toast;
 
   HomeState get state => _state.current;
@@ -71,21 +79,58 @@ class HomeController {
     return null;
   }
 
+  List<ProjectMetadata> _withDefault(List<ProjectMetadata> remoteProjects) {
+    const defaultItem = ProjectMetadata(
+      id: LocalMedia.defaultProjectId,
+      name: 'Default',
+      recordingAmount: 0,
+      userAmount: 0,
+    );
+
+    return [
+      defaultItem,
+      ...remoteProjects.where((p) => p.id != LocalMedia.defaultProjectId),
+    ];
+  }
+
+  List<Recording> _mergeRecordings(
+    List<Recording> local,
+    List<Recording> cloud,
+  ) {
+    return [...local, ...cloud];
+  }
+
   // ----------------
   // Load/Open
   // ----------------
 
   Future<void> loadProjects() async {
+    if (state.areProjectsLoaded) return;
     _state.setLoading(true);
+
     try {
-      final projects = await _projectService.getProjects();
+      final localProjects = await _projectService.getLocalProjects();
+
+      final List<ProjectMetadata> merged;
+      if (!_authState.isGuest) {
+        final remoteProjects = await _projectService.getProjects();
+        merged = [...localProjects, ...remoteProjects];
+      } else {
+        merged = localProjects;
+      }
+
+      final projects = _withDefault(merged);
       _state.setProjects(projects);
 
       final currentOpenId = state.openProjectId;
       final openStillValid =
-          currentOpenId == 'default' || _projectExists(currentOpenId, projects);
+          currentOpenId == LocalMedia.defaultProjectId ||
+          _projectExists(currentOpenId, projects);
 
-      await openProject(openStillValid ? currentOpenId : 'default');
+      await openProject(
+        openStillValid ? currentOpenId : LocalMedia.defaultProjectId,
+      );
+      _state.setProjectsLoaded(true);
     } on DioException catch (e) {
       _error(e, userMessage: 'Failed to load projects');
     } finally {
@@ -94,7 +139,7 @@ class HomeController {
   }
 
   Future<void> openProject(String projectId) async {
-    final isDefault = projectId == 'default';
+    final isDefault = projectId == LocalMedia.defaultProjectId;
     final isValid = isDefault || _projectExists(projectId, state.projects);
 
     if (!isValid) {
@@ -106,12 +151,21 @@ class HomeController {
     }
 
     try {
+      final localRecordings = await _recordingService.getLocalProjectRecordings(
+        projectId,
+      );
       final List<Recording> recordings;
-      if (isDefault) {
-        recordings = await _recordingService.getRecordings();
+      if (_authState.isGuest) {
+        recordings = localRecordings;
       } else {
-        final project = await _projectService.getProject(projectId);
-        recordings = project.recordings;
+        final List<Recording> cloud;
+        if (isDefault) {
+          cloud = await _recordingService.getRecordings();
+        } else {
+          cloud = (await _projectService.getProject(projectId)).recordings;
+        }
+
+        recordings = _mergeRecordings(localRecordings, cloud);
       }
 
       _state.setOpenProject(projectId: projectId, videos: recordings);
