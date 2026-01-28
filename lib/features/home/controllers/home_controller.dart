@@ -277,7 +277,7 @@ class HomeController extends StateNotifier<HomeState> {
 
     try {
       final project = await _projectService.getProject(projectId);
-      final users = await _projectService.getProjectUsers(projectId); // returns List<ProjectUserDto>
+      final users = await _projectService.getProjectUsers(projectId);
 
       state = state.copyWith(
         isUsersLoading: false,
@@ -320,7 +320,7 @@ class HomeController extends StateNotifier<HomeState> {
   Future<void> addUserToOpenProject({
     required String myUserId,
     required String emailAddress,
-    required String role, // 'EDITOR' | 'VIEWER'
+    required String role,
   }) async {
     final projectId = state.openProjectId;
     if (projectId == 'default') {

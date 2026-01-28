@@ -124,7 +124,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
       insetPadding: const EdgeInsets.all(18),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: SizedBox(
-        width: 600,
+        width: 550,
         height: 700,
         child: Container(
           decoration: BoxDecoration(
@@ -309,7 +309,9 @@ class _UserCard extends StatelessWidget {
             ),
             IconButton(
               icon: const Icon(Icons.close),
-              onPressed: null,
+              onPressed: () {
+                //TODO: Implement remove user
+              }
             ),
           ],
         ),

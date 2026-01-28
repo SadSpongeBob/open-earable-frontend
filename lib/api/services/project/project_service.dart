@@ -74,7 +74,7 @@ class ProjectService {
   Future<List<ProjectUserDto>> addProjectUser({
     required String projectId,
     required String emailAddress,
-    required String role, // 'VIEWER' | 'EDITOR'
+    required String role,
   }) async {
     final res = await dioClient.post<dynamic>(
       ProjectEndpoints.projectUsers(projectId),

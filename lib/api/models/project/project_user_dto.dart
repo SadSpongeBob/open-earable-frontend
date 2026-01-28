@@ -2,7 +2,7 @@ class ProjectUserDto {
   final String userId;
   final String name;
   final String emailAddress;
-  final String role; // 'VIEWER' | 'EDITOR' | 'OWNER'
+  final String role;
   final String? pictureUrl;
 
   const ProjectUserDto({
