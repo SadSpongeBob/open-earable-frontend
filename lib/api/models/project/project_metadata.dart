@@ -51,7 +51,7 @@ class ProjectMetadata {
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
-    'projectSource': projectSource,
+    'projectSource': projectSource.json,
   };
 }
 
