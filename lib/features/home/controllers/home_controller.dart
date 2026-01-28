@@ -93,6 +93,15 @@ class HomeController {
     ];
   }
 
+  List<ProjectMetadata> _mergeProjects(
+    List<ProjectMetadata> local,
+    List<ProjectMetadata> cloud,
+  ) {
+    final cloudIds = cloud.map((c) => c.id).toSet();
+
+    return [...local.where((l) => !cloudIds.contains(l.id)), ...cloud];
+  }
+
   List<Recording> _mergeRecordings(
     List<Recording> local,
     List<Recording> cloud,
@@ -114,7 +123,7 @@ class HomeController {
       final List<ProjectMetadata> merged;
       if (!_authState.isGuest) {
         final remoteProjects = await _projectService.getProjects();
-        merged = [...localProjects, ...remoteProjects];
+        merged = _mergeProjects(localProjects, remoteProjects);
       } else {
         merged = localProjects;
       }
