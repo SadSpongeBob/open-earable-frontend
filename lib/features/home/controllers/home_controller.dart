@@ -389,7 +389,8 @@ class HomeController {
 
   void enterSelectionMode({String? initialProjectId}) {
     final ids = <String>{};
-    if (initialProjectId != null && initialProjectId != 'default') {
+    if (initialProjectId != null &&
+        initialProjectId != LocalMedia.defaultProjectId) {
       ids.add(initialProjectId);
     }
 
@@ -401,7 +402,7 @@ class HomeController {
   }
 
   void toggleProjectSelection(String projectId) {
-    if (projectId == 'default') return;
+    if (projectId == LocalMedia.defaultProjectId) return;
     final next = Set<String>.from(state.selectedProjectIds);
     if (next.contains(projectId)) {
       next.remove(projectId);
@@ -413,7 +414,7 @@ class HomeController {
   }
 
   void handleProjectLongPress(String projectId) {
-    if (projectId == 'default') return;
+    if (projectId == LocalMedia.defaultProjectId) return;
     if (!state.isSelectionMode) {
       _state.setSelection({projectId});
     }
