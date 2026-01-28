@@ -22,7 +22,7 @@ class ProjectService {
       _localMedia = localMedia;
 
   Future<List<ProjectMetadata>> getProjects() async {
-    final res = await _dioClient.get<dynamic>(ProjectEndpoints.baseUrl);
+    final res = await _dioClient.get(ProjectEndpoints.baseUrl);
     final data = res.asList();
 
     return data
@@ -70,16 +70,14 @@ class ProjectService {
   }
 
   Future<Project> getProject(String projectId) async {
-    final res = await _dioClient.get<dynamic>(
-      ProjectEndpoints.project(projectId),
-    );
+    final res = await _dioClient.get(ProjectEndpoints.project(projectId));
     final data = res.asMap();
 
     return Project.fromJson(data);
   }
 
   Future<Project> createProject(String name) async {
-    final res = await _dioClient.post<dynamic>(
+    final res = await _dioClient.post(
       ProjectEndpoints.baseUrl,
       data: {'name': name},
     );
@@ -109,7 +107,7 @@ class ProjectService {
   }
 
   Future<void> renameProject(String projectId, String name) async {
-    await _dioClient.put<dynamic>(
+    await _dioClient.put(
       ProjectEndpoints.project(projectId),
       data: {'name': name},
     );
@@ -166,7 +164,7 @@ class ProjectService {
   }
 
   Future<void> deleteProject(String projectId) async {
-    await _dioClient.delete<dynamic>(ProjectEndpoints.deleteProject(projectId));
+    await _dioClient.delete(ProjectEndpoints.deleteProject(projectId));
   }
 
   Future<void> deleteLocalProject(String projectId) async {
