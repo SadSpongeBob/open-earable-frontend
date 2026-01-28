@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:openearable/api/local_media.dart';
 import 'package:path/path.dart' as p;
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,13 +11,11 @@ import 'package:openearable/api/services/recording//recording_endpoints.dart';
 
 class RecordingService {
   final Dio _dio;
-  final Directory _baseDir;
-  static const unassignedProjectId = 'default';
+  final LocalMedia _localMedia;
 
-  RecordingService({required Dio dio, Directory? baseDir})
+  RecordingService({required Dio dio, required LocalMedia localMedia})
     : _dio = dio,
-      _baseDir =
-          baseDir ?? Directory('/storage/emulated/0/Pictures/OpenEarable');
+      _localMedia = localMedia;
 
   Future<List<Recording>> getRecordings() async {
     final res = await _dio.get(RecordingEndpoints.baseUrl);
@@ -26,7 +25,7 @@ class RecordingService {
   }
 
   Future<List<Recording>> getLocalProjectRecordings(String projectId) async {
-    final projectDir = Directory(p.join(_baseDir.path, projectId));
+    final projectDir = _localMedia.projectDir(projectId);
 
     if (!await projectDir.exists()) return [];
 
@@ -38,15 +37,16 @@ class RecordingService {
     for (final recDir in recordingDirs) {
       final recordingId = p.basename(recDir.path);
 
-      final videoFile = File(p.join(recDir.path, 'video.mp4'));
-      if (!videoFile.existsSync()) continue;
+      final videoFile = _localMedia.videoFile(projectId, recordingId);
+      if (!await videoFile.exists()) continue;
 
-      final metaFile = File(p.join(recDir.path, 'meta.json'));
-      if (!metaFile.existsSync()) continue;
+      final metaFile = _localMedia.recordingMetaFile(projectId, recordingId);
+      if (!await metaFile.exists()) continue;
 
       Map<String, dynamic> meta;
       try {
-        meta = jsonDecode(await metaFile.readAsString()) as Map<String, dynamic>;
+        meta =
+            jsonDecode(await metaFile.readAsString()) as Map<String, dynamic>;
       } catch (_) {
         // corrupted metadata -> skip recording
         continue;
@@ -59,7 +59,7 @@ class RecordingService {
           ? DateTime.parse(timestampRaw).toUtc()
           : (await videoFile.lastModified()).toUtc();
 
-      final thumbFile = File(p.join(recDir.path, 'thumbnail.png'));
+      final thumbFile = _localMedia.thumbnailFile(projectId, recordingId);
 
       recordings.add(
         Recording.local(
@@ -68,7 +68,9 @@ class RecordingService {
           localVideoPath: videoFile.path,
           localThumbnailPath: thumbFile.existsSync() ? thumbFile.path : null,
           videoTimestamp: timestamp,
-          projectId: projectId == unassignedProjectId ? null : projectId,
+          projectId: projectId == LocalMedia.defaultProjectId
+              ? null
+              : projectId,
           userId: userId,
         ),
       );
@@ -78,11 +80,12 @@ class RecordingService {
   }
 
   Future<List<Recording>> getLocalRecordings() async {
-    return getLocalProjectRecordings(unassignedProjectId);
+    return getLocalProjectRecordings(LocalMedia.defaultProjectId);
   }
 }
 
 final recordingServiceProvider = Provider<RecordingService>((ref) {
   final dio = ref.read(apiDioProvider);
-  return RecordingService(dio: dio);
+  final localMedia = ref.read(localMediaProvider);
+  return RecordingService(dio: dio, localMedia: localMedia);
 });
