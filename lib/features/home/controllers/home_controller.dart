@@ -183,6 +183,7 @@ class HomeController {
       toggleProjectSelection(projectId);
       return;
     }
+    if (state.openProjectId == projectId) return;
 
     _state.setLoading(true);
     try {
