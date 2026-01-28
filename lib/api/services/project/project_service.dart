@@ -7,6 +7,7 @@ import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
+import 'package:uuid/uuid.dart';
 import '../../models/auth/user.dart';
 import '../../models/project/project.dart';
 import 'project_endpoints.dart';
@@ -14,6 +15,7 @@ import 'project_endpoints.dart';
 class ProjectService {
   final Dio _dioClient;
   final LocalMedia _localMedia;
+  final _uuid = Uuid();
 
   ProjectService({required Dio dioClient, required LocalMedia localMedia})
     : _dioClient = dioClient,
@@ -85,6 +87,25 @@ class ProjectService {
     final data = res.asMap();
 
     return Project.fromJson(data);
+  }
+
+  Future<ProjectMetadata> createLocalProject({
+    required String name,
+    String? id,
+  }) async {
+    final projectId = id ?? _uuid.v6();
+    final project = ProjectMetadata.local(projectId, name);
+
+    final metaFile = _localMedia.projectMetaFile(projectId);
+    await metaFile.parent.create(recursive: true);
+
+    final jsonString = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(project.toJson());
+
+    await metaFile.writeAsString(jsonString, flush: true);
+
+    return project;
   }
 
   Future<void> renameProject(String projectId, String name) async {

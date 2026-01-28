@@ -47,6 +47,20 @@ class ProjectMetadata {
       projectSource: projectSource,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'projectSource': projectSource,
+  };
 }
 
-enum ProjectSource { local, cloud }
+enum ProjectSource {
+  local,
+  cloud;
+
+  String get json => name.toUpperCase();
+
+  static ProjectSource fromJson(String value) =>
+      ProjectSource.values.byName(value.toUpperCase());
+}

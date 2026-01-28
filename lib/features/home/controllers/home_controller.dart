@@ -8,7 +8,6 @@ import 'package:openearable/api/services/project/project_service.dart';
 import 'package:openearable/api/services/recording//recording_service.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
-import 'package:uuid/uuid.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 import '../state/home_state.dart';
@@ -50,7 +49,6 @@ class HomeController {
   final HomeStateNotifier _state;
   final AuthState _authState;
   final ToastSink _toast;
-  final _uuid = Uuid();
 
   HomeState get state => _state.current;
 
@@ -213,7 +211,7 @@ class HomeController {
     try {
       final ProjectMetadata created;
       if (_authState.isGuest) {
-        created = ProjectMetadata.local(_uuid.v6(), trimmed);
+        created = await _projectService.createLocalProject(name: trimmed);
       } else {
         created = (await _projectService.createProject(trimmed)).toMetadata();
       }
