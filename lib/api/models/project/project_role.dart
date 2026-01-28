@@ -3,32 +3,27 @@ abstract class ProjectRole {
 
   const ProjectRole({required this.userId});
 
-  bool canViewVideos() {
-    return true;
-  }
+  bool canViewVideos() => true;
+  bool canEditVideos() => false;
+  bool canRecord() => false;
+  bool canManageUsers() => false;
 
-  bool canEditVideos() {
-    return false;
-  }
-
-  bool canRecord() {
-    return false;
-  }
-
-  bool canManageUsers() {
-    return false;
+  factory ProjectRole.fromApi({
+    required String userId,
+    required String role,
+  }) {
+    return switch (role.toUpperCase()) {
+      'OWNER' => Owner(userId: userId),
+      'EDITOR' => Editor(userId: userId),
+      'VIEWER' => Viewer(userId: userId),
+      _ => Viewer(userId: userId),
+    };
   }
 
   factory ProjectRole.fromJson(Map<String, dynamic> json) {
     final userId = json['userId'] as String;
     final role = json['role'] as String;
-
-    return switch (role) {
-      'OWNER' => Owner(userId: userId),
-      'EDITOR' => Editor(userId: userId),
-      'VIEWER' => Viewer(userId: userId),
-      _ => throw ArgumentError.value(role, 'role', 'Invalid ProjectRole'),
-    };
+    return ProjectRole.fromApi(userId: userId, role: role);
   }
 }
 

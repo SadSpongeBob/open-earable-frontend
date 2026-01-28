@@ -16,11 +16,21 @@ class ProjectUser {
   });
 
   factory ProjectUser.fromJson(Map<String, dynamic> json) {
+    final userId = json['userId'] as String;
+
+    final roleRaw = json['role'];
+    final roleString = roleRaw is String
+        ? roleRaw
+        : (roleRaw is Map<String, dynamic> ? (roleRaw['role'] as String?) : null);
+
     return ProjectUser(
-      userId: json['userId'] as String,
+      userId: userId,
       name: json['name'] as String,
       emailAddress: json['emailAddress'] as String,
-      role: ProjectRole.fromJson(json),
+      role: ProjectRole.fromApi(
+        userId: userId,
+        role: roleString ?? 'VIEWER',
+      ),
       pictureUrl: json['pictureUrl'] as String?,
     );
   }
