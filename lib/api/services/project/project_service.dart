@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:openearable/app/utils/helpers.dart';
 import 'package:path/path.dart' as p;
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +8,6 @@ import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
-import 'package:uuid/uuid.dart';
 import '../../models/auth/user.dart';
 import '../../models/project/project.dart';
 import 'project_endpoints.dart';
@@ -15,7 +15,6 @@ import 'project_endpoints.dart';
 class ProjectService {
   final Dio _dioClient;
   final LocalMedia _localMedia;
-  final _uuid = Uuid();
 
   ProjectService({required Dio dioClient, required LocalMedia localMedia})
     : _dioClient = dioClient,
@@ -91,7 +90,7 @@ class ProjectService {
     required String name,
     String? id,
   }) async {
-    final projectId = id ?? _uuid.v6();
+    final projectId = id ?? Helpers.getProjectId();
     final project = ProjectMetadata.local(projectId, name);
 
     final metaFile = _localMedia.projectMetaFile(projectId);
