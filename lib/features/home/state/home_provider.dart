@@ -63,7 +63,8 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
   // ----------------
 
   void addProject(ProjectMetadata project) {
-    state = state.copyWith(projects: [...state.projects, project]);
+    state = state.copyWith(
+        projects: [...state.projects, project], clearError: true);
   }
 
   void renameProjectInList(String projectId, String newName) {

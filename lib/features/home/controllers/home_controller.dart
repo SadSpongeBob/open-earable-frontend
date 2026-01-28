@@ -99,7 +99,7 @@ class HomeController {
 
     if (!isValid) {
       _error(
-        projectId,
+        Exception('Invalid project id: $projectId'),
         userMessage: 'Failed to load project with id $projectId',
       );
       return;
@@ -157,6 +157,7 @@ class HomeController {
       // Open the new project and reset videos/selected video.
       _state.setOpenProject(projectId: created.id, videos: const []);
 
+      _state.clearError();
       _success('Project "$trimmed" created');
     } catch (e) {
       _error(e, userMessage: 'Failed to create project');
@@ -180,6 +181,7 @@ class HomeController {
     try {
       await _projectService.renameProject(projectId, trimmed);
       _state.renameProjectInList(projectId, trimmed);
+
       _state.clearError();
       _success('Rename Successful');
     } catch (e) {
@@ -202,6 +204,7 @@ class HomeController {
         await openProject('default');
       }
 
+      _state.clearError();
       _success('Project Deleted');
     } on DioException catch (e) {
       _error(e, userMessage: 'Failed to delete project');
