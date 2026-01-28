@@ -31,24 +31,18 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-
     // Toast event listener
     // TODO: Move to a higher level widget if needed globally
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
 
-      PopupToast.show(
-        context,
-        message: next.message,
-      );
+      PopupToast.show(context, message: next.message);
 
       ref.read(toastProvider.notifier).state = null;
     });
 
-
     final state = ref.watch(homeStateProvider);
     final controller = ref.read(homeControllerProvider);
-
     final selectedCount = state.selectedProjectIds.length;
 
     return Scaffold(
@@ -115,13 +109,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                         onRename: () {
                           if (selectedCount != 1) return;
                           final projectId = state.selectedProjectIds.first;
-                          final project = state.projects.firstWhere((p) => p.id == projectId);
+                          final project = state.projects.firstWhere(
+                            (p) => p.id == projectId,
+                          );
 
                           showDialog<String>(
                             context: context,
-                            builder: (_) => RenameProjectDialog(
-                              initialName: project.name,
-                            ),
+                            builder: (_) =>
+                                RenameProjectDialog(initialName: project.name),
                           ).then((newName) {
                             if (newName != null && newName.isNotEmpty) {
                               controller.renameProject(projectId, newName);
