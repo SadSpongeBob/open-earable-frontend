@@ -169,6 +169,13 @@ class ProjectService {
     await _dioClient.delete<dynamic>(ProjectEndpoints.deleteProject(projectId));
   }
 
+  Future<void> deleteLocalProject(String projectId) async {
+    final dir = _localMedia.projectDir(projectId);
+    if (!await dir.exists()) return;
+
+    await dir.delete(recursive: true);
+  }
+
   Future<List<User>> getProjectUsers(String projectId) async {
     final res = await _dioClient.get<dynamic>(
       ProjectEndpoints.projectUsers(projectId),

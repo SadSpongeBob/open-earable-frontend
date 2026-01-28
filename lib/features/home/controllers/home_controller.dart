@@ -263,16 +263,25 @@ class HomeController {
   }
 
   Future<void> deleteProject(String projectId) async {
+    final project = _findById(projectId);
+    if (project == null) {
+      _toast(ToastEvent.error('Invalid project id: $projectId'));
+      return;
+    }
+
     _state.setLoading(true);
     try {
-      await _projectService.deleteProject(projectId);
+      if (project.projectSource == ProjectSource.cloud) {
+        await _projectService.deleteProject(projectId);
+      }
+      await _projectService.deleteLocalProject(projectId);
 
       final wasOpen = state.openProjectId == projectId;
 
       _state.removeProject(projectId);
 
       if (wasOpen) {
-        await openProject('default');
+        await openProject(LocalMedia.defaultProjectId);
       }
 
       _state.clearError();
