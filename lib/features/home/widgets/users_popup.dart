@@ -2,23 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/auth/widgets/auth_button.dart';
 import 'package:openearable/features/home/widgets/home_text_field.dart';
+import '../../../api/models/project/project_role.dart';
 import '../../../api/models/project/project_user.dart';
 import '../../../app/constants/colors.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../auth/state/session_provider.dart';
 import '../controllers/home_controller.dart';
 
-enum ProjectUserRole { editor, viewer }
+enum RoleChoice { viewer, editor }
 
-extension ProjectRoleLabel on ProjectUserRole {
-  String get label {
-    switch (this) {
-      case ProjectUserRole.editor:
-        return 'Editor';
-      case ProjectUserRole.viewer:
-        return 'Viewer';
-    }
-  }
+extension _RoleChoiceX on RoleChoice {
+  String get label => this == RoleChoice.editor ? 'Editor' : 'Viewer';
+
+  ProjectRole toProjectRole() =>
+      this == RoleChoice.editor ? Editor(userId: '') : Viewer(userId: '');
 }
 
 class RoleDropdownPill extends StatelessWidget {
@@ -28,8 +25,8 @@ class RoleDropdownPill extends StatelessWidget {
     required this.onChanged,
   });
 
-  final ProjectUserRole? value;
-  final ValueChanged<ProjectUserRole> onChanged;
+  final RoleChoice value;
+  final ValueChanged<RoleChoice> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -40,22 +37,17 @@ class RoleDropdownPill extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(36),
-          border: Border.all(
-            width: 3,
-            color: AppColors.fieldBorder,
-          ),
+          border: Border.all(width: 3, color: AppColors.fieldBorder),
         ),
-
         child: DropdownButtonHideUnderline(
-          child: DropdownButton<ProjectUserRole>(
+          child: DropdownButton<RoleChoice>(
             value: value,
             isExpanded: true,
             icon: const Icon(Icons.arrow_drop_down),
-            hint: Text('Role', style: AuthTextStyles.fieldHint),
             style: AuthTextStyles.fieldInput,
-            items: ProjectUserRole.values
+            items: RoleChoice.values
                 .map(
-                  (r) => DropdownMenuItem<ProjectUserRole>(
+                  (r) => DropdownMenuItem<RoleChoice>(
                 value: r,
                 child: Text(r.label),
               ),
@@ -88,8 +80,8 @@ class UsersPopup extends ConsumerStatefulWidget {
 
 class _UsersPopupState extends ConsumerState<UsersPopup> {
   final _emailController = TextEditingController();
-  ProjectUserRole _role = ProjectUserRole.viewer;
 
+  RoleChoice _role = RoleChoice.viewer;
 
   @override
   void initState() {
@@ -113,12 +105,15 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
     super.dispose();
   }
 
-  bool get _canAdd => _emailController.text.trim().isNotEmpty;
+  bool _canAdd(bool isUsersLoading) =>
+      _emailController.text.trim().isNotEmpty && !isUsersLoading;
 
   @override
   Widget build(BuildContext context) {
     final controller = ref.read(homeControllerProvider.notifier);
     final state = ref.watch(homeControllerProvider);
+
+    final canAdd = _canAdd(state.isUsersLoading);
 
     return Dialog(
       insetPadding: const EdgeInsets.all(18),
@@ -138,7 +133,6 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                 const SizedBox(height: 6),
                 const Text('Users', style: GlobalTextStyles.cardTitle),
                 const SizedBox(height: 18),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -158,16 +152,14 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 14),
-
                 SizedBox(
                   width: 490,
                   height: 55,
                   child: Opacity(
-                    opacity: _canAdd ? 1.0 : 0.45,
+                    opacity: canAdd ? 1.0 : 0.45,
                     child: IgnorePointer(
-                      ignoring: !_canAdd,
+                      ignoring: !canAdd,
                       child: AuthButton(
                         text: 'Add',
                         onTap: () async {
@@ -178,19 +170,17 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                           await controller.addUserToOpenProject(
                             myUserId: myUserId,
                             emailAddress: _emailController.text,
-                            role: _role == ProjectUserRole.editor ? 'EDITOR' : 'VIEWER',
+                            role: _role.toProjectRole(),
                           );
 
                           _emailController.clear();
-                          setState(() => _role = ProjectUserRole.viewer);
+                          setState(() => _role = RoleChoice.viewer);
                         },
                       ),
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 14),
-
                 Expanded(
                   child: Container(
                     decoration: const BoxDecoration(
@@ -205,12 +195,9 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                           ? const Center(child: CircularProgressIndicator())
                           : _UsersList(users: state.projectUsers),
                     ),
-
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
@@ -279,8 +266,9 @@ class _UserCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 26,
-              backgroundImage:
-              user.pictureUrl == null ? null : NetworkImage(user.pictureUrl!),
+              backgroundImage: user.pictureUrl == null
+                  ? null
+                  : NetworkImage(user.pictureUrl!),
               child: user.pictureUrl == null
                   ? const Icon(Icons.person, size: 28)
                   : null,
@@ -310,8 +298,8 @@ class _UserCard extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
-                //TODO: Implement remove user
-              }
+                // TODO: Implement remove user later
+              },
             ),
           ],
         ),
@@ -319,15 +307,9 @@ class _UserCard extends StatelessWidget {
     );
   }
 
-  String _roleLabel(String role) {
-    switch (role.toUpperCase()) {
-      case 'OWNER':
-        return 'Owner';
-      case 'EDITOR':
-        return 'Editor';
-      case 'VIEWER':
-      default:
-        return 'Viewer';
-    }
+  String _roleLabel(ProjectRole role) {
+    if (role is Owner) return 'Owner';
+    if (role is Editor) return 'Editor';
+    return 'Viewer';
   }
 }

@@ -68,3 +68,17 @@ class Owner extends ProjectRole {
     return true;
   }
 }
+
+extension ProjectRoleApi on ProjectRole {
+  String toApi() {
+    if (this is Owner) return 'OWNER';
+    if (this is Editor) return 'EDITOR';
+    return 'VIEWER';
+  }
+
+  String get label {
+    if (this is Owner) return 'Owner';
+    if (this is Editor) return 'Editor';
+    return 'Viewer';
+  }
+}

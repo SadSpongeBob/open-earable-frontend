@@ -4,6 +4,7 @@ import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/services/project/project_service.dart';
 import 'package:openearable/api/services/user/user_service.dart';
 import '../../../api/client_dio.dart';
+import '../../../api/models/project/project_role.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 import '../state/home_state.dart';
@@ -320,7 +321,7 @@ class HomeController extends StateNotifier<HomeState> {
   Future<void> addUserToOpenProject({
     required String myUserId,
     required String emailAddress,
-    required String role,
+    required ProjectRole role,
   }) async {
     final projectId = state.openProjectId;
     if (projectId == 'default') {
@@ -330,8 +331,6 @@ class HomeController extends StateNotifier<HomeState> {
 
     final email = emailAddress.trim();
     if (email.isEmpty) return;
-
-    final roleApi = role.trim().toUpperCase() == 'EDITOR' ? 'EDITOR' : 'VIEWER';
 
     try {
       state = state.copyWith(isUsersLoading: true, clearUsersError: true);
@@ -346,32 +345,22 @@ class HomeController extends StateNotifier<HomeState> {
       final updatedUsers = await _projectService.addProjectUser(
         projectId: projectId,
         emailAddress: email,
-        role: roleApi,
+        role: role,
       );
 
       state = state.copyWith(
         isUsersLoading: false,
-        openProject: project,
         projectUsers: updatedUsers,
       );
 
       _toast(const ToastEvent.success('User added'));
     } on DioException catch (e) {
       state = state.copyWith(isUsersLoading: false);
-
       final code = e.response?.statusCode;
-      if (code == 409) {
-        _toast(const ToastEvent.error('User is already a member of this project'));
-        return;
-      }
-      if (code == 403) {
-        _toast(const ToastEvent.error('You do not have permission to add users'));
-        return;
-      }
-      if (code == 404) {
-        _toast(const ToastEvent.error('Project or user not found'));
-        return;
-      }
+
+      if (code == 409) return _toast(const ToastEvent.error('User already in project'));
+      if (code == 403) return _toast(const ToastEvent.error('No permission'));
+      if (code == 404) return _toast(const ToastEvent.error('Project or user not found'));
 
       _toast(const ToastEvent.error('Failed to add user'));
     } catch (_) {

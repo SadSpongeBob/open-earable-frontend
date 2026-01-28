@@ -1,8 +1,10 @@
+import 'package:openearable/api/models/project/project_role.dart';
+
 class ProjectUser {
   final String userId;
   final String name;
   final String emailAddress;
-  final String role;
+  final ProjectRole role;
   final String? pictureUrl;
 
   const ProjectUser({
@@ -18,8 +20,9 @@ class ProjectUser {
       userId: json['userId'] as String,
       name: json['name'] as String,
       emailAddress: json['emailAddress'] as String,
-      role: json['role'] as String,
+      role: ProjectRole.fromJson(json),
       pictureUrl: json['pictureUrl'] as String?,
     );
   }
 }
+

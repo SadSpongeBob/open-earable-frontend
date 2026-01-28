@@ -4,6 +4,7 @@ import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import '../../models/project/project.dart';
+import '../../models/project/project_role.dart';
 import '../../models/project/project_user.dart';
 import 'project_endpoints.dart';
 
@@ -74,27 +75,24 @@ class ProjectService {
   Future<List<ProjectUser>> addProjectUser({
     required String projectId,
     required String emailAddress,
-    required String role,
+    required ProjectRole role,
   }) async {
     final res = await dioClient.post<dynamic>(
       ProjectEndpoints.projectUsers(projectId),
       data: {
         'emailAddress': emailAddress.trim(),
-        'role': role.trim().toUpperCase(),
+        'role': role.toApi(),
       },
     );
 
-    final map = res.asMap();
-    final data = map['data'];
+    final map = res.data as Map<String, dynamic>;
+    final list = map['data'] as List;
 
-    if (data is! List) {
-      throw StateError('Expected {data: List} from POST ${ProjectEndpoints.projectUsers(projectId)}');
-    }
-
-    return data
+    return list
         .map((e) => ProjectUser.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
 
 
   Future<void> removeUserFromProject({
