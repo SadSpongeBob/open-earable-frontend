@@ -23,6 +23,16 @@ class ProjectMetadata {
     );
   }
 
+  factory ProjectMetadata.cloud(String id, String name) {
+    return ProjectMetadata(
+      id: id,
+      name: name,
+      recordingAmount: 0,
+      userAmount: 0,
+      projectSource: ProjectSource.cloud,
+    );
+  }
+
   factory ProjectMetadata.fromJson(Map<String, dynamic> json) {
     final id = json['projectId'] as String;
     final name = json['name'] as String;
