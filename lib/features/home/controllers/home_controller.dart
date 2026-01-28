@@ -143,10 +143,7 @@ class HomeController {
     final isValid = isDefault || _projectExists(projectId, state.projects);
 
     if (!isValid) {
-      _error(
-        Exception('Invalid project id: $projectId'),
-        userMessage: 'Failed to load project with id $projectId',
-      );
+      _toast(ToastEvent.error('Invalid project id: $projectId'));
       return;
     }
 
