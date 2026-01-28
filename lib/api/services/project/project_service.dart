@@ -4,7 +4,7 @@ import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import '../../models/project/project.dart';
-import '../../models/project/project_user_dto.dart';
+import '../../models/project/project_user.dart';
 import 'project_endpoints.dart';
 
 class ProjectService {
@@ -54,7 +54,7 @@ class ProjectService {
 
   // Project Users Management
 
-  Future<List<ProjectUserDto>> getProjectUsers(String projectId) async {
+  Future<List<ProjectUser>> getProjectUsers(String projectId) async {
     final res = await dioClient.get<dynamic>(
       ProjectEndpoints.projectUsers(projectId),
     );
@@ -67,11 +67,11 @@ class ProjectService {
     }
 
     return data
-        .map((e) => ProjectUserDto.fromJson(e as Map<String, dynamic>))
+        .map((e) => ProjectUser.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
-  Future<List<ProjectUserDto>> addProjectUser({
+  Future<List<ProjectUser>> addProjectUser({
     required String projectId,
     required String emailAddress,
     required String role,
@@ -92,7 +92,7 @@ class ProjectService {
     }
 
     return data
-        .map((e) => ProjectUserDto.fromJson(e as Map<String, dynamic>))
+        .map((e) => ProjectUser.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

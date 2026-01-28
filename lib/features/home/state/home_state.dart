@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/project/project.dart';
-import 'package:openearable/api/models/project/project_user_dto.dart';
+import 'package:openearable/api/models/project/project_user.dart';
 import '../../../api/models/recording/recording.dart';
 
 @immutable
@@ -21,7 +21,7 @@ class HomeState {
   final String? errorMessage;
 
   final bool isUsersLoading;
-  final List<ProjectUserDto> projectUsers;
+  final List<ProjectUser> projectUsers;
   final String? usersErrorMessage;
 
   const HomeState({
@@ -72,7 +72,7 @@ class HomeState {
     bool clearError = false,
 
     bool? isUsersLoading,
-    List<ProjectUserDto>? projectUsers,
+    List<ProjectUser>? projectUsers,
     String? usersErrorMessage,
     bool clearUsersError = false,
     bool clearProjectUsers = false,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/auth/widgets/auth_button.dart';
 import 'package:openearable/features/home/widgets/home_text_field.dart';
-import '../../../api/models/project/project_user_dto.dart';
+import '../../../api/models/project/project_user.dart';
 import '../../../app/constants/colors.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../auth/state/session_provider.dart';
@@ -237,7 +237,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
 class _UsersList extends StatelessWidget {
   const _UsersList({required this.users});
 
-  final List<ProjectUserDto> users;
+  final List<ProjectUser> users;
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +262,7 @@ class _UsersList extends StatelessWidget {
 class _UserCard extends StatelessWidget {
   const _UserCard({required this.user});
 
-  final ProjectUserDto user;
+  final ProjectUser user;
 
   @override
   Widget build(BuildContext context) {
