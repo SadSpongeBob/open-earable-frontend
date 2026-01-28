@@ -92,10 +92,18 @@ class HomeController {
   }
 
   List<ProjectMetadata> _withDefault(List<ProjectMetadata> remoteProjects) {
-    final defaultItem = ProjectMetadata.local(
-      LocalMedia.defaultProjectId,
-      'Default',
-    );
+    final ProjectMetadata defaultItem;
+    if (_authState.isGuest) {
+      defaultItem = ProjectMetadata.local(
+        LocalMedia.defaultProjectId,
+        'Default',
+      );
+    } else {
+      defaultItem = ProjectMetadata.cloud(
+        LocalMedia.defaultProjectId,
+        'Default',
+      );
+    }
 
     return [
       defaultItem,
@@ -165,7 +173,7 @@ class HomeController {
       _toast(ToastEvent.error('Invalid project id: $projectId'));
       return;
     }
-    final hasCloud = isDefault || project.projectSource == ProjectSource.cloud;
+    final hasCloud = project.projectSource == ProjectSource.cloud;
 
     try {
       final localRecordings = await _recordingService.getLocalProjectRecordings(
@@ -334,7 +342,7 @@ class HomeController {
     try {
       for (final projectId in projectIds) {
         if (projectId == LocalMedia.defaultProjectId) {
-          failed.add(projectId); // or continue without counting
+          failed.add(projectId);
           continue;
         }
 
