@@ -17,7 +17,7 @@ final homeControllerProvider = Provider<HomeController>((ref) {
   final projectService = ref.read(projectServiceProvider);
   final recordingService = ref.read(recordingServiceProvider);
   final homeState = ref.read(homeStateProvider.notifier);
-  final authState = ref.read(sessionProvider);
+  final authState = ref.watch(sessionProvider);
 
   void toast(ToastEvent event) => emitToast(ref, event);
 
