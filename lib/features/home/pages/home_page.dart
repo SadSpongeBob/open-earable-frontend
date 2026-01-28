@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
+import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/home/widgets/project_bar.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
@@ -25,7 +26,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(homeControllerProvider.notifier).loadProjects();
+      ref.read(homeControllerProvider).loadProjects();
     });
   }
 
@@ -46,8 +47,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
 
 
-    final state = ref.watch(homeControllerProvider);
-    final controller = ref.read(homeControllerProvider.notifier);
+    final state = ref.watch(homeStateProvider);
+    final controller = ref.read(homeControllerProvider);
 
     const defaultProjectItem = ProjectMetadata(
       id: 'default',

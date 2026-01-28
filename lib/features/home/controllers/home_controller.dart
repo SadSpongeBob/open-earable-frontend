@@ -1,48 +1,52 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/services/project/project_service.dart';
 import 'package:openearable/api/services/recording//recording_service.dart';
+import 'package:openearable/features/home/state/home_provider.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 import '../state/home_state.dart';
 
-final homeControllerProvider = StateNotifierProvider<HomeController, HomeState>(
-      (ref) {
-    final projectService = ref.read(projectServiceProvider);
-    final recordingService = ref.read(recordingServiceProvider);
+final homeControllerProvider = Provider<HomeController>((ref) {
+  final projectService = ref.read(projectServiceProvider);
+  final recordingService = ref.read(recordingServiceProvider);
+  final homeState = ref.read(homeStateProvider.notifier);
 
-    void toast(ToastEvent event) => emitToast(ref, event);
+  void toast(ToastEvent event) => emitToast(ref, event);
 
-    return HomeController(recordingService: recordingService,
-        projectService: projectService,
-        toast: toast);
-  },
-);
+  return HomeController(
+    projectService: projectService,
+    recordingService: recordingService,
+    homeState: homeState,
+    toast: toast,
+  );
+});
 
 typedef ToastSink = void Function(ToastEvent);
 
-class HomeController extends StateNotifier<HomeState> {
+class HomeController {
   HomeController({
-    required RecordingService recordingService,
     required ProjectService projectService,
+    required RecordingService recordingService,
+    required HomeStateNotifier homeState,
     required ToastSink toast,
-  })  : _recordingService = recordingService,
-        _projectService = projectService,
-        _toast = toast,
-        super(HomeState.initial());
+  }) : _projectService = projectService,
+       _recordingService = recordingService,
+       _state = homeState,
+       _toast = toast;
 
-  final RecordingService _recordingService;
   final ProjectService _projectService;
+  final RecordingService _recordingService;
+  final HomeStateNotifier _state;
   final ToastSink _toast;
 
-  void _setLoading(bool value) =>
-      state = state.copyWith(isLoading: value);
+  HomeState get state => _state.current;
 
-  void _setError(Object e, {String? userMessage}) {
+  void _error(Object e, {String? userMessage}) {
     final msg = userMessage ?? e.toString();
-    state = state.copyWith(isLoading: false, errorMessage: msg);
+    _state.setErrorMessage(msg);
     _toast(ToastEvent.error(msg));
   }
 
@@ -53,9 +57,10 @@ class HomeController extends StateNotifier<HomeState> {
 
   bool _nameExists(String name, {String? excludeProjectId}) {
     final normalized = name.trim().toLowerCase();
+    if (normalized == 'default') return true;
     return state.projects.any((p) {
       if (excludeProjectId != null && p.id == excludeProjectId) return false;
-      return p.name.trim().toLowerCase() == normalized || normalized == 'default';
+      return p.name.trim().toLowerCase() == normalized;
     });
   }
 
@@ -66,37 +71,42 @@ class HomeController extends StateNotifier<HomeState> {
     return null;
   }
 
+  // ----------------
+  // Load/Open
+  // ----------------
+
   Future<void> loadProjects() async {
-    _setLoading(true);
+    _state.setLoading(true);
     try {
       final projects = await _projectService.getProjects();
+      _state.setProjects(projects);
 
       final currentOpenId = state.openProjectId;
       final openStillValid =
           currentOpenId == 'default' || _projectExists(currentOpenId, projects);
 
-      state = state.copyWith(projects: projects);
       await openProject(openStillValid ? currentOpenId : 'default');
     } on DioException catch (e) {
-      _setError(e, userMessage: 'Failed to load projects');
+      _error(e, userMessage: 'Failed to load projects');
     } finally {
-      _setLoading(false);
+      _state.setLoading(false);
     }
   }
 
   Future<void> openProject(String projectId) async {
     final isDefault = projectId == 'default';
+    final isValid = isDefault || _projectExists(projectId, state.projects);
 
-    final isValid =
-        isDefault || _projectExists(projectId, state.projects);
     if (!isValid) {
-      _setError(
-          projectId, userMessage: 'Failed to load project with id $projectId');
+      _error(
+        projectId,
+        userMessage: 'Failed to load project with id $projectId',
+      );
       return;
     }
 
     try {
-      List<Recording> recordings;
+      final List<Recording> recordings;
       if (isDefault) {
         recordings = await _recordingService.getRecordings();
       } else {
@@ -104,18 +114,29 @@ class HomeController extends StateNotifier<HomeState> {
         recordings = project.recordings;
       }
 
-      state = state.copyWith(
-        openProjectId: projectId,
-        videos: recordings,
-        clearSelectedVideoId: true,
-        clearError: true,
-      );
+      _state.setOpenProject(projectId: projectId, videos: recordings);
     } on DioException catch (e) {
-      _setError(e, userMessage: 'Failed to load project with id $projectId');
+      _error(e, userMessage: 'Failed to load project with id $projectId');
     }
   }
 
-  Future<void> openDefaultProject() => openProject('default');
+  Future<void> handleProjectTap(String projectId) async {
+    if (state.isSelectionMode) {
+      toggleProjectSelection(projectId);
+      return;
+    }
+
+    _state.setLoading(true);
+    try {
+      await openProject(projectId);
+    } finally {
+      _state.setLoading(false);
+    }
+  }
+
+  // ----------------
+  // Create/Rename/Delete/Duplicate
+  // ----------------
 
   Future<void> createProject(String name) async {
     final trimmed = name.trim();
@@ -123,27 +144,24 @@ class HomeController extends StateNotifier<HomeState> {
       _toast(const ToastEvent.error('Project name can’t be empty'));
       return;
     }
-
     if (_nameExists(trimmed)) {
       _toast(const ToastEvent.error('A project with this name already exists'));
       return;
     }
 
-    _setLoading(true);
+    _state.setLoading(true);
     try {
       final created = await _projectService.createProject(trimmed);
+      _state.addProject(created.toMetadata());
 
-      state = state.copyWith(
-        isLoading: false,
-        videos: [],
-        projects: [...state.projects, created.toMetadata()],
-        openProjectId: created.id,
-        clearError: true,
-      );
+      // Open the new project and reset videos/selected video.
+      _state.setOpenProject(projectId: created.id, videos: const []);
 
       _success('Project "$trimmed" created');
     } catch (e) {
-      _setError(e, userMessage: 'Failed to create project');
+      _error(e, userMessage: 'Failed to create project');
+    } finally {
+      _state.setLoading(false);
     }
   }
 
@@ -153,118 +171,42 @@ class HomeController extends StateNotifier<HomeState> {
       _toast(const ToastEvent.error('Project name can’t be empty'));
       return;
     }
-
     if (_nameExists(trimmed, excludeProjectId: projectId)) {
       _toast(const ToastEvent.error('A project with this name already exists'));
       return;
     }
 
-    _setLoading(true);
+    _state.setLoading(true);
     try {
       await _projectService.renameProject(projectId, trimmed);
-
-      final updatedProjects = state.projects.map((p) {
-        if (p.id != projectId) return p;
-        return p.copyWith(name: trimmed);
-      }).toList();
-
-      state = state.copyWith(
-        isLoading: false,
-        projects: updatedProjects,
-        clearError: true,
-      );
-
+      _state.renameProjectInList(projectId, trimmed);
+      _state.clearError();
       _success('Rename Successful');
     } catch (e) {
-      _setError(e, userMessage: 'Failed to rename project');
+      _error(e, userMessage: 'Failed to rename project');
+    } finally {
+      _state.setLoading(false);
     }
   }
 
   Future<void> deleteProject(String projectId) async {
-    _setLoading(true);
+    _state.setLoading(true);
     try {
       await _projectService.deleteProject(projectId);
 
-      final updated = state.projects.where((p) => p.id != projectId).toList();
-      var newOpenId = state.openProjectId;
-      if (state.openProjectId == projectId) {
+      final wasOpen = state.openProjectId == projectId;
+
+      _state.removeProject(projectId);
+
+      if (wasOpen) {
         await openProject('default');
-        newOpenId = 'default';
       }
-
-      final nextSelected = Set<String>.from(state.selectedProjectIds)
-        ..remove(projectId);
-
-      state = state.copyWith(
-        projects: updated,
-        openProjectId: newOpenId,
-        selectedProjectIds: nextSelected,
-        isSelectionMode: state.isSelectionMode && nextSelected.isNotEmpty,
-        clearError: true,
-      );
 
       _success('Project Deleted');
     } on DioException catch (e) {
-      _setError(e, userMessage: 'Failed to delete project');
+      _error(e, userMessage: 'Failed to delete project');
     } finally {
-      _setLoading(false);
-    }
-  }
-
-  void enterSelectionMode({String? initialProjectId}) {
-    final ids = <String>{};
-    if (initialProjectId != null && initialProjectId != 'default') {
-      ids.add(initialProjectId);
-    }
-
-    state = state.copyWith(
-      isSelectionMode: true,
-      selectedProjectIds: ids,
-      clearError: true,
-    );
-  }
-
-  void exitSelectionMode() {
-    state = state.copyWith(
-      isSelectionMode: false,
-      selectedProjectIds: <String>{},
-      clearError: true,
-    );
-  }
-
-  void toggleProjectSelection(String projectId) {
-
-    final next = Set<String>.from(state.selectedProjectIds);
-    if (next.contains(projectId)) {
-      next.remove(projectId);
-    } else {
-      next.add(projectId);
-    }
-
-    state = state.copyWith(
-      isSelectionMode: next.isNotEmpty,
-      selectedProjectIds: next,
-      clearError: true,
-    );
-  }
-
-  Future<void> handleProjectTap(String projectId) async {
-    if (state.isSelectionMode) {
-      toggleProjectSelection(projectId);
-      return;
-    }
-    _setLoading(true);
-    try {
-      await openProject(projectId);
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  void handleProjectLongPress(String projectId) {
-    if (projectId == 'default') return;
-    if (!state.isSelectionMode) {
-      enterSelectionMode(initialProjectId: projectId);
+      _state.setLoading(false);
     }
   }
 
@@ -277,9 +219,9 @@ class HomeController extends StateNotifier<HomeState> {
       return;
     }
 
-    String base = '${project.name} (Copy)';
-    String candidate = base;
-    int i = 2;
+    final base = '${project.name} (Copy)';
+    var candidate = base;
+    var i = 2;
     while (_nameExists(candidate)) {
       candidate = '$base $i';
       i++;
@@ -287,5 +229,40 @@ class HomeController extends StateNotifier<HomeState> {
 
     await createProject(candidate);
   }
-}
 
+  // ----------------
+  // Selection UI state
+  // ----------------
+
+  void enterSelectionMode({String? initialProjectId}) {
+    final ids = <String>{};
+    if (initialProjectId != null && initialProjectId != 'default') {
+      ids.add(initialProjectId);
+    }
+
+    _state.setSelection(ids);
+  }
+
+  void exitSelectionMode() {
+    _state.clearSelection();
+  }
+
+  void toggleProjectSelection(String projectId) {
+    if (projectId == 'default') return;
+    final next = Set<String>.from(state.selectedProjectIds);
+    if (next.contains(projectId)) {
+      next.remove(projectId);
+    } else {
+      next.add(projectId);
+    }
+
+    _state.setSelection(next);
+  }
+
+  void handleProjectLongPress(String projectId) {
+    if (projectId == 'default') return;
+    if (!state.isSelectionMode) {
+      _state.setSelection({projectId});
+    }
+  }
+}
