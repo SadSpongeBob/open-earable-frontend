@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/auth/widgets/auth_button.dart';
 import 'package:openearable/features/home/widgets/home_text_field.dart';
+import '../../../api/models/project/project_user_dto.dart';
 import '../../../app/constants/colors.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../auth/state/session_provider.dart';
@@ -94,6 +95,16 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
   void initState() {
     super.initState();
     _emailController.addListener(() => setState(() {}));
+
+    Future.microtask(() {
+      final session = ref.read(sessionProvider);
+      final myUserId = session.user?.userId;
+      if (myUserId == null) return;
+
+      ref.read(homeControllerProvider.notifier).loadUsersForOpenProject(
+        myUserId: myUserId,
+      );
+    });
   }
 
   @override
@@ -107,6 +118,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
   @override
   Widget build(BuildContext context) {
     final controller = ref.read(homeControllerProvider.notifier);
+    final state = ref.watch(homeControllerProvider);
 
     return Dialog(
       insetPadding: const EdgeInsets.all(18),
@@ -187,10 +199,13 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                         bottom: BorderSide(color: Colors.black12, width: 2),
                       ),
                     ),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                      child: _UsersPlaceholderList(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: state.isUsersLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : _UsersList(users: state.projectUsers),
                     ),
+
                   ),
                 ),
 
@@ -219,25 +234,35 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
   }
 }
 
-// Placeholder list and user card for demonstration purposes
-// This would be replaced with actual data in a real implementation
-// TODO: Implement actual user list fetching and display logic
-class _UsersPlaceholderList extends StatelessWidget {
-  const _UsersPlaceholderList();
+class _UsersList extends StatelessWidget {
+  const _UsersList({required this.users});
+
+  final List<ProjectUserDto> users;
 
   @override
   Widget build(BuildContext context) {
+    if (users.isEmpty) {
+      return const Center(
+        child: Text(
+          'No users in this project yet',
+          style: TextStyle(color: Colors.black54),
+        ),
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.all(14),
-      itemCount: 4,
+      itemCount: users.length,
       separatorBuilder: (_, _) => const SizedBox(height: 14),
-      itemBuilder: (_, _) => const _UserCardPlaceholder(),
+      itemBuilder: (_, i) => _UserCard(user: users[i]),
     );
   }
 }
 
-class _UserCardPlaceholder extends StatelessWidget {
-  const _UserCardPlaceholder();
+class _UserCard extends StatelessWidget {
+  const _UserCard({required this.user});
+
+  final ProjectUserDto user;
 
   @override
   Widget build(BuildContext context) {
@@ -252,28 +277,32 @@ class _UserCardPlaceholder extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 26,
-              child: Icon(Icons.person, size: 28),
+              backgroundImage:
+              user.pictureUrl == null ? null : NetworkImage(user.pictureUrl!),
+              child: user.pictureUrl == null
+                  ? const Icon(Icons.person, size: 28)
+                  : null,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
-                    'User Name',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                    user.name,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'user@email.com',
-                    style: TextStyle(color: Colors.black54),
+                    user.emailAddress,
+                    style: const TextStyle(color: Colors.black54),
                   ),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Text(
-                    'Viewer',
-                    style: TextStyle(color: Colors.black54),
+                    _roleLabel(user.role),
+                    style: const TextStyle(color: Colors.black54),
                   ),
                 ],
               ),
@@ -286,5 +315,17 @@ class _UserCardPlaceholder extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _roleLabel(String role) {
+    switch (role.toUpperCase()) {
+      case 'OWNER':
+        return 'Owner';
+      case 'EDITOR':
+        return 'Editor';
+      case 'VIEWER':
+      default:
+        return 'Viewer';
+    }
   }
 }
