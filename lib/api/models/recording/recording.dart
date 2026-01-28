@@ -55,7 +55,7 @@ class Recording {
   }
 
   factory Recording.fromJson(Map<String, dynamic> json) => Recording(
-    id: json['id'] as String,
+    id: json['recordingId'] as String,
     name: json['name'] as String,
     source: RecordingSource.cloud,
     thumbnailUrl: json['thumbnailUrl'] as String?,
