@@ -158,22 +158,21 @@ class HomeController {
   }
 
   Future<void> openProject(String projectId) async {
+    final project = _findById(projectId);
     final isDefault = projectId == LocalMedia.defaultProjectId;
-    final isValid = isDefault || _projectExists(projectId, state.projects);
 
-    if (!isValid) {
+    if (project == null) {
       _toast(ToastEvent.error('Invalid project id: $projectId'));
       return;
     }
+    final hasCloud = isDefault || project.projectSource == ProjectSource.cloud;
 
     try {
       final localRecordings = await _recordingService.getLocalProjectRecordings(
         projectId,
       );
       final List<Recording> recordings;
-      if (_authState.isGuest) {
-        recordings = localRecordings;
-      } else {
+      if (hasCloud) {
         final List<Recording> cloud;
         if (isDefault) {
           cloud = await _recordingService.getRecordings();
@@ -182,6 +181,8 @@ class HomeController {
         }
 
         recordings = _mergeRecordings(localRecordings, cloud);
+      } else {
+        recordings = localRecordings;
       }
 
       _state.setOpenProject(projectId: projectId, videos: recordings);
