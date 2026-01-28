@@ -25,6 +25,10 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
     );
   }
 
+  void setProjectsLoaded(bool loaded) {
+    state = state.copyWith(areProjectsLoaded: loaded);
+  }
+
   void clearSelection() {
     state = state.copyWith(selectedProjectIds: {}, isSelectionMode: false);
   }
