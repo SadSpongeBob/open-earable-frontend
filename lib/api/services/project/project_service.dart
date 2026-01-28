@@ -173,6 +173,64 @@ class ProjectService {
     await dir.delete(recursive: true);
   }
 
+  Future<ProjectMetadata> duplicateProject(String projectId) async {
+    final res = await _dioClient.post(
+      ProjectEndpoints.duplicateProject,
+      data: {'projectId': projectId},
+    );
+    final data = res.asMap();
+    return ProjectMetadata.fromJson(data);
+  }
+
+  Future<void> duplicateLocalProject(
+    String projectId,
+    ProjectMetadata newProject,
+  ) async {
+    final sourceDir = _localMedia.projectDir(projectId);
+    if (!await sourceDir.exists()) return;
+
+    final destinationDir = _localMedia.projectDir(newProject.id);
+    if (await destinationDir.exists()) {
+      throw StateError('Destination already exists: ${destinationDir.path}');
+    }
+
+    try {
+      await _copyDirectory(sourceDir, destinationDir);
+      await overwriteMetaIfProjectDirExists(newProject.id, newProject);
+    } catch (_) {
+      // Rollback
+      if (await destinationDir.exists()) {
+        await destinationDir.delete(recursive: true);
+      }
+      rethrow;
+    }
+  }
+
+  /// Copies directory from [source] to [destination].
+  /// Any sub directory (`/{recordingId}`) will be regenerated
+  /// meaning the sub directories will be renamed to a `uuid`.
+  Future<void> _copyDirectory(Directory source, Directory destination) async {
+    await destination.create(recursive: true);
+
+    await for (final entity in source.list(
+      recursive: false,
+      followLinks: false,
+    )) {
+      final newPath = p.join(destination.path, p.basename(entity.path));
+
+      if (entity is File) {
+        await entity.copy(newPath);
+      } else if (entity is Directory) {
+        final newRecordingId = Helpers.getRecordingId();
+        final newDir = Directory(p.join(destination.path, newRecordingId));
+        await _copyDirectory(entity, newDir);
+      } else if (entity is Link) {
+        final target = await entity.target();
+        await Link(newPath).create(target);
+      }
+    }
+  }
+
   Future<List<User>> getProjectUsers(String projectId) async {
     final res = await _dioClient.get<dynamic>(
       ProjectEndpoints.projectUsers(projectId),

@@ -6,6 +6,7 @@ import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/services/project/project_service.dart';
 import 'package:openearable/api/services/recording//recording_service.dart';
+import 'package:openearable/app/utils/helpers.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import '../../../app/ui/toast_controller.dart';
@@ -70,6 +71,17 @@ class HomeController {
       if (excludeProjectId != null && p.id == excludeProjectId) return false;
       return p.name.trim().toLowerCase() == normalized;
     });
+  }
+
+  String _duplicateName(String name) {
+    final base = '$name (Copy)';
+    var candidate = base;
+    var i = 2;
+    while (_nameExists(candidate)) {
+      candidate = '$base $i';
+      i++;
+    }
+    return candidate;
   }
 
   ProjectMetadata? _findById(String id) {
@@ -295,7 +307,7 @@ class HomeController {
   }
 
   Future<void> duplicateProject(String projectId) async {
-    if (projectId == 'default') return;
+    if (projectId == LocalMedia.defaultProjectId) return;
 
     final project = _findById(projectId);
     if (project == null) {
@@ -303,15 +315,26 @@ class HomeController {
       return;
     }
 
-    final base = '${project.name} (Copy)';
-    var candidate = base;
-    var i = 2;
-    while (_nameExists(candidate)) {
-      candidate = '$base $i';
-      i++;
-    }
+    _state.setLoading(true);
+    try {
+      final ProjectMetadata newProject;
+      if (project.projectSource == ProjectSource.cloud) {
+        newProject = await _projectService.duplicateProject(projectId);
+      } else {
+        final newName = _duplicateName(project.name);
+        final newId = Helpers.getProjectId();
+        newProject = ProjectMetadata.local(newId, newName);
+      }
 
-    await createProject(candidate);
+      await _projectService.duplicateLocalProject(projectId, newProject);
+
+      _state.addProject(newProject);
+      _success('Project duplicated');
+    } on DioException catch (e) {
+      _error(e, userMessage: 'Failed to duplicate project ${project.name}');
+    } finally {
+      _state.setLoading(false);
+    }
   }
 
   // ----------------
