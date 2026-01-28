@@ -47,14 +47,7 @@ class ProjectService {
       }
       final name = (meta['name'] as String?) ?? 'Project - $projectId';
 
-      projects.add(
-        ProjectMetadata(
-          id: projectId,
-          name: name,
-          recordingAmount: 0,
-          userAmount: 0,
-        ),
-      );
+      projects.add(ProjectMetadata.local(projectId, name));
     }
 
     return projects;

@@ -82,11 +82,9 @@ class HomeController {
   }
 
   List<ProjectMetadata> _withDefault(List<ProjectMetadata> remoteProjects) {
-    const defaultItem = ProjectMetadata(
-      id: LocalMedia.defaultProjectId,
-      name: 'Default',
-      recordingAmount: 0,
-      userAmount: 0,
+    final defaultItem = ProjectMetadata.local(
+      LocalMedia.defaultProjectId,
+      'Default',
     );
 
     return [
@@ -206,12 +204,7 @@ class HomeController {
     try {
       final ProjectMetadata created;
       if (_authState.isGuest) {
-        created = ProjectMetadata(
-          id: _uuid.v6(),
-          name: trimmed,
-          recordingAmount: 0,
-          userAmount: 0,
-        );
+        created = ProjectMetadata.local(_uuid.v6(), trimmed);
       } else {
         created = (await _projectService.createProject(trimmed)).toMetadata();
       }

@@ -31,15 +31,8 @@ class HomeState {
     required this.areProjectsLoaded,
   });
 
-  factory HomeState.initial() => const HomeState(
-    projects: [
-      ProjectMetadata(
-        id: LocalMedia.defaultProjectId,
-        name: 'Default',
-        recordingAmount: 0,
-        userAmount: 0,
-      ),
-    ],
+  factory HomeState.initial() => HomeState(
+    projects: [ProjectMetadata.local(LocalMedia.defaultProjectId, 'Default')],
     openProjectId: LocalMedia.defaultProjectId,
     isSelectionMode: false,
     selectedProjectIds: {},

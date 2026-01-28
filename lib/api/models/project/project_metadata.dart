@@ -3,13 +3,25 @@ class ProjectMetadata {
   final String name;
   final int recordingAmount;
   final int userAmount;
+  final ProjectSource projectSource;
 
   const ProjectMetadata({
     required this.id,
     required this.name,
     required this.recordingAmount,
     required this.userAmount,
+    required this.projectSource,
   });
+
+  factory ProjectMetadata.local(String id, String name) {
+    return ProjectMetadata(
+      id: id,
+      name: name,
+      recordingAmount: 0,
+      userAmount: 0,
+      projectSource: ProjectSource.local,
+    );
+  }
 
   factory ProjectMetadata.fromJson(Map<String, dynamic> json) {
     final id = json['projectId'] as String;
@@ -22,6 +34,7 @@ class ProjectMetadata {
       name: name,
       recordingAmount: recordingAmount,
       userAmount: userAmount,
+      projectSource: ProjectSource.cloud,
     );
   }
 
@@ -31,6 +44,9 @@ class ProjectMetadata {
       name: name,
       recordingAmount: recordingAmount,
       userAmount: userAmount,
+      projectSource: projectSource,
     );
   }
 }
+
+enum ProjectSource { local, cloud }
