@@ -1,63 +1,106 @@
 import 'package:dio/dio.dart';
-import 'package:openearable/api/client_dio.dart';
-import '../../models/auth/auth_result.dart';
+import 'package:openearable/api/interceptors/map_response.dart';
+import 'package:openearable/api/models/auth/auth_tokens.dart';
+import 'package:openearable/api/services/user/user_service.dart';
+
 import 'auth_endpoints.dart';
+import 'token_storage.dart';
 
 class AuthService {
-  /// LOGIN
-  Future<AuthResult> login(String email, String password) async {
-    try {
-      final response = await dio.post(
-        AuthEndpoints.login,
-        data: {
-          "email": email,
-          "password": password,
-        },
-      );
+  final Dio _dio;
+  final TokenStorage _tokenStorage;
+  final UserService _userService;
 
-      return AuthResult.success(response.data);
-    } on DioException catch (e) {
-      String errorMsg = "Login failed";
+  AuthService({
+    required Dio dio,
+    required TokenStorage tokenStorage,
+    required UserService userService,
+  }) : _dio = dio,
+       _tokenStorage = tokenStorage,
+       _userService = userService;
 
-      if (e.response?.data is Map<String, dynamic>) {
-        errorMsg = (e.response!.data["message"] ?? errorMsg).toString();
-      }
-
-      return AuthResult.error(errorMsg);
-    } catch (e) {
-      return AuthResult.error("An unexpected error occurred");
-    }
-  }
-
-  /// signup
-  Future<AuthResult> signup({
-    required String name,
+  Future<Tokens> login({
     required String email,
     required String password,
-    required String downloadMethod,
   }) async {
-    try {
-      final response = await dio.post(
-        AuthEndpoints.signup,
-        data: {
-          "name": name,
-          "email": email,
-          "password": password,
-          "downloadMethod": downloadMethod,
-        },
-      );
+    final res = await _dio.post(
+      AuthEndpoints.login,
+      data: {'emailAddress': email, 'password': password},
+    );
 
-      return AuthResult.success(response.data);
-    } on DioException catch (e) {
-      String errorMsg = "Signup failed";
+    final data = res.asMap();
 
-      if (e.response?.data is Map<String, dynamic>) {
-        errorMsg = (e.response!.data["message"] ?? errorMsg).toString();
-      }
-
-      return AuthResult.error(errorMsg);
-    } catch (e) {
-      return AuthResult.error("An unexpected error occurred");
-    }
+    final tokens = Tokens.fromJson(data);
+    await _tokenStorage.saveTokens(tokens);
+    return tokens;
   }
+
+  Future<Tokens> refresh() async {
+    final refreshToken = await _tokenStorage.readRefreshToken();
+    if (refreshToken == null) {
+      throw StateError('No refresh token available');
+    }
+
+    final res = await _dio.post(
+      AuthEndpoints.refresh,
+      data: {'refreshToken': refreshToken},
+    );
+
+    final data = res.asMap();
+
+    final tokens = Tokens.fromJson(data);
+
+    await _tokenStorage.saveTokens(tokens);
+    return tokens;
+  }
+
+  Future<Tokens> register({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    final res = await _dio.post(
+      AuthEndpoints.register,
+      data: {'emailAddress': email, 'password': password, 'name': name},
+    );
+
+    final data = res.asMap();
+    final tokens = Tokens.fromJson(data);
+    await _tokenStorage.saveTokens(tokens);
+    return tokens;
+  }
+
+  Future<void> resetPassword({required String emailAddress}) async {
+    await _dio.delete(AuthEndpoints.resetPassword(emailAddress));
+  }
+
+  Future<void> updatePassword({
+    required String password,
+    required String authToken,
+  }) async {
+    final user = await _userService.getUser(authToken: authToken);
+
+    await _dio.put(
+      AuthEndpoints.update,
+      data: {
+        'emailAddress': user.emailAddress,
+        'name': user.name,
+        'password': password,
+      },
+      options: Options(extra: {'authTokenOverride': authToken}),
+    );
+  }
+
+  Future<void> updateUser({
+    required String emailAddress,
+    required String name,
+    String? password,
+  }) async {
+    await _dio.put(
+      AuthEndpoints.update,
+      data: {'emailAddress': emailAddress, 'name': name, 'password': password},
+    );
+  }
+
+  Future<void> logout() => _tokenStorage.clear();
 }

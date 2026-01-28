@@ -1,13 +1,42 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/network_module.dart';
+import 'package:openearable/api/services/auth/auth_service.dart';
+import 'package:openearable/api/services/user/user_service.dart';
+import 'package:openearable/features/auth/state/session_provider.dart';
+import 'package:openearable/api/services/auth/token_storage.dart';
 
-final dio = Dio(
-  BaseOptions(
-    baseUrl: dotenv.env['API_BASE_URL'] ??
-        (throw Exception('API_BASE_URL not found in .env file')),
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
-    contentType: "application/json",
-  ),
-);
+final _networkModuleProvider = Provider<NetworkModule>((ref) {
+  return NetworkModule.create(
+    logout: () async {
+      ref
+          .read(sessionProvider.notifier)
+          .setLoggedOut('Session expired. Please log in again.');
+    },
+  );
+});
 
+final apiDioProvider = Provider<Dio>((ref) {
+  return ref.read(_networkModuleProvider).dio;
+});
+
+final tokenStorageProvider = Provider<TokenStorage>((ref) {
+  return ref.read(_networkModuleProvider).tokenStorage;
+});
+
+final userServiceProvider = Provider<UserService>((ref) {
+  return ref.read(_networkModuleProvider).userService;
+});
+
+final authServiceProvider = Provider<AuthService>((ref) {
+  return ref.read(_networkModuleProvider).authService;
+});
+
+final awsDioProvider = Provider<Dio>((ref) {
+  return Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 120),
+    ),
+  );
+});

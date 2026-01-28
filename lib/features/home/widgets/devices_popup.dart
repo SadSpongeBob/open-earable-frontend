@@ -1,10 +1,8 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
-import 'package:openearable/features/home/controllers/wearables_provider.dart';
 import 'package:provider/provider.dart';
-
+import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
+import 'package:openearable/features/home/state/wearables_provider.dart';
 import 'package:openearable/api/models/device/wearable_connector.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
@@ -40,7 +38,7 @@ class _DevicesPopup extends State<DevicesPopup> {
 
           Text(
             "Devices",
-            style: AppTextStyles.headerMedium,
+            style: GlobalTextStyles.headerMedium,
           ),
 
           const SizedBox(height: 30),
@@ -79,7 +77,7 @@ class _DevicesPopup extends State<DevicesPopup> {
                               const SizedBox(width: 8),
                               Text(
                                 error,
-                                style: AppTextStyles.subHeader,
+                                style: GlobalTextStyles.subHeader,
                               ),
                             ],
                           ),
@@ -151,7 +149,7 @@ class _DevicesPopup extends State<DevicesPopup> {
                             Text(
                               device.name,
                               textAlign: TextAlign.center,
-                              style: AppTextStyles.text,
+                              style: GlobalTextStyles.text,
                             ),
 
                             const SizedBox(height: 4),
@@ -160,7 +158,7 @@ class _DevicesPopup extends State<DevicesPopup> {
                               Text(
                                 statusText,
                                 textAlign: TextAlign.center,
-                                style: AppTextStyles.footnote,
+                                style: GlobalTextStyles.footnote,
                                 selectionColor: Color(0xFF6E6E6E),
                               ),
 

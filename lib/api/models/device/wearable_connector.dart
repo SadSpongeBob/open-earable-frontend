@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:open_earable_flutter/open_earable_flutter.dart';
 
 abstract class WearableEvent {
