@@ -265,57 +265,29 @@ class HomeController extends StateNotifier<HomeState> {
     await createProject(candidate);
   }
 
-  Future<void> loadUsersForOpenProject({
-    required String myUserId,
-  }) async {
+  Future<void> loadUsersForOpenProject({required String myUserId}) async {
     final projectId = state.openProjectId;
     if (projectId == 'default') return;
 
-    state = state.copyWith(
-      isUsersLoading: true,
-      clearUsersError: true,
-    );
+    state = state.copyWith(isUsersLoading: true, clearUsersError: true);
 
     try {
-      final project = await _projectService.getProject(projectId);
       final users = await _projectService.getProjectUsers(projectId);
 
       state = state.copyWith(
         isUsersLoading: false,
-        openProject: project,
         projectUsers: users,
+        usersErrorMessage: null,
       );
-    } on DioException catch (e) {
-      final code = e.response?.statusCode;
-      final msg = code == 404 ? 'Project not found' : 'Failed to load project users';
-
-      state = state.copyWith(
-        isUsersLoading: false,
-        usersErrorMessage: msg,
-      );
-      _toast(ToastEvent.error(msg));
+    } on DioException {
+      const msg = 'Failed to load project users';
+      state = state.copyWith(isUsersLoading: false, usersErrorMessage: msg);
+      _toast(const ToastEvent.error(msg));
     } catch (_) {
       const msg = 'Failed to load project users';
-      state = state.copyWith(
-        isUsersLoading: false,
-        usersErrorMessage: msg,
-      );
+      state = state.copyWith(isUsersLoading: false, usersErrorMessage: msg);
       _toast(const ToastEvent.error(msg));
     }
-  }
-
-  void clearUsersPopupState() {
-    state = state.copyWith(
-      isUsersLoading: false,
-      clearUsersError: true,
-      clearProjectUsers: true,
-    );
-  }
-
-  bool canManageUsers({required String myUserId}) {
-    final p = state.openProject;
-    if (p == null) return false;
-    return p.isOwner(myUserId);
   }
 
   Future<void> addUserToOpenProject({
@@ -332,16 +304,9 @@ class HomeController extends StateNotifier<HomeState> {
     final email = emailAddress.trim();
     if (email.isEmpty) return;
 
+    state = state.copyWith(isUsersLoading: true, clearUsersError: true);
+
     try {
-      state = state.copyWith(isUsersLoading: true, clearUsersError: true);
-
-      final project = await _projectService.getProject(projectId);
-      if (!project.isOwner(myUserId)) {
-        state = state.copyWith(isUsersLoading: false);
-        _toast(const ToastEvent.error('Only the owner can add users'));
-        return;
-      }
-
       final updatedUsers = await _projectService.addProjectUser(
         projectId: projectId,
         emailAddress: email,
@@ -351,21 +316,47 @@ class HomeController extends StateNotifier<HomeState> {
       state = state.copyWith(
         isUsersLoading: false,
         projectUsers: updatedUsers,
+        usersErrorMessage: null,
       );
 
       _toast(const ToastEvent.success('User added'));
     } on DioException catch (e) {
       state = state.copyWith(isUsersLoading: false);
-      final code = e.response?.statusCode;
 
-      if (code == 409) return _toast(const ToastEvent.error('User already in project'));
-      if (code == 403) return _toast(const ToastEvent.error('No permission'));
-      if (code == 404) return _toast(const ToastEvent.error('Project or user not found'));
+      final code = e.response?.statusCode;
+      if (code == 409) {
+        _toast(const ToastEvent.error('User already in project'));
+        return;
+      }
+      if (code == 403) {
+        _toast(const ToastEvent.error('No permission'));
+        return;
+      }
+      if (code == 404) {
+        _toast(const ToastEvent.error('Project or user not found'));
+        return;
+      }
 
       _toast(const ToastEvent.error('Failed to add user'));
     } catch (_) {
       state = state.copyWith(isUsersLoading: false);
       _toast(const ToastEvent.error('Failed to add user'));
     }
+  }
+
+
+
+  void clearUsersPopupState() {
+    state = state.copyWith(
+      isUsersLoading: false,
+      clearUsersError: true,
+      clearProjectUsers: true,
+    );
+  }
+
+  bool canManageUsers({required String myUserId}) {
+    final p = state.openProject;
+    if (p == null) return false;
+    return p.isOwner(myUserId);
   }
 }

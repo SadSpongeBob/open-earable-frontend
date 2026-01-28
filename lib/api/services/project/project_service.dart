@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
@@ -56,15 +57,10 @@ class ProjectService {
   // Project Users Management
 
   Future<List<ProjectUser>> getProjectUsers(String projectId) async {
-    final res = await dioClient.get<dynamic>(
-      ProjectEndpoints.projectUsers(projectId),
-    );
-
-    final map = res.asMap();
-    final data = map['data'];
-
+    final res = await dioClient.get<dynamic>(ProjectEndpoints.projectUsers(projectId));
+    final data = res.data;
     if (data is! List) {
-      throw StateError('Expected {data: List} from GET ${ProjectEndpoints.projectUsers(projectId)}');
+      throw StateError('Expected List from ${ProjectEndpoints.projectUsers(projectId)}');
     }
 
     return data
@@ -85,13 +81,25 @@ class ProjectService {
       },
     );
 
-    final map = res.data as Map<String, dynamic>;
-    final list = map['data'] as List;
+    final root = res.data;
 
-    return list
+    // Backend may return either:
+    // A) List<ProjectUserDto>
+    // B) { "data": List<ProjectUserDto> }
+    final data = root is Map<String, dynamic> ? root['data'] : root;
+
+    if (data is! List) {
+      throw StateError(
+        'Expected List or {data: List} from POST ${ProjectEndpoints.projectUsers(projectId)} '
+            'but got ${data.runtimeType}',
+      );
+    }
+
+    return data
         .map((e) => ProjectUser.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
 
 
 
