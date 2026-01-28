@@ -98,10 +98,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                         onDuplicate: () {
                           if (selectedCount == 0) return;
-
-                          for (final projectId in state.selectedProjectIds) {
-                            controller.duplicateProject(projectId);
-                          }
+                          controller.duplicateProjects(
+                            state.selectedProjectIds,
+                          );
                         },
 
                         onRename: () {

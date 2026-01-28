@@ -325,32 +325,59 @@ class HomeController {
     }
   }
 
-  Future<void> duplicateProject(String projectId) async {
-    if (projectId == LocalMedia.defaultProjectId) return;
-
-    final project = _findById(projectId);
-    if (project == null) {
-      _toast(const ToastEvent.error('Project not found'));
-      return;
-    }
+  Future<void> duplicateProjects(Set<String> projectIds) async {
+    var successCount = 0;
+    final failed = <String>[];
 
     _state.setLoading(true);
     try {
-      final ProjectMetadata newProject;
-      if (project.projectSource == ProjectSource.cloud) {
-        newProject = await _projectService.duplicateProject(projectId);
-      } else {
-        final newName = _duplicateName(project.name);
-        final newId = Helpers.getProjectId();
-        newProject = ProjectMetadata.local(newId, newName);
+      for (final projectId in projectIds) {
+        if (projectId == LocalMedia.defaultProjectId) {
+          failed.add(projectId); // or continue without counting
+          continue;
+        }
+
+        final project = _findById(projectId);
+        if (project == null) {
+          _toast(ToastEvent.error('Invalid project id: $projectId'));
+          failed.add(projectId);
+          continue;
+        }
+
+        try {
+          late final ProjectMetadata newProject;
+
+          if (project.projectSource == ProjectSource.cloud) {
+            newProject = await _projectService.duplicateProject(projectId);
+          } else {
+            final newName = _duplicateName(project.name);
+            final newId = Helpers.getProjectId();
+            newProject = ProjectMetadata.local(newId, newName);
+          }
+
+          await _projectService.duplicateLocalProject(projectId, newProject);
+
+          _state.addProject(newProject);
+          successCount++;
+        } on DioException catch (e) {
+          failed.add(projectId);
+          _error(e, userMessage: 'Failed to duplicate project ${project.name}');
+        } catch (e) {
+          failed.add(projectId);
+          _error(e, userMessage: 'Failed to duplicate project ${project.name}');
+        }
       }
 
-      await _projectService.duplicateLocalProject(projectId, newProject);
-
-      _state.addProject(newProject);
-      _success('Project duplicated');
-    } on DioException catch (e) {
-      _error(e, userMessage: 'Failed to duplicate project ${project.name}');
+      if (failed.isEmpty) {
+        _state.clearError();
+        _success(
+          successCount == 1 ? 'Project duplicated' : 'Projects duplicated',
+        );
+      } else {
+        _toast(
+          ToastEvent.error('Duplicated $successCount, failed ${failed.length}'),
+        );
+      }
     } finally {
       _state.setLoading(false);
     }
