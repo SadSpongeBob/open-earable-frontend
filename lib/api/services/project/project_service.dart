@@ -115,6 +115,51 @@ class ProjectService {
     );
   }
 
+  /// Updates the local project on disk.
+  ///
+  /// If [projectId] is provided, the project is migrated from that old ID:
+  /// - The metadata file is renamed/moved.
+  /// - Any recordings are moved under the new project folder.
+  /// Otherwise, the existing metadata is overwritten in place.
+  Future<void> updateLocalProject({
+    required ProjectMetadata project,
+    String? projectId,
+  }) async {
+    final oldId = projectId;
+    final newId = project.id;
+
+    if (oldId != null && oldId != newId) {
+      final oldDir = _localMedia.projectDir(oldId);
+      final newDir = _localMedia.projectDir(newId);
+
+      if (await oldDir.exists()) {
+        await newDir.parent.create(recursive: true);
+
+        if (await newDir.exists()) {
+          // Invariant violation
+          throw StateError(
+            'Target project directory already exists: ${newDir.path}',
+          );
+        }
+
+        await oldDir.rename(newDir.path);
+      }
+    }
+
+    await overwriteMeta(newId, project);
+  }
+
+  Future<void> overwriteMeta(String projectId, ProjectMetadata project) async {
+    final metaFile = _localMedia.projectMetaFile(projectId);
+    await metaFile.parent.create(recursive: true);
+
+    final jsonString = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(project.toJson());
+
+    await metaFile.writeAsString(jsonString, flush: true);
+  }
+
   Future<void> deleteProject(String projectId) async {
     await _dioClient.delete<dynamic>(ProjectEndpoints.deleteProject(projectId));
   }

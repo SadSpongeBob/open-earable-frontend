@@ -238,9 +238,20 @@ class HomeController {
       return;
     }
 
+    final project = _findById(projectId);
+    if (project == null) {
+      _toast(ToastEvent.error('Invalid project id: $projectId'));
+      return;
+    }
+
     _state.setLoading(true);
     try {
-      await _projectService.renameProject(projectId, trimmed);
+      if (project.projectSource == ProjectSource.local) {
+        final updatedProject = project.copyWith(name: trimmed);
+        _projectService.updateLocalProject(project: updatedProject);
+      } else {
+        await _projectService.renameProject(projectId, trimmed);
+      }
       _state.renameProjectInList(projectId, trimmed);
 
       _state.clearError();
