@@ -85,14 +85,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                         onDelete: () {
                           if (selectedCount == 0) return;
 
-                          final projectIds = state.selectedProjectIds.toList();
+                          final projectIds = state.selectedProjectIds;
 
                           DeleteProjectDialog.show(
                             context,
                             onDelete: () async {
-                              for (final id in projectIds) {
-                                await controller.deleteProject(id);
-                              }
+                              await controller.deleteProjects(projectIds);
                               controller.exitSelectionMode();
                             },
                           );

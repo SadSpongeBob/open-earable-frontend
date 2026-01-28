@@ -275,32 +275,51 @@ class HomeController {
     }
   }
 
-  Future<void> deleteProject(String projectId) async {
-    final project = _findById(projectId);
-    if (project == null) {
-      _toast(ToastEvent.error('Invalid project id: $projectId'));
-      return;
-    }
+  Future<void> deleteProjects(Set<String> projectIds) async {
+    var successCount = 0;
+    final failed = <String>[];
 
     _state.setLoading(true);
     try {
-      if (project.projectSource == ProjectSource.cloud) {
-        await _projectService.deleteProject(projectId);
+      for (final projectId in projectIds) {
+        final project = _findById(projectId);
+        if (project == null) {
+          _toast(ToastEvent.error('Invalid project id: $projectId'));
+          failed.add(projectId);
+          continue;
+        }
+
+        try {
+          if (project.projectSource == ProjectSource.cloud) {
+            await _projectService.deleteProject(projectId);
+          }
+          await _projectService.deleteLocalProject(projectId);
+
+          final wasOpen = state.openProjectId == projectId;
+          _state.removeProject(projectId);
+
+          if (wasOpen) {
+            await openProject(LocalMedia.defaultProjectId);
+          }
+
+          successCount++;
+        } on DioException catch (e) {
+          failed.add(projectId);
+          _error(e, userMessage: 'Failed to delete project ${project.name}');
+        } catch (e) {
+          failed.add(projectId);
+          _error(e, userMessage: 'Failed to delete project ${project.name}');
+        }
       }
-      await _projectService.deleteLocalProject(projectId);
 
-      final wasOpen = state.openProjectId == projectId;
-
-      _state.removeProject(projectId);
-
-      if (wasOpen) {
-        await openProject(LocalMedia.defaultProjectId);
+      if (failed.isEmpty) {
+        _state.clearError();
+        _success(successCount == 1 ? 'Project deleted' : 'Projects deleted');
+      } else {
+        _toast(
+          ToastEvent.error('Deleted $successCount, failed ${failed.length}'),
+        );
       }
-
-      _state.clearError();
-      _success('Project Deleted');
-    } on DioException catch (e) {
-      _error(e, userMessage: 'Failed to delete project');
     } finally {
       _state.setLoading(false);
     }
