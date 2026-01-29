@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/project/project.dart';
 import 'package:openearable/api/models/project/project_user.dart';
@@ -19,6 +20,7 @@ class HomeState {
 
   final bool isLoading;
   final String? errorMessage;
+  final bool areProjectsLoaded;
 
   final bool isUsersLoading;
   final List<ProjectUser> projectUsers;
@@ -34,14 +36,15 @@ class HomeState {
     required this.selectedVideoId,
     required this.isLoading,
     required this.errorMessage,
+    required this.areProjectsLoaded,
     required this.isUsersLoading,
     required this.projectUsers,
     required this.usersErrorMessage,
   });
 
-  factory HomeState.initial() => const HomeState(
-    projects: [],
-    openProjectId: 'default',
+  factory HomeState.initial() => HomeState(
+    projects: [ProjectMetadata.local(LocalMedia.defaultProjectId, 'Default')],
+    openProjectId: LocalMedia.defaultProjectId,
     openProject: null,
     isSelectionMode: false,
     selectedProjectIds: {},
@@ -49,6 +52,7 @@ class HomeState {
     selectedVideoId: null,
     isLoading: false,
     errorMessage: null,
+    areProjectsLoaded: false,
     isUsersLoading: false,
     projectUsers: [],
     usersErrorMessage: null,
@@ -70,6 +74,7 @@ class HomeState {
     bool? isLoading,
     String? errorMessage,
     bool clearError = false,
+    bool? areProjectsLoaded,
 
     bool? isUsersLoading,
     List<ProjectUser>? projectUsers,
@@ -86,11 +91,12 @@ class HomeState {
       selectedProjectIds: selectedProjectIds ?? this.selectedProjectIds,
 
       videos: videos ?? this.videos,
-      selectedVideoId:
-      clearSelectedVideoId ? null : (selectedVideoId ?? this.selectedVideoId),
-
+      selectedVideoId: clearSelectedVideoId
+          ? null
+          : (selectedVideoId ?? this.selectedVideoId),
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      areProjectsLoaded: areProjectsLoaded ?? this.areProjectsLoaded,
 
       isUsersLoading: isUsersLoading ?? this.isUsersLoading,
       projectUsers: clearProjectUsers ? const [] : (projectUsers ?? this.projectUsers),
