@@ -23,7 +23,6 @@ class PlaybackController extends ChangeNotifier {
     videoController = controller;
     await controller.initialize();
     controller.play();
-    videoName = File(path).uri.pathSegments.last.split('.').first;
     notifyListeners();
   }
   void togglePlay() {
@@ -104,8 +103,7 @@ class PlaybackController extends ChangeNotifier {
       debugPrintStack(stackTrace: stack);
     }
   }
-  String getVideoName([String? path]) {
-
+  String getVideoName() {
     return videoName;
   }
   Future<void> stopAndUpload({required RecordingService recordingService, Dio? dioClient, required String path, required String? projektId}) async {
@@ -138,7 +136,9 @@ class PlaybackController extends ChangeNotifier {
           timestamp: timestamp.toIso8601String(),
         ),
         sensors: const [],
-        projectId: projektId,
+        // if projekt id == default then null
+
+        projectId: projektId == "default" ? null : projektId,
         thumbnailContent: thumbnailBytes != null ? 'JPEG' : null,
       );
       final uploadResp = await recordingService.startUpload(req);

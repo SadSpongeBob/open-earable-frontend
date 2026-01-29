@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import '../../../api/services/recording/recording_service.dart';
+import '../../../app/routing/routes.dart';
 import '../../../app/theme/app_bar_styles.dart';
 import '../../home/state/home_provider.dart';
 import 'rename_dialog.dart';
@@ -77,10 +79,7 @@ class _TopBarState extends ConsumerState<TopBar> {
                   onPressed: () async {
                     final svc = ref.read(recordingServiceProvider);
                     unawaited(controller.stopAndUpload(recordingService: svc, path: videoPath, projektId:  ref.read(homeStateProvider).openProjectId));
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => RecordingPage()),
-                    );
+                    context.go(Routes.home);
                   },
                   color: const Color(0xFFFF4442),
                   splashRadius: 20,
@@ -136,13 +135,13 @@ class _TopBarState extends ConsumerState<TopBar> {
                   color: Colors.white,
                   onSelected: (value) async {
                     if (value == "Rename") {
-                      final newName = await showRenameDialog(context, oldName: controller.getVideoName(videoPath));
+                      final newName = await showRenameDialog(context, oldName: controller.getVideoName());
                       if (newName != null && newName.isNotEmpty) {
                         final videoNames = ref
                             .read(homeStateProvider)
                             .videos
                             .where((v) =>
-                        v.projectId == ref.read(homeStateProvider).openProjectId)
+                        v.projectId == (ref.read(homeStateProvider).openProjectId  == "default" ? null : ref.read(homeStateProvider).openProjectId))
                             .map((v) => v.name)
                             .toList();
 
@@ -151,7 +150,6 @@ class _TopBarState extends ConsumerState<TopBar> {
                             const SnackBar(content: Text('video name exists')),
                           );
                         } else {
-
                           controller.renameVideo(newName);
                         }
                       }
