@@ -325,11 +325,6 @@ class HomeController extends StateNotifier<HomeState> {
       state = state.copyWith(isUsersLoading: false);
 
       final code = e.response?.statusCode;
-      final data = e.response?.data;
-
-      debugPrint('addUser DioException code=$code');
-      debugPrint('addUser DioException data=$data');
-      debugPrint('addUser DioException message=${e.message}');
 
       if (code == 409) return _toast(const ToastEvent.error('User already in project'));
       if (code == 403) return _toast(const ToastEvent.error('No permission'));
@@ -338,10 +333,6 @@ class HomeController extends StateNotifier<HomeState> {
       _toast(const ToastEvent.error('Failed to add user'));
     } catch (e, st) {
       state = state.copyWith(isUsersLoading: false);
-
-      debugPrint('addUser unexpected error: $e');
-      debugPrint('addUser stack: $st');
-
       _toast(const ToastEvent.error('Failed to add user'));
     }
   }
