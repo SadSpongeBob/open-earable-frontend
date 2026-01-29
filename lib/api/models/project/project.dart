@@ -68,6 +68,7 @@ class Project {
       name: name,
       recordingAmount: recordings.length,
       userAmount: users.length,
+      projectSource: ProjectSource.cloud,
     );
   }
 }
