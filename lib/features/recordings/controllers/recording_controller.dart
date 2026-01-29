@@ -1,13 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:video_thumbnail/video_thumbnail.dart' as vt;
+import 'package:uuid/uuid.dart';
+import 'package:image/image.dart' as img;
 
 
 class RecordingController extends ChangeNotifier {
   RecordingController({this.initialCamera = CameraLensDirection.back});
   final CameraLensDirection initialCamera;
+  final recordingId = const Uuid().v4();
 
   CameraController? cameraController;
   List<CameraDescription> cameras = [];
@@ -57,18 +62,87 @@ class RecordingController extends ChangeNotifier {
       final file = await cameraController!.stopVideoRecording();
       isRecording = isPaused = false;
       notifyListeners();
-      return _saveVideo(file);
+      return _saveVideo(file: file);
     }
     return null;
   }
 
-  Future<String?> _saveVideo(XFile file) async {
-    final dir = Directory('${(await getApplicationDocumentsDirectory()).path}/OpenEarable/${DateTime.now().millisecondsSinceEpoch}');
-    await dir.create(recursive: true);
-    final path = '${dir.path}/video.mp4';
-    await File(file.path).copy(path);
-    lastSavedPath = path;
-    return path;
+  Future<String?> _saveVideo({
+    required XFile file,
+  }) async {
+    try {
+      // 1️⃣ Basis-Verzeichnis
+      final appDir = await getApplicationDocumentsDirectory();
+      final recordingId = const Uuid().v4();
+
+      final dir = Directory(
+        '${appDir.path}/OpenEarable/default/$recordingId',
+      );
+      await dir.create(recursive: true);
+
+      // 2️⃣ Video speichern
+      final videoPath = '${dir.path}/video.mp4';
+      await File(file.path).copy(videoPath);
+      debugPrint('🎥 Video gespeichert: $videoPath');
+      Uint8List? thumbData = await generateThumbnail(videoPath);
+
+      if (thumbData != null) {
+        final image = img.decodeImage(thumbData);
+        if (image != null) {
+          final thumbFile = File('${dir.path}/thumbnail.png');
+          await thumbFile.writeAsBytes(img.encodePng(image));
+          debugPrint('🖼️ Thumbnail gespeichert');
+        }
+      }
+      // 4️⃣ meta.json schreiben
+      final metaFile = File('${dir.path}/meta.txt');
+      final meta = {
+        'name': "video.mp4",
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+      };
+
+      await metaFile.writeAsString(
+        const JsonEncoder.withIndent('  ').convert(meta),
+      );
+      debugPrint('📄 meta.json geschrieben');
+
+      return videoPath;
+    } catch (e, stack) {
+      debugPrint('❌ Fehler in saveVideo: $e');
+      debugPrintStack(stackTrace: stack);
+      return null;
+    }
+  }
+  Future<Uint8List?> generateThumbnail(String videoPath) async {
+    return vt.VideoThumbnail.thumbnailData(
+      video: videoPath,
+      imageFormat: vt.ImageFormat.JPEG,
+      maxWidth: 512,
+      quality: 75,
+    );
+  }
+  Future<void> writeMeta({
+    required String videoPath,
+    required String name,
+    required DateTime timestamp,
+  }) async {
+    try {
+      final dir = Directory(File(videoPath).parent.path);
+      final metaFile = File('${dir.path}/meta.txt');
+
+      final meta = {
+        'videoPath': videoPath,
+        'name': name,
+        'timestamp': timestamp.toUtc().toIso8601String(),
+      };
+
+      await metaFile.writeAsString(
+        const JsonEncoder.withIndent('  ').convert(meta),
+      );
+
+    } catch (e) {
+      debugPrint('❌ Fehler beim Schreiben von meta.json: $e');
+    }
   }
 
   Future<void> toggleCamera() async {
@@ -104,3 +178,4 @@ class RecordingController extends ChangeNotifier {
     super.dispose();
   }
 }
+

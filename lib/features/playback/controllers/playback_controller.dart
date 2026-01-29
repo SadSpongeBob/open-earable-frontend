@@ -72,18 +72,37 @@ class PlaybackController extends ChangeNotifier {
       await directory.delete(recursive: true);
     }
   }
-  Future<void> exportVideoFolder(String videoPath) async {
-    final sourceFile = File(videoPath);
+  Future<void> exportVideoFolder({
+    required String videoPath,
+  }) async {
+    try {
+      final sourceVideo = File(videoPath);
+      final sourceDir = sourceVideo.parent;
 
-    final picturesDir =
-    Directory('/storage/emulated/0/Pictures/OpenEarable');
-    await picturesDir.create(recursive: true);
-    final folderName = DateTime.now().millisecondsSinceEpoch.toString();
-    final targetDir = Directory('${picturesDir.path}/$folderName');
-    await targetDir.create(recursive: true);
-    final targetFile =
-    File('${targetDir.path}/$videoName.mp4');
-    await sourceFile.copy(targetFile.path);
+      // Zielordner in Pictures/OpenEarable
+      final picturesDir = Directory('/storage/emulated/0/Pictures/OpenEarable');
+      await picturesDir.create(recursive: true);
+
+      // Neuer Ordnername = aktueller Zeitstempel
+      final folderName = DateTime.now().millisecondsSinceEpoch.toString();
+      final targetDir = Directory('${picturesDir.path}/$folderName');
+      await targetDir.create(recursive: true);
+
+      // Alle Dateien im Parent-Ordner kopieren
+      await for (var entity in sourceDir.list()) {
+        if (entity is File && entity.uri.pathSegments.last != "meta.txt") {
+          final fileName = entity.uri.pathSegments.last;
+          final targetFile = File('${targetDir.path}/$fileName');
+          await entity.copy(targetFile.path);
+          debugPrint('📄 Datei kopiert: $fileName');
+        }
+      }
+
+      debugPrint('✅ Export abgeschlossen: ${targetDir.path}');
+    } catch (e, stack) {
+      debugPrint('❌ Fehler beim Exportieren: $e');
+      debugPrintStack(stackTrace: stack);
+    }
   }
   String getVideoName([String? path]) {
 

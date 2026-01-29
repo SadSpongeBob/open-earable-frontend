@@ -130,7 +130,7 @@ class _TopBarState extends ConsumerState<TopBar> {
 
               final right = Row(mainAxisSize: MainAxisSize.min, children: [
                 TextButton(
-                  onPressed: () => controller.exportVideoFolder(videoPath),
+                  onPressed: () => controller.exportVideoFolder(videoPath: videoPath),
                   child: const Text("Export", style: GlobalAppBarStyles.appBarBlackText),
                 ),
                 PopupMenuButton<String>(
