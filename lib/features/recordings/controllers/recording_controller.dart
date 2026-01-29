@@ -71,7 +71,7 @@ class RecordingController extends ChangeNotifier {
     required XFile file,
   }) async {
     try {
-      // 1️⃣ Basis-Verzeichnis
+
       final appDir = await getApplicationDocumentsDirectory();
       final recordingId = const Uuid().v4();
 
@@ -79,11 +79,8 @@ class RecordingController extends ChangeNotifier {
         '${appDir.path}/OpenEarable/default/$recordingId',
       );
       await dir.create(recursive: true);
-
-      // 2️⃣ Video speichern
       final videoPath = '${dir.path}/video.mp4';
       await File(file.path).copy(videoPath);
-      debugPrint('🎥 Video gespeichert: $videoPath');
       Uint8List? thumbData = await generateThumbnail(videoPath);
 
       if (thumbData != null) {
@@ -91,24 +88,18 @@ class RecordingController extends ChangeNotifier {
         if (image != null) {
           final thumbFile = File('${dir.path}/thumbnail.png');
           await thumbFile.writeAsBytes(img.encodePng(image));
-          debugPrint('🖼️ Thumbnail gespeichert');
         }
       }
-      // 4️⃣ meta.json schreiben
       final metaFile = File('${dir.path}/meta.txt');
       final meta = {
         'name': "video.mp4",
         'timestamp': DateTime.now().toUtc().toIso8601String(),
       };
-
       await metaFile.writeAsString(
         const JsonEncoder.withIndent('  ').convert(meta),
       );
-      debugPrint('📄 meta.json geschrieben');
-
       return videoPath;
     } catch (e, stack) {
-      debugPrint('❌ Fehler in saveVideo: $e');
       debugPrintStack(stackTrace: stack);
       return null;
     }
@@ -126,23 +117,19 @@ class RecordingController extends ChangeNotifier {
     required String name,
     required DateTime timestamp,
   }) async {
-    try {
-      final dir = Directory(File(videoPath).parent.path);
-      final metaFile = File('${dir.path}/meta.txt');
+    final dir = Directory(File(videoPath).parent.path);
+    final metaFile = File('${dir.path}/meta.txt');
 
-      final meta = {
-        'videoPath': videoPath,
-        'name': name,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-      };
+    final meta = {
+      'videoPath': videoPath,
+      'name': name,
+      'timestamp': timestamp.toUtc().toIso8601String(),
+    };
 
-      await metaFile.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(meta),
-      );
+    await metaFile.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(meta),
+    );
 
-    } catch (e) {
-      debugPrint('❌ Fehler beim Schreiben von meta.json: $e');
-    }
   }
 
   Future<void> toggleCamera() async {
@@ -161,7 +148,6 @@ class RecordingController extends ChangeNotifier {
       notifyListeners();
     }
   }
-
   Future<void> resumeRecording() async {
     if (isInitialized && isRecording && isPaused) {
       await cameraController!.resumeVideoRecording();
@@ -169,9 +155,6 @@ class RecordingController extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-
-
   @override
   void dispose() {
     cameraController?.dispose();

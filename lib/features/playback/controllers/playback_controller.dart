@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
@@ -78,28 +77,21 @@ class PlaybackController extends ChangeNotifier {
       final sourceVideo = File(videoPath);
       final sourceDir = sourceVideo.parent;
 
-      // Zielordner in Pictures/OpenEarable
       final picturesDir = Directory('/storage/emulated/0/Pictures/OpenEarable');
       await picturesDir.create(recursive: true);
 
-      // Neuer Ordnername = aktueller Zeitstempel
       final folderName = DateTime.now().millisecondsSinceEpoch.toString();
       final targetDir = Directory('${picturesDir.path}/$folderName');
       await targetDir.create(recursive: true);
 
-      // Alle Dateien im Parent-Ordner kopieren
       await for (var entity in sourceDir.list()) {
         if (entity is File && entity.uri.pathSegments.last != "meta.txt") {
           final fileName = entity.uri.pathSegments.last;
           final targetFile = File('${targetDir.path}/$fileName');
           await entity.copy(targetFile.path);
-          debugPrint('📄 Datei kopiert: $fileName');
         }
       }
-
-      debugPrint('✅ Export abgeschlossen: ${targetDir.path}');
     } catch (e, stack) {
-      debugPrint('❌ Fehler beim Exportieren: $e');
       debugPrintStack(stackTrace: stack);
     }
   }
@@ -136,7 +128,6 @@ class PlaybackController extends ChangeNotifier {
           timestamp: timestamp.toIso8601String(),
         ),
         sensors: const [],
-        // if projekt id == default then null
 
         projectId: projektId == "default" ? null : projektId,
         thumbnailContent: thumbnailBytes != null ? 'JPEG' : null,
