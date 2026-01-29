@@ -1,4 +1,3 @@
-
 class RecordingEndpoints {
 
   static const String base = '/api/recording';
@@ -26,4 +25,5 @@ class RecordingEndpoints {
   static String userRecordings(String userId) => '$base/user/$userId';
 
 
+  static const baseUrl = '/api/recording';
 }

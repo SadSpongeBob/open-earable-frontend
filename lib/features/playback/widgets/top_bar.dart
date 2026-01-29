@@ -1,13 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
-import 'package:openearable/api/client_dio.dart';
+import '../../../api/services/recording/recording_service.dart';
 import '../../../app/theme/app_bar_styles.dart';
+import '../../home/state/home_provider.dart';
 import 'rename_dialog.dart';
 import '../controllers/playback_controller.dart';
-
 class TopBar extends ConsumerStatefulWidget {
   final PlaybackController controller;
   final GlobalKey speedKey;
@@ -77,7 +76,7 @@ class _TopBarState extends ConsumerState<TopBar> {
                   icon: const Icon(Icons.arrow_back_ios),
                   onPressed: () async {
                     final svc = ref.read(recordingServiceProvider);
-                    unawaited(controller.stopAndUpload(recordingService: svc, path: videoPath));
+                    unawaited(controller.stopAndUpload(recordingService: svc, path: videoPath, projektId:  ref.read(homeStateProvider).openProjectId));
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (_) => RecordingPage()),
@@ -139,7 +138,22 @@ class _TopBarState extends ConsumerState<TopBar> {
                     if (value == "Rename") {
                       final newName = await showRenameDialog(context, oldName: controller.getVideoName(videoPath));
                       if (newName != null && newName.isNotEmpty) {
-                        controller.renameVideo(newName);
+                        final videoNames = ref
+                            .read(homeStateProvider)
+                            .videos
+                            .where((v) =>
+                        v.projectId == ref.read(homeStateProvider).openProjectId)
+                            .map((v) => v.name)
+                            .toList();
+
+                        if (videoNames.contains(newName)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('video name exists')),
+                          );
+                        } else {
+
+                          controller.renameVideo(newName);
+                        }
                       }
                     }
                   },

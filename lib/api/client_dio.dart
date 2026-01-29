@@ -34,15 +34,6 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return ref.read(_networkModuleProvider).authService;
 });
 
-final projectServiceProvider = Provider<ProjectService>((ref) {
-  final dio = ref.read(apiDioProvider);
-  return ProjectService(dioClient: dio);
-});
-
-final recordingServiceProvider = Provider<RecordingService>((ref) {
-  final dio = ref.read(apiDioProvider);
-  return RecordingService(dioClient: dio);
-});
 
 final awsDioProvider = Provider<Dio>((ref) {
   return Dio(

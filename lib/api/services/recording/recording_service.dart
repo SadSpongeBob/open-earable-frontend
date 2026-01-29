@@ -1,19 +1,25 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:openearable/api/local_media.dart';
+import 'package:path/path.dart' as p;
 import 'package:dio/dio.dart';
-import '../../models/recording/recording.dart';
-import '../../models/recording/upload_recording_request.dart';
-import '../../models/recording/upload_recording_response.dart';
-import 'recording_endpoints.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/client_dio.dart';
+import 'package:openearable/api/interceptors/map_response.dart';
+import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/api/services/recording//recording_endpoints.dart';
 
+import 'package:openearable/api/models/recording/upload_recording_request.dart';
+import 'package:openearable/api/models/recording/upload_recording_response.dart';
 class RecordingService {
-  final Dio dioClient;
+  final Dio _dio;
+  final LocalMedia _localMedia;
 
-  RecordingService({required this.dioClient});
-
-  Dio get dio => dioClient;
-
+  RecordingService({required Dio dio, required LocalMedia localMedia})
+      : _dio = dio,
+        _localMedia = localMedia;
   Future<UploadRecordingResponse> startUpload(UploadRecordingRequest req) async {
-    final res = await dioClient.post(
+    final res = await _dio.post(
       RecordingEndpoints.startUpload,
       data: req.toJson(),
       options: Options(validateStatus: (status) => true),
@@ -33,7 +39,7 @@ class RecordingService {
     throw Exception('startUpload: unexpected response shape: ${raw.runtimeType}');
   }
   Future<Recording?> completeUpload(String recordingId) async {
-    final res = await dioClient.put(
+    final res = await _dio.put(
       RecordingEndpoints.complete(recordingId),
       options: Options(validateStatus: (status) => true),
     );
@@ -66,25 +72,90 @@ class RecordingService {
     }
     throw Exception('completeUpload: unexpected response type ${raw.runtimeType}');
   }
-  Future<List<Recording>> getRecordings({Map<String, dynamic>? query}) async {
-    final res = await dioClient.get(RecordingEndpoints.base, queryParameters: query);
-    final data = res.data;
-    if (data is! List) {
-      throw StateError('Expected List from GET ${RecordingEndpoints.base}');
-    }
-    return data.map((e) => Recording.fromJson(e as Map<String, dynamic>)).toList();
-  }
+
   Future<Recording> getRecording(String recordingId) async {
-    final res = await dioClient.get(RecordingEndpoints.recording(recordingId));
+    final res = await _dio.get(RecordingEndpoints.recording(recordingId));
     return Recording.fromJson(res.data as Map<String, dynamic>);
   }
   Future<void> deleteRecording(String recordingId) async {
-    await dioClient.delete(RecordingEndpoints.deleteRecording(recordingId));
+    await _dio.delete(RecordingEndpoints.deleteRecording(recordingId));
   }
   Future<void> rename(String recordingId, String name) async {
-    await dioClient.put(RecordingEndpoints.rename(recordingId), data: {'name': name});
+    await _dio.put(RecordingEndpoints.rename(recordingId), data: {'name': name});
   }
   Future<void> duplicate(String recordingId) async {
-    await dioClient.post(RecordingEndpoints.duplicate(recordingId));
+    await _dio.post(RecordingEndpoints.duplicate(recordingId));
+  }
+
+  Future<List<Recording>> getRecordings() async {
+    final res = await _dio.get(RecordingEndpoints.baseUrl);
+    final data = res.asList();
+
+    return data.map((r) => Recording.fromJson(r)).toList();
+  }
+
+  Future<List<Recording>> getLocalProjectRecordings(String projectId) async {
+    final projectDir = _localMedia.projectDir(projectId);
+
+    if (!await projectDir.exists()) return [];
+
+    final recordings = <Recording>[];
+
+    final entities = await projectDir.list(followLinks: false).toList();
+    final recordingDirs = entities.whereType<Directory>();
+
+    for (final recDir in recordingDirs) {
+      final recordingId = p.basename(recDir.path);
+
+      final videoFile = _localMedia.videoFile(projectId, recordingId);
+      if (!await videoFile.exists()) continue;
+
+      final metaFile = _localMedia.recordingMetaFile(projectId, recordingId);
+      if (!await metaFile.exists()) continue;
+
+      Map<String, dynamic> meta;
+      try {
+        meta =
+        jsonDecode(await metaFile.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        // corrupted metadata -> skip recording
+        continue;
+      }
+
+      final name = meta['name'] as String? ?? 'Recording - $recordingId';
+      final userId = meta['userId'] as String? ?? 'local';
+      final timestampRaw = meta['timestamp'] as String?;
+      final timestamp = timestampRaw != null
+          ? DateTime.parse(timestampRaw).toUtc()
+          : (await videoFile.lastModified()).toUtc();
+
+      final thumbFile = _localMedia.thumbnailFile(projectId, recordingId);
+
+      recordings.add(
+        Recording.local(
+          id: recordingId,
+          name: name,
+          localVideoPath: videoFile.path,
+          localThumbnailPath: thumbFile.existsSync() ? thumbFile.path : null,
+          videoTimestamp: timestamp,
+          projectId: projectId == LocalMedia.defaultProjectId
+              ? null
+              : projectId,
+          userId: userId,
+        ),
+      );
+    }
+    recordings.sort((a, b) => b.videoTimestamp.compareTo(a.videoTimestamp));
+    return recordings;
+  }
+
+  Future<List<Recording>> getLocalRecordings() async {
+    return getLocalProjectRecordings(LocalMedia.defaultProjectId);
   }
 }
+
+final recordingServiceProvider = Provider<RecordingService>((ref) {
+  final dio = ref.read(apiDioProvider);
+  final localMedia = ref.read(localMediaProvider);
+  return RecordingService(dio: dio, localMedia: localMedia);
+});

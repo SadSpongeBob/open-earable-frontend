@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 
 class ProjectBar extends StatelessWidget {
@@ -46,8 +47,8 @@ class ProjectBar extends StatelessWidget {
               }
 
               final project = projects[index - 1];
-              final isOpen= project.id == openProjectId;
-              final isSelectable = project.id != 'default';
+              final isOpen = project.id == openProjectId;
+              final isSelectable = project.id != LocalMedia.defaultProjectId;
               final isChecked = selectedProjectIds.contains(project.id);
               return _ProjectTile(
                 name: project.name,

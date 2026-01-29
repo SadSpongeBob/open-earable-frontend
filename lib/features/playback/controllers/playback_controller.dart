@@ -13,7 +13,7 @@ class PlaybackController extends ChangeNotifier {
   bool isMuted = false;
   double speed = 1.0;
   String speedString = "1.0x";
-  String videoName = "video.mp4";
+  String videoName = "recording_${DateTime.now().millisecondsSinceEpoch}";
   DateTime? recordingStartedAt;
   Future<void> loadVideo(String path) async {
     recordingStartedAt = DateTime.now().toUtc();
@@ -108,14 +108,14 @@ class PlaybackController extends ChangeNotifier {
 
     return videoName;
   }
-  Future<void> stopAndUpload({required RecordingService recordingService, Dio? dioClient, required String path}) async {
-    await uploadVideo(path, recordingService: recordingService, dioClient: dioClient);
+  Future<void> stopAndUpload({required RecordingService recordingService, Dio? dioClient, required String path, required String? projektId}) async {
+    await uploadVideo(path, recordingService: recordingService, dioClient: dioClient, projektId: projektId);
     await deleteVideo(path);
   }
   Future<void> uploadVideo(
       String filePath, {
         required RecordingService recordingService,
-        Dio? dioClient,
+        Dio? dioClient, String? projektId,
       }) async {
     try {
       final dio = dioClient ?? Dio();
@@ -130,7 +130,7 @@ class PlaybackController extends ChangeNotifier {
       }
       final timestamp = recordingStartedAt ?? DateTime.now().toUtc();
       final req = UploadRecordingRequest(
-        name: "recording_${DateTime.now().millisecondsSinceEpoch}",
+        name: videoName,
         video: RecordingFile(
           filename: videoName,
           contentType: 'MP4',
@@ -138,7 +138,7 @@ class PlaybackController extends ChangeNotifier {
           timestamp: timestamp.toIso8601String(),
         ),
         sensors: const [],
-        projectId: null,
+        projectId: projektId,
         thumbnailContent: thumbnailBytes != null ? 'JPEG' : null,
       );
       final uploadResp = await recordingService.startUpload(req);
