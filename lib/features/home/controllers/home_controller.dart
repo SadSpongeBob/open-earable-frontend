@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/services/project/project_service.dart';
@@ -331,7 +330,7 @@ class HomeController extends StateNotifier<HomeState> {
       if (code == 404) return _toast(const ToastEvent.error('Project or user not found'));
 
       _toast(const ToastEvent.error('Failed to add user'));
-    } catch (e, st) {
+    } catch (e) {
       state = state.copyWith(isUsersLoading: false);
       _toast(const ToastEvent.error('Failed to add user'));
     }
