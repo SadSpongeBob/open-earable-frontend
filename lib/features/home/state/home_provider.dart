@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/legacy.dart';
+
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import '../../../api/models/project/project_user.dart';
 import '../state/home_state.dart';
 
-final homeStateProvider = StateNotifierProvider<HomeStateNotifier, HomeState>((
-  ref,
-) {
+final homeStateProvider =
+StateNotifierProvider<HomeStateNotifier, HomeState>((ref) {
   return HomeStateNotifier();
 });
 
@@ -25,13 +26,12 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
     );
   }
 
-  void setProjectsLoaded(bool loaded) {
-    state = state.copyWith(areProjectsLoaded: loaded);
-  }
-
   void clearSelection() {
     state = state.copyWith(selectedProjectIds: {}, isSelectionMode: false);
   }
+
+  void setProjectsLoaded(bool loaded) =>
+      state = state.copyWith(areProjectsLoaded: loaded);
 
   void setLoading(bool value) => state = state.copyWith(isLoading: value);
 
@@ -42,13 +42,6 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
 
   void setProjects(List<ProjectMetadata> projects) =>
       state = state.copyWith(projects: projects);
-
-  void setOpenProjectId(String projectId) =>
-      state = state.copyWith(openProjectId: projectId);
-
-  void setVideos(List<Recording> videos, {bool clearSelected = true}) {
-    state = state.copyWith(videos: videos, clearSelectedVideoId: clearSelected);
-  }
 
   void setOpenProject({
     required String projectId,
@@ -67,8 +60,7 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
   // ----------------
 
   void addProject(ProjectMetadata project) {
-    state = state.copyWith(
-        projects: [...state.projects, project], clearError: true);
+    state = state.copyWith(projects: [...state.projects, project], clearError: true);
   }
 
   void renameProjectInList(String projectId, String newName) {
@@ -80,7 +72,6 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
     state = state.copyWith(projects: updated);
   }
 
-  /// Removes project from list + also cleans selection set.
   void removeProject(String projectId) {
     final updated = state.projects.where((p) => p.id != projectId).toList();
 
@@ -92,6 +83,39 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
       selectedProjectIds: nextSelected,
       isSelectionMode: nextSelected.isNotEmpty,
       clearError: true,
+    );
+  }
+
+  // ----------------
+  // Project users popup setters
+  // ----------------
+
+  void setUsersLoading(bool value) {
+    state = state.copyWith(isUsersLoading: value, clearUsersError: true);
+  }
+
+  void setProjectUsers(List<ProjectUser> users) {
+    state = state.copyWith(
+      isUsersLoading: false,
+      projectUsers: users,
+      usersErrorMessage: null,
+    );
+  }
+
+
+  void setUsersError(String message) {
+    state = state.copyWith(
+      isUsersLoading: false,
+      usersErrorMessage: message,
+    );
+  }
+
+  void clearUsersPopupState() {
+    state = state.copyWith(
+      isUsersLoading: false,
+      clearUsersError: true,
+      clearProjectUsers: true,
+      usersErrorMessage: null,
     );
   }
 }
