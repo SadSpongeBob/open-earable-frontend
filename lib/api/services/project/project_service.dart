@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
@@ -82,10 +81,6 @@ class ProjectService {
     );
 
     final root = res.data;
-
-    // Backend may return either:
-    // A) List<ProjectUserDto>
-    // B) { "data": List<ProjectUserDto> }
     final data = root is Map<String, dynamic> ? root['data'] : root;
 
     if (data is! List) {

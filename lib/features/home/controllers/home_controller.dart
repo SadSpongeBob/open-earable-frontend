@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/services/project/project_service.dart';
@@ -324,22 +325,23 @@ class HomeController extends StateNotifier<HomeState> {
       state = state.copyWith(isUsersLoading: false);
 
       final code = e.response?.statusCode;
-      if (code == 409) {
-        _toast(const ToastEvent.error('User already in project'));
-        return;
-      }
-      if (code == 403) {
-        _toast(const ToastEvent.error('No permission'));
-        return;
-      }
-      if (code == 404) {
-        _toast(const ToastEvent.error('Project or user not found'));
-        return;
-      }
+      final data = e.response?.data;
+
+      debugPrint('addUser DioException code=$code');
+      debugPrint('addUser DioException data=$data');
+      debugPrint('addUser DioException message=${e.message}');
+
+      if (code == 409) return _toast(const ToastEvent.error('User already in project'));
+      if (code == 403) return _toast(const ToastEvent.error('No permission'));
+      if (code == 404) return _toast(const ToastEvent.error('Project or user not found'));
 
       _toast(const ToastEvent.error('Failed to add user'));
-    } catch (_) {
+    } catch (e, st) {
       state = state.copyWith(isUsersLoading: false);
+
+      debugPrint('addUser unexpected error: $e');
+      debugPrint('addUser stack: $st');
+
       _toast(const ToastEvent.error('Failed to add user'));
     }
   }
