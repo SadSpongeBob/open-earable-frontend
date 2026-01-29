@@ -1,15 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/app/utils/helpers.dart';
 import 'package:path/path.dart' as p;
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
-import '../../models/auth/user.dart';
+import '../../client_dio.dart';
 import '../../models/project/project.dart';
+import '../../models/project/project_role.dart';
+import '../../models/project/project_user.dart';
 import 'project_endpoints.dart';
 
 class ProjectService {
@@ -43,7 +44,6 @@ class ProjectService {
         meta =
             jsonDecode(await metaFile.readAsString()) as Map<String, dynamic>;
       } catch (_) {
-        // corrupted metadata -> skip project
         continue;
       }
       final name = (meta['name'] as String?) ?? 'Project - $projectId';
@@ -231,19 +231,65 @@ class ProjectService {
     }
   }
 
-  Future<List<User>> getProjectUsers(String projectId) async {
-    final res = await _dioClient.get<dynamic>(
+  // Project Users Management
+
+  Future<List<ProjectUser>> getProjectUsers(String projectId) async {
+    final res = await _dioClient.get(ProjectEndpoints.projectUsers(projectId));
+
+    final root = res.data;
+    final data = root is Map<String, dynamic> ? root['data'] : root;
+
+    if (data is! List) {
+      throw StateError(
+        'Expected List or {data: List} from GET ${ProjectEndpoints.projectUsers(projectId)} '
+            'but got ${data.runtimeType}',
+      );
+    }
+
+    return data
+        .map((e) => ProjectUser.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<ProjectUser>> addProjectUser({
+    required String projectId,
+    required String emailAddress,
+    required ProjectRole role,
+  }) async {
+    final res = await _dioClient.post<dynamic>(
       ProjectEndpoints.projectUsers(projectId),
+      data: {
+        'emailAddress': emailAddress.trim(),
+        'role': role.toApi(),
+      },
     );
 
-    final data = res.asList();
+    final root = res.data;
+    final data = root is Map<String, dynamic> ? root['data'] : root;
 
-    return data.map((e) => User.fromJson(e as Map<String, dynamic>)).toList();
+    if (data is! List) {
+      throw StateError(
+        'Expected List or {data: List} from POST ${ProjectEndpoints.projectUsers(projectId)} '
+            'but got ${data.runtimeType}',
+      );
+    }
+
+    return data
+        .map((e) => ProjectUser.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
-}
 
+  Future<void> removeUserFromProject({
+    required String projectId,
+    required String userId,
+  }) async {
+    await _dioClient.delete<dynamic>(
+      ProjectEndpoints.removeProjectUser(projectId, userId),
+    );
+  }}
 final projectServiceProvider = Provider<ProjectService>((ref) {
   final dio = ref.read(apiDioProvider);
   final localMedia = ref.read(localMediaProvider);
   return ProjectService(dioClient: dio, localMedia: localMedia);
 });
+
