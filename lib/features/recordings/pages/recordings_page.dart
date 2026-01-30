@@ -88,20 +88,17 @@ class _RecordingPageState extends State<RecordingPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final size = _controller.cameraController!.value.previewSize!;
-    final double previewAspectRatio = size.height / size.width;
-
     return LayoutBuilder(
       builder: (context, constraints) {
         return ClipRect(
-          child: OverflowBox(
-            alignment: Alignment.center,
+          child: SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
             child: FittedBox(
               fit: BoxFit.cover,
               child: SizedBox(
-                width: constraints.maxWidth,
-                // We calculate the height based on the camera's true aspect ratio
-                height: constraints.maxWidth / previewAspectRatio,
+                width: _controller.cameraController!.value.previewSize!.height,
+                height: _controller.cameraController!.value.previewSize!.width,
                 child: CameraPreview(_controller.cameraController!),
               ),
             ),

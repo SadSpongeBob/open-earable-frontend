@@ -53,11 +53,14 @@ class VideoSensorOverlay extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(color: Colors.white.withOpacity(0.55)),
         padding: const EdgeInsets.all(12),
-        child: ChangeNotifierProvider<SensorDataProvider>.value(
-          value: activeDataProvider,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: const SensorChart(allowToggleAxes: false),
+        child: Material(
+          color: Colors.transparent,
+          child: ChangeNotifierProvider<SensorDataProvider>.value(
+            value: activeDataProvider,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: const SensorChart(allowToggleAxes: false),
+            ),
           ),
         ),
       ),
