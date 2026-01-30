@@ -12,42 +12,37 @@ class VideoSensorOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final recordingProvider = context.watch<RecordingChartProvider>();
     final wearablesProvider = context.watch<WearablesProvider>();
-    
-    final chartId = recordingProvider.activeChartId;
 
     if (!recordingProvider.isOverlayVisible) return const SizedBox.shrink();
 
-    // FIND LOGIC
+    // 1. Get the ID
+    final chartId = recordingProvider.activeChartId;
+
+    // 2. Existing null check
+    if (chartId == null || !recordingProvider.isOverlayVisible) {
+      return const SizedBox.shrink();
+    } 
+
+    // 3. Create a non-nullable version for the loop
+    final String selectedId = chartId.toLowerCase();
+
     SensorDataProvider? activeDataProvider;
-    List<String> availableSensorNames = [];
 
     for (var providers in wearablesProvider.sensorDataProviders.values) {
       for (var provider in providers) {
-        String name = provider.sensor.sensorName;
-        availableSensorNames.add(name);
-        if (name == chartId) {
+        // 4. Compare using the non-nullable selectedId
+        String sensorName = provider.sensor.sensorName.toLowerCase();
+    
+        if (selectedId.contains(sensorName)) {
           activeDataProvider = provider;
+          break;
         }
       }
+      if (activeDataProvider != null) break;
     }
 
-    // DEBUG UI: If chartId is null or doesn't match, show what we found
-    if (chartId == null || activeDataProvider == null) {
-      return Container(
-        color: Colors.red.withOpacity(0.8),
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("DEBUG MODE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            Text("Selected ID: '$chartId'", style: TextStyle(color: Colors.yellow)),
-            Text("Available in WearablesProvider:", style: TextStyle(color: Colors.white)),
-            ...availableSensorNames.map((name) => Text("- '$name'", style: TextStyle(color: Colors.white70))),
-            if (availableSensorNames.isEmpty) Text("NO SENSORS FOUND IN WEARABLES PROVIDER", style: TextStyle(color: Colors.orange)),
-          ],
-        ),
-      );
+    if (activeDataProvider == null) {
+      return const SizedBox.shrink();
     }
 
     // ACTUAL CHART UI
