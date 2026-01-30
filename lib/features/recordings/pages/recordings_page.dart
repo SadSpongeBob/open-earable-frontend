@@ -88,23 +88,16 @@ class _RecordingPageState extends State<RecordingPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return ClipRect(
-          child: SizedBox(
-            width: constraints.maxWidth,
-            height: constraints.maxHeight,
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: _controller.cameraController!.value.previewSize!.height,
-                height: _controller.cameraController!.value.previewSize!.width,
-                child: CameraPreview(_controller.cameraController!),
-              ),
-            ),
-          ),
-        );
-      },
+    final cameraController = _controller.cameraController!;
+
+    return ClipRect(
+      child: OverflowBox(
+        alignment: Alignment.center,
+        child: AspectRatio(
+          aspectRatio: cameraController.value.aspectRatio,
+          child: CameraPreview(cameraController),
+        ),
+      ),
     );
   }
 

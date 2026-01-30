@@ -15,22 +15,18 @@ class VideoSensorOverlay extends StatelessWidget {
 
     if (!recordingProvider.isOverlayVisible) return const SizedBox.shrink();
 
-    // 1. Get the ID
     final chartId = recordingProvider.activeChartId;
 
-    // 2. Existing null check
     if (chartId == null || !recordingProvider.isOverlayVisible) {
       return const SizedBox.shrink();
     } 
 
-    // 3. Create a non-nullable version for the loop
     final String selectedId = chartId.toLowerCase();
 
     SensorDataProvider? activeDataProvider;
 
     for (var providers in wearablesProvider.sensorDataProviders.values) {
       for (var provider in providers) {
-        // 4. Compare using the non-nullable selectedId
         String sensorName = provider.sensor.sensorName.toLowerCase();
     
         if (selectedId.contains(sensorName)) {
@@ -45,7 +41,7 @@ class VideoSensorOverlay extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // ACTUAL CHART UI
+    // CHART
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
