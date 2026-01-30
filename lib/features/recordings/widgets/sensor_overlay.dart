@@ -15,6 +15,7 @@ class VideoSensorOverlay extends StatelessWidget {
     final wearablesProvider = context.watch<WearablesProvider>();
     
     final chartId = recordingProvider.activeChartId;
+    print("ACTIVE CHART ID: $chartId");
 
     // 2. Hide if no selection or overlay toggled off
     if (chartId == null || !recordingProvider.isOverlayVisible) {
@@ -26,6 +27,7 @@ class VideoSensorOverlay extends StatelessWidget {
     
     for (var providers in wearablesProvider.sensorDataProviders.values) {
       for (var provider in providers) {
+        print("COMPARING: ${provider.sensor.sensorName} WITH $chartId");
         // We match based on the sensor name (which usually acts as the ID)
         if (provider.sensor.sensorName == chartId) {
           activeDataProvider = provider;

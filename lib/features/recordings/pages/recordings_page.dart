@@ -88,14 +88,12 @@ class _RecordingPageState extends State<RecordingPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return FittedBox(
-      fit: BoxFit.cover,
-      child: SizedBox(
-        width: _controller.cameraController!.value.previewSize!.height,
-        height: _controller.cameraController!.value.previewSize!.width,
+    return Center(
+     child: AspectRatio(
+        aspectRatio: _controller.cameraController!.value.aspectRatio,
         child: CameraPreview(_controller.cameraController!),
       ),
-    );
+  ) ;
   }
 
   @override
