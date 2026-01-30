@@ -88,8 +88,13 @@ class _RecordingPageState extends State<RecordingPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Positioned.fill(
-      child: CameraPreview(_controller.cameraController!),
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: _controller.cameraController!.value.previewSize!.height,
+        height: _controller.cameraController!.value.previewSize!.width,
+        child: CameraPreview(_controller.cameraController!),
+      ),
     );
   }
 
@@ -100,14 +105,19 @@ class _RecordingPageState extends State<RecordingPage> {
         children: [
           RecordingLeftBar(onBackToProjects: _navigateToHome),
           Expanded(
-            child: Container(
-              color: Colors.black,
-              child: Stack(
-                children: [
-                  _buildCameraPreview(),
-                  const VideoSensorOverlay(),
-                ]
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  children: [
+                    SizedBox(
+                      width: constraints.maxWidth,
+                      height: constraints.maxHeight,
+                      child: _buildCameraPreview(),
+                    ),
+                    const VideoSensorOverlay(),
+                  ],
+                );
+              },
             ),
           ),
 
