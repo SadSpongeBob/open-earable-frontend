@@ -1,8 +1,11 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/app/widgets/devices_popup_overlay.dart';
+import 'package:openearable/features/recordings/widgets/sensor_overlay.dart';
+import 'package:openearable/features/sensors/state/recording_chart_provider.dart';
 import '../../../app/routing/routes.dart';
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
@@ -25,6 +28,7 @@ class _RecordingPageState extends State<RecordingPage> {
   late final RecordingController _controller;
 
   final GlobalKey bluetoothKey = GlobalKey();
+  
 
   @override
   void initState() {
@@ -98,24 +102,38 @@ class _RecordingPageState extends State<RecordingPage> {
           Expanded(
             child: Container(
               color: Colors.black,
-              child: Stack(children: [ _buildCameraPreview() ]),
+              child: Stack(
+                children: [
+                  _buildCameraPreview(),
+                  const VideoSensorOverlay(),
+                ]
+              ),
             ),
           ),
-          HomeRecordingRightBar(
-            onSettings: () => context.go(Routes.settings),
-            onWaveSound: () => context.go('${Routes.sensordata}?source=recording'),
-            onShutter: _onShutterPressed,
-            onFlipCamera: _onFlipOrPausePressed,
-            onBluetooth: () {
-              showDevicesPopup(
-                context: context,
-                isSensorPage: false,
+
+          Consumer<RecordingChartProvider>(
+            builder: (context, chartProvider, _) {
+              return HomeRecordingRightBar(
+                onSettings: () => context.go(Routes.settings),
+                onWaveSound: () => context.go('${Routes.sensordata}?source=recording'),
+                onWaveSoundLongPress: () {
+                  chartProvider.toggleOverlayVisibility();
+                },
+                isWaveSoundActive: chartProvider.shouldShowOverlay,
+                onShutter: _onShutterPressed,
+                onFlipCamera: _onFlipOrPausePressed,
+                onBluetooth: () {
+                  showDevicesPopup(
+                    context: context,
+                    isSensorPage: false,
+                  );
+                },
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                isRecording: _controller.isRecording,
+                isPaused: _controller.isPaused,
+                bluetoothKey: bluetoothKey,
               );
             },
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            isRecording: _controller.isRecording,
-            isPaused: _controller.isPaused,
-            bluetoothKey: bluetoothKey,
           ),
         ],
       ),

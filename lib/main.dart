@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/app/constants/colors.dart';
-import 'package:openearable/app/routing//router_provider.dart';
+import 'package:openearable/app/routing/router_provider.dart';
 import 'package:openearable/app/routing/app_bootstrapper.dart';
 import 'package:openearable/api/models/device/wearable_connector.dart';
 import 'package:openearable/features/home/state/wearables_provider.dart';

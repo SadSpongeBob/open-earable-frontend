@@ -66,7 +66,7 @@ class SelectableSensorCard extends StatelessWidget {
                     onChanged: (_) {
                       context
                           .read<RecordingChartProvider>()
-                          .selectChart(chartId);
+                          .toggleChart(chartId);
                     },
                   ),
                 ],

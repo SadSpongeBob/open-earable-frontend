@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart' as legacy;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
@@ -8,6 +9,7 @@ import 'package:openearable/features/home/widgets/project_bar.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
 import 'package:openearable/features/home/widgets/delete_project_dialog.dart';
 import 'package:openearable/app/widgets/devices_popup_overlay.dart';
+import 'package:openearable/features/sensors/state/recording_chart_provider.dart';
 import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
@@ -164,21 +166,29 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
 
             // RIGHT BAR
-            HomeRecordingRightBar(
-              onSettings: () => context.go(Routes.settings),
-              onWaveSound: () => context.go('${Routes.sensordata}?source=home'),
-              onShutter: () => context.go(Routes.recording),
-              onBluetooth: () {
-                showDevicesPopup(
-                  context: context,
-                  isSensorPage: false,
+            legacy.Consumer<RecordingChartProvider>(
+              builder: (context, chartProvider, _) {
+                return HomeRecordingRightBar(
+                  onSettings: () => context.go(Routes.settings),
+                  onWaveSound: () => context.go('${Routes.sensordata}?source=home'),
+                  onWaveSoundLongPress: () {
+                    chartProvider.toggleOverlayVisibility();
+                  },
+                  isWaveSoundActive: chartProvider.shouldShowOverlay,
+                  onShutter: () => context.go(Routes.recording),
+                  onBluetooth: () {
+                    showDevicesPopup(
+                      context: context,
+                      isSensorPage: false,
+                    );
+                  },
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  isRecording: false,
+                  isPaused: false,
+                  showFlipButton: false,
+                  bluetoothKey: bluetoothKey,
                 );
               },
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              isRecording: false,
-              isPaused: false,
-              showFlipButton: false,
-              bluetoothKey: bluetoothKey,
             ),
           ],
         ),

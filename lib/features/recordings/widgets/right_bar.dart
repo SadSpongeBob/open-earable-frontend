@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/app/widgets/bluetooth_button.dart';
+import 'package:openearable/app/widgets/image_button.dart';
 
 class HomeRecordingRightBar extends StatelessWidget {
   const HomeRecordingRightBar({
     super.key,
     required this.onSettings,
     required this.onWaveSound,
+    required this.onWaveSoundLongPress,
+    required this.isWaveSoundActive,
     required this.onShutter,
     this.onFlipCamera,
     required this.onBluetooth,
@@ -19,12 +22,14 @@ class HomeRecordingRightBar extends StatelessWidget {
 
   final VoidCallback onSettings;
   final VoidCallback onWaveSound;
+  final VoidCallback onWaveSoundLongPress;
   final VoidCallback onShutter;
   final VoidCallback? onFlipCamera;
   final VoidCallback onBluetooth;
 
   final EdgeInsets padding;
 
+  final bool isWaveSoundActive;
   final bool isRecording;
   final bool isPaused;
   final bool showFlipButton;
@@ -49,12 +54,18 @@ class HomeRecordingRightBar extends StatelessWidget {
           const Spacer(),
           Column(
             children: [
-              Btn(
-                asset: 'assets/buttons/wave-sound.png',
-                size: 52,
-                onTap: onWaveSound,
-                semanticLabel: 'Wave sound',
-              ),
+              ImageButton(
+                image: 'assets/buttons/wave_sound.png', 
+                activeImage: 'assets/buttons/wave_sound_on.png', 
+                onPressed: onWaveSound,
+                onLongPress: onWaveSoundLongPress,
+                isActive: isWaveSoundActive,
+                width: 52, 
+                height: 52, 
+                semanticLabel: isWaveSoundActive
+                    ? 'Hide sensor chart overlay'
+                    : 'Show sensor chart overlay',
+                ),
 
               Btn(
                 asset: isRecording
