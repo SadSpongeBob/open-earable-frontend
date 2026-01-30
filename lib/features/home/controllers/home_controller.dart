@@ -1,20 +1,28 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/services/project/project_service.dart';
-import 'package:openearable/api/services/recording//recording_service.dart';
+import 'package:openearable/api/services/recording/recording_service.dart';
+import 'package:openearable/api/services/user/user_service.dart';
+import 'package:openearable/app/ui/toast_controller.dart';
+import 'package:openearable/app/ui/toast_event.dart';
 import 'package:openearable/app/utils/helpers.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
-import '../../../app/ui/toast_controller.dart';
-import '../../../app/ui/toast_event.dart';
+
+import '../../../api/client_dio.dart';
+import '../../../api/models/project/project_role.dart';
 import '../state/home_state.dart';
+
+typedef ToastSink = void Function(ToastEvent);
 
 final homeControllerProvider = Provider<HomeController>((ref) {
   final projectService = ref.read(projectServiceProvider);
+  final userService = ref.read(userServiceProvider);
   final recordingService = ref.read(recordingServiceProvider);
   final homeState = ref.read(homeStateProvider.notifier);
   final authState = ref.watch(sessionProvider);
@@ -23,6 +31,7 @@ final homeControllerProvider = Provider<HomeController>((ref) {
 
   return HomeController(
     projectService: projectService,
+    userService: userService,
     recordingService: recordingService,
     homeState: homeState,
     authState: authState,
@@ -30,20 +39,19 @@ final homeControllerProvider = Provider<HomeController>((ref) {
   );
 });
 
-typedef ToastSink = void Function(ToastEvent);
-
 class HomeController {
   HomeController({
     required ProjectService projectService,
+    required UserService userService,
     required RecordingService recordingService,
     required HomeStateNotifier homeState,
     required AuthState authState,
     required ToastSink toast,
-  }) : _projectService = projectService,
-       _recordingService = recordingService,
-       _state = homeState,
-       _authState = authState,
-       _toast = toast;
+  })  : _projectService = projectService,
+        _recordingService = recordingService,
+        _state = homeState,
+        _authState = authState,
+        _toast = toast;
 
   final ProjectService _projectService;
   final RecordingService _recordingService;
@@ -67,6 +75,7 @@ class HomeController {
   bool _nameExists(String name, {String? excludeProjectId}) {
     final normalized = name.trim().toLowerCase();
     if (normalized == 'default') return true;
+
     return state.projects.any((p) {
       if (excludeProjectId != null && p.id == excludeProjectId) return false;
       return p.name.trim().toLowerCase() == normalized;
@@ -91,39 +100,26 @@ class HomeController {
     return null;
   }
 
-  List<ProjectMetadata> _withDefault(List<ProjectMetadata> remoteProjects) {
-    final ProjectMetadata defaultItem;
-    if (_authState.isGuest) {
-      defaultItem = ProjectMetadata.local(
-        LocalMedia.defaultProjectId,
-        'Default',
-      );
-    } else {
-      defaultItem = ProjectMetadata.cloud(
-        LocalMedia.defaultProjectId,
-        'Default',
-      );
-    }
+  List<ProjectMetadata> _withDefault(List<ProjectMetadata> projects) {
+    final ProjectMetadata defaultItem = _authState.isGuest
+        ? ProjectMetadata.local(LocalMedia.defaultProjectId, 'Default')
+        : ProjectMetadata.cloud(LocalMedia.defaultProjectId, 'Default');
 
     return [
       defaultItem,
-      ...remoteProjects.where((p) => p.id != LocalMedia.defaultProjectId),
+      ...projects.where((p) => p.id != LocalMedia.defaultProjectId),
     ];
   }
 
   List<ProjectMetadata> _mergeProjects(
-    List<ProjectMetadata> local,
-    List<ProjectMetadata> cloud,
-  ) {
+      List<ProjectMetadata> local,
+      List<ProjectMetadata> cloud,
+      ) {
     final cloudIds = cloud.map((c) => c.id).toSet();
-
     return [...local.where((l) => !cloudIds.contains(l.id)), ...cloud];
   }
 
-  List<Recording> _mergeRecordings(
-    List<Recording> local,
-    List<Recording> cloud,
-  ) {
+  List<Recording> _mergeRecordings(List<Recording> local, List<Recording> cloud) {
     return [...local, ...cloud];
   }
 
@@ -133,8 +129,8 @@ class HomeController {
 
   Future<void> loadProjects() async {
     if (state.areProjectsLoaded) return;
-    _state.setLoading(true);
 
+    _state.setLoading(true);
     try {
       final localProjects = await _projectService.getLocalProjects();
 
@@ -150,15 +146,15 @@ class HomeController {
       _state.setProjects(projects);
 
       final currentOpenId = state.openProjectId;
-      final openStillValid =
-          currentOpenId == LocalMedia.defaultProjectId ||
+      final openStillValid = currentOpenId == LocalMedia.defaultProjectId ||
           _projectExists(currentOpenId, projects);
 
-      await openProject(
-        openStillValid ? currentOpenId : LocalMedia.defaultProjectId,
-      );
+      await openProject(openStillValid ? currentOpenId : LocalMedia.defaultProjectId);
+
       _state.setProjectsLoaded(true);
     } on DioException catch (e) {
+      _error(e, userMessage: 'Failed to load projects');
+    } catch (e) {
       _error(e, userMessage: 'Failed to load projects');
     } finally {
       _state.setLoading(false);
@@ -167,18 +163,18 @@ class HomeController {
 
   Future<void> openProject(String projectId) async {
     final project = _findById(projectId);
-    final isDefault = projectId == LocalMedia.defaultProjectId;
-
     if (project == null) {
       _toast(ToastEvent.error('Invalid project id: $projectId'));
       return;
     }
+
+    final isDefault = projectId == LocalMedia.defaultProjectId;
     final hasCloud = project.projectSource == ProjectSource.cloud;
 
     try {
-      final localRecordings = await _recordingService.getLocalProjectRecordings(
-        projectId,
-      );
+      final localRecordings =
+      await _recordingService.getLocalProjectRecordings(projectId);
+
       final List<Recording> recordings;
       if (hasCloud) {
         final List<Recording> cloud;
@@ -187,14 +183,17 @@ class HomeController {
         } else {
           cloud = (await _projectService.getProject(projectId)).recordings;
         }
-
         recordings = _mergeRecordings(localRecordings, cloud);
       } else {
         recordings = localRecordings;
       }
 
+      _state.clearUsersPopupState();
+
       _state.setOpenProject(projectId: projectId, videos: recordings);
     } on DioException catch (e) {
+      _error(e, userMessage: 'Failed to load project with id $projectId');
+    } catch (e) {
       _error(e, userMessage: 'Failed to load project with id $projectId');
     }
   }
@@ -237,9 +236,9 @@ class HomeController {
       } else {
         created = (await _projectService.createProject(trimmed)).toMetadata();
       }
+
       _state.addProject(created);
       _state.setOpenProject(projectId: created.id, videos: const []);
-
       _state.clearError();
       _success('Project "$trimmed" created');
     } catch (e) {
@@ -269,14 +268,17 @@ class HomeController {
     _state.setLoading(true);
     try {
       final updatedProject = project.copyWith(name: trimmed);
+
       if (project.projectSource == ProjectSource.cloud) {
         await _projectService.renameProject(projectId, trimmed);
       }
-      await _projectService.updateLocalProject(project: updatedProject);
-      _state.renameProjectInList(projectId, trimmed);
 
+      // Always keep local metadata in sync
+      await _projectService.updateLocalProject(project: updatedProject);
+
+      _state.renameProjectInList(projectId, trimmed);
       _state.clearError();
-      _success('Rename Successful');
+      _success('Rename successful');
     } catch (e) {
       _error(e, userMessage: 'Failed to rename project');
     } finally {
@@ -291,10 +293,15 @@ class HomeController {
     _state.setLoading(true);
     try {
       for (final projectId in projectIds) {
+        if (projectId == LocalMedia.defaultProjectId) {
+          failed.add(projectId);
+          continue;
+        }
+
         final project = _findById(projectId);
         if (project == null) {
-          _toast(ToastEvent.error('Invalid project id: $projectId'));
           failed.add(projectId);
+          _toast(ToastEvent.error('Invalid project id: $projectId'));
           continue;
         }
 
@@ -312,9 +319,6 @@ class HomeController {
           }
 
           successCount++;
-        } on DioException catch (e) {
-          failed.add(projectId);
-          _error(e, userMessage: 'Failed to delete project ${project.name}');
         } catch (e) {
           failed.add(projectId);
           _error(e, userMessage: 'Failed to delete project ${project.name}');
@@ -325,9 +329,7 @@ class HomeController {
         _state.clearError();
         _success(successCount == 1 ? 'Project deleted' : 'Projects deleted');
       } else {
-        _toast(
-          ToastEvent.error('Deleted $successCount, failed ${failed.length}'),
-        );
+        _toast(ToastEvent.error('Deleted $successCount, failed ${failed.length}'));
       }
     } finally {
       _state.setLoading(false);
@@ -348,8 +350,8 @@ class HomeController {
 
         final project = _findById(projectId);
         if (project == null) {
-          _toast(ToastEvent.error('Invalid project id: $projectId'));
           failed.add(projectId);
+          _toast(ToastEvent.error('Invalid project id: $projectId'));
           continue;
         }
 
@@ -365,12 +367,8 @@ class HomeController {
           }
 
           await _projectService.duplicateLocalProject(projectId, newProject);
-
           _state.addProject(newProject);
           successCount++;
-        } on DioException catch (e) {
-          failed.add(projectId);
-          _error(e, userMessage: 'Failed to duplicate project ${project.name}');
         } catch (e) {
           failed.add(projectId);
           _error(e, userMessage: 'Failed to duplicate project ${project.name}');
@@ -379,13 +377,9 @@ class HomeController {
 
       if (failed.isEmpty) {
         _state.clearError();
-        _success(
-          successCount == 1 ? 'Project duplicated' : 'Projects duplicated',
-        );
+        _success(successCount == 1 ? 'Project duplicated' : 'Projects duplicated');
       } else {
-        _toast(
-          ToastEvent.error('Duplicated $successCount, failed ${failed.length}'),
-        );
+        _toast(ToastEvent.error('Duplicated $successCount, failed ${failed.length}'));
       }
     } finally {
       _state.setLoading(false);
@@ -402,23 +396,20 @@ class HomeController {
         initialProjectId != LocalMedia.defaultProjectId) {
       ids.add(initialProjectId);
     }
-
     _state.setSelection(ids);
   }
 
-  void exitSelectionMode() {
-    _state.clearSelection();
-  }
+  void exitSelectionMode() => _state.clearSelection();
 
   void toggleProjectSelection(String projectId) {
     if (projectId == LocalMedia.defaultProjectId) return;
+
     final next = Set<String>.from(state.selectedProjectIds);
     if (next.contains(projectId)) {
       next.remove(projectId);
     } else {
       next.add(projectId);
     }
-
     _state.setSelection(next);
   }
 
@@ -427,5 +418,111 @@ class HomeController {
     if (!state.isSelectionMode) {
       _state.setSelection({projectId});
     }
+  }
+
+  // ----------------
+  // Project users popup
+  // ----------------
+
+  Future<void> loadUsersForOpenProject({required String myUserId}) async {
+    final projectId = state.openProjectId;
+    if (projectId == LocalMedia.defaultProjectId) return;
+
+    _state.setUsersLoading(true);
+
+    try {
+      final users = await _projectService.getProjectUsers(projectId);
+      _state.setProjectUsers(users);
+    } on DioException {
+      const msg = 'Failed to load project users';
+      _state.setUsersError(msg);
+      _toast(const ToastEvent.error(msg));
+    } catch (_) {
+      const msg = 'Failed to load project users';
+      _state.setUsersError(msg);
+      _toast(const ToastEvent.error(msg));
+    }
+  }
+
+  Future<void> addUserToOpenProject({
+    required String myUserId,
+    required String emailAddress,
+    required ProjectRole role,
+  }) async {
+    final projectId = state.openProjectId;
+    if (projectId == LocalMedia.defaultProjectId) {
+      _toast(const ToastEvent.error('Select a project first'));
+      return;
+    }
+
+    final email = emailAddress.trim();
+    if (email.isEmpty) return;
+
+    _state.setUsersLoading(true);
+
+    try {
+      final updatedUsers = await _projectService.addProjectUser(
+        projectId: projectId,
+        emailAddress: email,
+        role: role,
+      );
+
+      _state.setProjectUsers(updatedUsers);
+      _toast(const ToastEvent.success('User added'));
+    } on DioException catch (e) {
+      _state.setUsersLoading(false);
+
+      final code = e.response?.statusCode;
+      if (code == 409) {
+        _toast(const ToastEvent.error('User already in project'));
+        return;
+      }
+      if (code == 403) {
+        _toast(const ToastEvent.error('No permission'));
+        return;
+      }
+      if (code == 404) {
+        _toast(const ToastEvent.error('Project or user not found'));
+        return;
+      }
+
+      _toast(const ToastEvent.error('Failed to add user'));
+    } catch (_) {
+      _state.setUsersLoading(false);
+      _toast(const ToastEvent.error('Failed to add user'));
+    }
+  }
+
+  Future<void> removeUserFromOpenProject({
+    required String myUserId,
+    required String userId,
+  }) async {
+    final projectId = state.openProjectId;
+    if (projectId == LocalMedia.defaultProjectId) return;
+
+    _state.setUsersLoading(true);
+
+    try {
+      await _projectService.removeUserFromProject(
+        projectId: projectId,
+        userId: userId,
+      );
+
+      final users = await _projectService.getProjectUsers(projectId);
+      _state.setProjectUsers(users);
+
+      _toast(const ToastEvent.success('User removed'));
+    } catch (_) {
+      _state.setUsersLoading(false);
+      _toast(const ToastEvent.error('Failed to remove user'));
+    }
+  }
+
+  void clearUsersPopupState() => _state.clearUsersPopupState();
+
+  bool canManageUsers({required String myUserId}) {
+    final open = state.openProject;
+    if (open == null) return false;
+    return open.isOwner(myUserId);
   }
 }

@@ -74,7 +74,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   void _navigateToPlayBack(String path) {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => PlaybackPage(videoPath: path)),
+      MaterialPageRoute(builder: (_) => PlaybackPage(recordingId: path)),
     );
   }
 

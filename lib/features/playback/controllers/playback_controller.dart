@@ -1,35 +1,50 @@
+
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import 'package:video_player/video_player.dart';
 import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 
 class PlaybackController extends ChangeNotifier {
   VideoPlayerController? videoController;
+
   bool isMuted = false;
   double speed = 1.0;
   String speedString = "1.0x";
-  String videoName = "recording_${DateTime.now().millisecondsSinceEpoch}";
+  String videoName = const Uuid().v4();
   DateTime? recordingStartedAt;
-  Future<void> loadVideo(String path) async {
+
+  Future<Directory> _getRecordingDir(String recordingId) async {
+    final appDir = await getApplicationDocumentsDirectory();
+    return Directory('${appDir.path}/OpenEarable/default/$recordingId');
+  }
+
+  Future<File> _getVideoFile(String recordingId) async {
+    final dir = await _getRecordingDir(recordingId);
+    return File('${dir.path}/video.mp4');
+  }
+
+  Future<void> loadVideo(String recordingId) async {
     recordingStartedAt = DateTime.now().toUtc();
-    if (path.isEmpty) return;
+    final videoFile = await _getVideoFile(recordingId);
+    if (!await videoFile.exists()) return;
     await videoController?.dispose();
-    final controller = VideoPlayerController.file(File(path));
-    videoController = controller;
-    await controller.initialize();
-    controller.play();
+    videoController = VideoPlayerController.file(videoFile);
+    await videoController!.initialize();
+    videoController!.play();
     notifyListeners();
   }
+
   void togglePlay() {
     if (videoController == null || !videoController!.value.isInitialized) return;
     if (videoController!.value.isPlaying) {
-      videoController?.pause();
+      videoController!.pause();
     } else {
-      videoController?.play();
+      videoController!.play();
     }
     notifyListeners();
   }
@@ -37,7 +52,7 @@ class PlaybackController extends ChangeNotifier {
   void toggleMute() {
     if (videoController == null) return;
     isMuted = !isMuted;
-    videoController?.setVolume(isMuted ? 0 : 1);
+    videoController!.setVolume(isMuted ? 0 : 1);
     notifyListeners();
   }
 
@@ -45,113 +60,129 @@ class PlaybackController extends ChangeNotifier {
     final clamped = value.clamp(0.25, 2.0);
     speed = clamped;
     speedString = "${clamped}x";
-    if (videoController == null || !videoController!.value.isInitialized) {
-      notifyListeners();
-      return;
+    if (videoController?.value.isInitialized == true) {
+      videoController!.setPlaybackSpeed(clamped);
     }
-    videoController?.setPlaybackSpeed(clamped);
     notifyListeners();
   }
+
   void seekBySeconds(int seconds) {
-    if (videoController == null || !videoController!.value.isInitialized) return;
-    final current = videoController?.value.position;
-    final total = videoController?.value.duration;
-    final newPos = current! + Duration(seconds: seconds);
+    if (videoController?.value.isInitialized != true) return;
+    final current = videoController!.value.position;
+    final total = videoController!.value.duration;
+    final newPos = current + Duration(seconds: seconds);
     final clamped = newPos < Duration.zero
         ? Duration.zero
-        : (newPos > total! ? total : newPos);
-    videoController?.seekTo(clamped);
+        : (newPos > total ? total : newPos);
+    videoController!.seekTo(clamped);
     notifyListeners();
   }
-  Future<void> deleteVideo(String videoPath) async {
-    final file = File(videoPath);
-    final directory = file.parent;
-    if (await directory.exists()) {
-      await directory.delete(recursive: true);
+
+  Future<void> deleteVideo(String recordingId) async {
+    final dir = await _getRecordingDir(recordingId);
+    if (await dir.exists()) {
+      await dir.delete(recursive: true);
     }
   }
+
   Future<void> exportVideoFolder({
-    required String videoPath,
+    required String recordingId,
   }) async {
-    try {
-      final sourceVideo = File(videoPath);
-      final sourceDir = sourceVideo.parent;
-
-      final picturesDir = Directory('/storage/emulated/0/Pictures/OpenEarable');
-      await picturesDir.create(recursive: true);
-
-      final folderName = DateTime.now().millisecondsSinceEpoch.toString();
-      final targetDir = Directory('${picturesDir.path}/$folderName');
-      await targetDir.create(recursive: true);
-
-      await for (var entity in sourceDir.list()) {
-        if (entity is File && entity.uri.pathSegments.last != "meta.txt") {
-          final fileName = entity.uri.pathSegments.last;
-          final targetFile = File('${targetDir.path}/$fileName');
-          await entity.copy(targetFile.path);
-        }
+    final sourceDir = await _getRecordingDir(recordingId);
+    if (!await sourceDir.exists()) return;
+    final picturesDir = Directory('/storage/emulated/0/Pictures/OpenEarable');
+    await picturesDir.create(recursive: true);
+    final targetDir = Directory('${picturesDir.path}/$recordingId');
+    await targetDir.create(recursive: true);
+    await for (var entity in sourceDir.list()) {
+      if (entity is File && entity.uri.pathSegments.last != 'meta.txt') {
+        final fileName = entity.uri.pathSegments.last;
+        await entity.copy('${targetDir.path}/$fileName');
       }
-    } catch (e, stack) {
-      debugPrintStack(stackTrace: stack);
     }
   }
-  String getVideoName() {
-    return videoName;
+
+  Future<void> stopAndUpload({
+    required RecordingService recordingService,
+    Dio? dioClient,
+    required String recordingId,
+    required String? projectId,
+  }) async {
+    await uploadVideo(
+      recordingId,
+      recordingService: recordingService,
+      dioClient: dioClient,
+      projectId: projectId,
+    );
+    await deleteVideo(recordingId);
   }
-  Future<void> stopAndUpload({required RecordingService recordingService, Dio? dioClient, required String path, required String? projektId}) async {
-    await uploadVideo(path, recordingService: recordingService, dioClient: dioClient, projektId: projektId);
-    await deleteVideo(path);
-  }
+
   Future<void> uploadVideo(
-      String filePath, {
+      String recordingId, {
         required RecordingService recordingService,
-        Dio? dioClient, String? projektId,
+        Dio? dioClient,
+        String? projectId,
       }) async {
-    try {
-      final dio = dioClient ?? Dio();
-
-      final videoFile = File(filePath);
-      final Uint8List? thumbnailBytes = await generateThumbnail(filePath);
-      File? thumbnailFile;
-      if (thumbnailBytes != null) {
-        final tempDir = await Directory.systemTemp.createTemp();
-        thumbnailFile = File('${tempDir.path}/thumbnail.jpg');
-        await thumbnailFile.writeAsBytes(thumbnailBytes);
-      }
-      final timestamp = recordingStartedAt ?? DateTime.now().toUtc();
-      final req = UploadRecordingRequest(
-        name: videoName,
-        video: RecordingFile(
-          filename: videoName,
-          contentType: 'MP4',
-          sizeBytes: await videoFile.length(),
-          timestamp: timestamp.toIso8601String(),
-        ),
-        sensors: const [],
-
-        projectId: projektId == "default" ? null : projektId,
-        thumbnailContent: thumbnailBytes != null ? 'JPEG' : null,
-      );
-      final uploadResp = await recordingService.startUpload(req);
-      await _uploadFile(videoFile, uploadResp.videoUpload.uploadUrl, uploadResp.videoUpload.requiredHeaders, dio);
-      if (uploadResp.thumbnailUpload != null && thumbnailFile != null) {
-        await _uploadFile(thumbnailFile, uploadResp.thumbnailUpload!.uploadUrl, uploadResp.thumbnailUpload!.requiredHeaders, dio);
-      }
-      await recordingService.completeUpload(uploadResp.recordingId);
-    } catch (e, s) {
-      if (kDebugMode) {
-        debugPrint(e.toString());
-        debugPrint(s.toString());
-      }
+    final dio = dioClient ?? Dio();
+    final videoFile = await _getVideoFile(recordingId);
+    if (!await videoFile.exists()) return;
+    final Uint8List? thumbnailBytes =
+    await generateThumbnail(videoFile.path);
+    File? thumbnailFile;
+    if (thumbnailBytes != null) {
+      final tempDir = await Directory.systemTemp.createTemp();
+      thumbnailFile = File('${tempDir.path}/thumbnail.jpg');
+      await thumbnailFile.writeAsBytes(thumbnailBytes);
     }
-  }
-  Future<Response> _uploadFile(File file, String url, Map<String, String> headers, Dio dio) async {
-    final bytes = await file.readAsBytes();
-    final resp = await dio.put(url, data: bytes, options: Options(headers: headers, validateStatus: (_) => true));
-    return resp;
+    final timestamp = recordingStartedAt ?? DateTime.now().toUtc();
+    final req = UploadRecordingRequest(
+      name: videoName,
+      video: RecordingFile(
+        filename: videoName,
+        contentType: 'MP4',
+        sizeBytes: await videoFile.length(),
+        timestamp: timestamp.toIso8601String(),
+      ),
+      sensors: const [],
+      projectId: projectId == 'default' ? null : projectId,
+      thumbnailContent: thumbnailBytes != null ? 'JPEG' : null,
+    );
+    final uploadResp = await recordingService.startUpload(req);
+    await _uploadFile(
+      videoFile,
+      uploadResp.videoUpload.uploadUrl,
+      uploadResp.videoUpload.requiredHeaders,
+      dio,
+    );
+    if (uploadResp.thumbnailUpload != null && thumbnailFile != null) {
+      await _uploadFile(
+        thumbnailFile,
+        uploadResp.thumbnailUpload!.uploadUrl,
+        uploadResp.thumbnailUpload!.requiredHeaders,
+        dio,
+      );
+    }
+    await recordingService.completeUpload(uploadResp.recordingId);
   }
 
-  Future<Uint8List?> generateThumbnail(String videoPath) async {
+  Future<Response> _uploadFile(
+      File file,
+      String url,
+      Map<String, String> headers,
+      Dio dio,
+      ) async {
+    final bytes = await file.readAsBytes();
+    return dio.put(
+      url,
+      data: bytes,
+      options: Options(
+        headers: headers,
+        validateStatus: (_) => true,
+      ),
+    );
+  }
+
+  Future<Uint8List?> generateThumbnail(String videoPath) {
     return vt.VideoThumbnail.thumbnailData(
       video: videoPath,
       imageFormat: vt.ImageFormat.JPEG,
@@ -159,10 +190,13 @@ class PlaybackController extends ChangeNotifier {
       quality: 75,
     );
   }
-  Future<void > renameVideo(String newName) async {
+
+  Future<void> renameVideo(String newName) async {
     videoName = newName;
     notifyListeners();
   }
+
+  String getVideoName() => videoName;
 
   @override
   void dispose() {

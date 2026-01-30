@@ -12,12 +12,12 @@ import '../controllers/playback_controller.dart';
 class TopBar extends ConsumerStatefulWidget {
   final PlaybackController controller;
   final GlobalKey speedKey;
-  final String videoPath;
+  final String recordingId;
 
   const TopBar({
     required this.controller,
     required this.speedKey,
-    required this.videoPath,
+    required this.recordingId,
     super.key,
   });
 
@@ -28,7 +28,7 @@ class TopBar extends ConsumerStatefulWidget {
 class _TopBarState extends ConsumerState<TopBar> {
   PlaybackController get controller => widget.controller;
   GlobalKey get speedKey => widget.speedKey;
-  String get videoPath => widget.videoPath;
+  String get videoPath => widget.recordingId;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +78,7 @@ class _TopBarState extends ConsumerState<TopBar> {
                   icon: const Icon(Icons.arrow_back_ios),
                   onPressed: () async {
                     final svc = ref.read(recordingServiceProvider);
-                    unawaited(controller.stopAndUpload(recordingService: svc, path: videoPath, projektId:  ref.read(homeStateProvider).openProjectId));
+                    unawaited(controller.stopAndUpload(recordingService: svc, projectId:  ref.read(homeStateProvider).openProjectId, recordingId: widget.recordingId));
                     context.go(Routes.home);
                   },
                   color: const Color(0xFFFF4442),
@@ -128,7 +128,7 @@ class _TopBarState extends ConsumerState<TopBar> {
 
               final right = Row(mainAxisSize: MainAxisSize.min, children: [
                 TextButton(
-                  onPressed: () => controller.exportVideoFolder(videoPath: videoPath),
+                  onPressed: () => controller.exportVideoFolder( recordingId: widget.recordingId),
                   child: const Text("Export", style: GlobalAppBarStyles.appBarBlackText),
                 ),
                 PopupMenuButton<String>(

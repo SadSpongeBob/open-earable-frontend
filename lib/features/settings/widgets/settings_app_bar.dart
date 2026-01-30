@@ -1,10 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/theme/app_bar_styles.dart';
-import '../../auth/pages/login_page.dart';
 
 class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool loading;

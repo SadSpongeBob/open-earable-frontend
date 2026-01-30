@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/playback_controller.dart';
 import '../widgets/top_bar.dart';
 import '../widgets/video_card.dart';
-
 class PlaybackPage extends ConsumerStatefulWidget {
-  final String videoPath;
-  const PlaybackPage({super.key, required this.videoPath});
+  final String recordingId;
+  const PlaybackPage({super.key, required this.recordingId});
 
   @override
   ConsumerState<PlaybackPage> createState() => _PlaybackPageState();
@@ -19,8 +18,8 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.videoPath.isNotEmpty) {
-      _controller.loadVideo(widget.videoPath);
+    if (widget.recordingId.isNotEmpty) {
+      _controller.loadVideo(widget.recordingId);
 
     }
   }
@@ -43,7 +42,7 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
               child: TopBar(
                 controller: _controller,
                 speedKey: _speedKey,
-                videoPath: widget.videoPath,
+                recordingId: widget.recordingId,
               ),
             ),
             Expanded(

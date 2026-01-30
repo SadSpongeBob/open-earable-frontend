@@ -70,39 +70,34 @@ class RecordingController extends ChangeNotifier {
   Future<String?> _saveVideo({
     required XFile file,
   }) async {
-    try {
+    final appDir = await getApplicationDocumentsDirectory();
+    final recordingId = const Uuid().v4();
 
-      final appDir = await getApplicationDocumentsDirectory();
-      final recordingId = const Uuid().v4();
+    final dir = Directory(
+      '${appDir.path}/OpenEarable/default/$recordingId',
+    );
+    await dir.create(recursive: true);
+    final videoPath = '${dir.path}/video.mp4';
+    await File(file.path).copy(videoPath);
+    Uint8List? thumbData = await generateThumbnail(videoPath);
 
-      final dir = Directory(
-        '${appDir.path}/OpenEarable/default/$recordingId',
-      );
-      await dir.create(recursive: true);
-      final videoPath = '${dir.path}/video.mp4';
-      await File(file.path).copy(videoPath);
-      Uint8List? thumbData = await generateThumbnail(videoPath);
-
-      if (thumbData != null) {
-        final image = img.decodeImage(thumbData);
-        if (image != null) {
-          final thumbFile = File('${dir.path}/thumbnail.png');
-          await thumbFile.writeAsBytes(img.encodePng(image));
-        }
+    if (thumbData != null) {
+      final image = img.decodeImage(thumbData);
+      if (image != null) {
+        final thumbFile = File('${dir.path}/thumbnail.png');
+        await thumbFile.writeAsBytes(img.encodePng(image));
       }
-      final metaFile = File('${dir.path}/meta.txt');
-      final meta = {
-        'name': "video.mp4",
-        'timestamp': DateTime.now().toUtc().toIso8601String(),
-      };
-      await metaFile.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(meta),
-      );
-      return videoPath;
-    } catch (e, stack) {
-      debugPrintStack(stackTrace: stack);
-      return null;
     }
+    final metaFile = File('${dir.path}/meta.txt');
+    final meta = {
+      'name': recordingId,
+      'timestamp': DateTime.now().toUtc().toIso8601String(),
+    };
+    await metaFile.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(meta),
+    );
+    return recordingId;
+
   }
   Future<Uint8List?> generateThumbnail(String videoPath) async {
     return vt.VideoThumbnail.thumbnailData(
@@ -121,7 +116,6 @@ class RecordingController extends ChangeNotifier {
     final metaFile = File('${dir.path}/meta.txt');
 
     final meta = {
-      'videoPath': videoPath,
       'name': name,
       'timestamp': timestamp.toUtc().toIso8601String(),
     };

@@ -4,7 +4,7 @@ import 'package:video_player/video_player.dart';
 class VideoCard extends StatelessWidget {
   final VideoPlayerController controller;
 
-  const VideoCard({required this.controller, Key? key}) : super(key: key);
+  const VideoCard({required this.controller, super.key});
 
   @override
   Widget build(BuildContext context) {
