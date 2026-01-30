@@ -10,53 +10,59 @@ class VideoSensorOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Watch both providers
     final recordingProvider = context.watch<RecordingChartProvider>();
     final wearablesProvider = context.watch<WearablesProvider>();
     
     final chartId = recordingProvider.activeChartId;
-    print("ACTIVE CHART ID: $chartId");
 
-    // 2. Hide if no selection or overlay toggled off
-    if (chartId == null || !recordingProvider.isOverlayVisible) {
-      return const SizedBox.shrink();
-    }
+    if (!recordingProvider.isOverlayVisible) return const SizedBox.shrink();
 
-    // 3. Find the matching SensorDataProvider from the connected wearables
+    // FIND LOGIC
     SensorDataProvider? activeDataProvider;
-    
+    List<String> availableSensorNames = [];
+
     for (var providers in wearablesProvider.sensorDataProviders.values) {
       for (var provider in providers) {
-        print("COMPARING: ${provider.sensor.sensorName} WITH $chartId");
-        // We match based on the sensor name (which usually acts as the ID)
-        if (provider.sensor.sensorName == chartId) {
+        String name = provider.sensor.sensorName;
+        availableSensorNames.add(name);
+        if (name == chartId) {
           activeDataProvider = provider;
-          break;
         }
       }
-      if (activeDataProvider != null) break;
     }
 
-    // 4. If not found (e.g., device disconnected), show nothing
-    if (activeDataProvider == null) return const SizedBox.shrink();
+    // DEBUG UI: If chartId is null or doesn't match, show what we found
+    if (chartId == null || activeDataProvider == null) {
+      return Container(
+        color: Colors.red.withOpacity(0.8),
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("DEBUG MODE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text("Selected ID: '$chartId'", style: TextStyle(color: Colors.yellow)),
+            Text("Available in WearablesProvider:", style: TextStyle(color: Colors.white)),
+            ...availableSensorNames.map((name) => Text("- '$name'", style: TextStyle(color: Colors.white70))),
+            if (availableSensorNames.isEmpty) Text("NO SENSORS FOUND IN WEARABLES PROVIDER", style: TextStyle(color: Colors.orange)),
+          ],
+        ),
+      );
+    }
 
+    // ACTUAL CHART UI
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
         height: 200,
         width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.55),
-        ),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.55)),
         padding: const EdgeInsets.all(12),
-        // 5. Provide the EXACT instance found in WearablesProvider
         child: ChangeNotifierProvider<SensorDataProvider>.value(
           value: activeDataProvider,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: const SensorChart(
-              allowToggleAxes: false,
-            ),
+            child: const SensorChart(allowToggleAxes: false),
           ),
         ),
       ),
