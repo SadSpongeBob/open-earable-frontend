@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:openearable/features/sensors/widgets/sensor_configuration_view.dart';
 import 'package:openearable/features/sensors/widgets/sensors_values.dart';
-import 'package:openearable/app/widgets/image_button.dart';
-import 'package:openearable/features/home/state/wearables_provider.dart';
+import 'package:openearable/app/widgets/bluetooth_button.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import '../../../app/routing/routes.dart';
 
 class SensorPage extends StatelessWidget {
-  final VoidCallback onBluetoothPressed;
+  final VoidCallback onBluetooth;
   final bool isRecordingSource;
 
   SensorPage({
     super.key,
-    required this.onBluetoothPressed,
+    required this.onBluetooth,
     this.isRecordingSource = false,
   });
 
-  final GlobalKey _sensorBtKey = GlobalKey();
+  final GlobalKey _sensorBluetoothKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -45,19 +43,9 @@ class SensorPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(
-                    child: Consumer<WearablesProvider>(
-                      builder: (context, provider, _) {
-                        bool isConnected = provider.wearables.isNotEmpty;
-                        return ImageButton(
-                          buttonKey: _sensorBtKey,
-                          image: 'assets/buttons/bluetooth.png',
-                          activeImage: 'assets/buttons/bluetooth_connected.png',
-                          isActive: isConnected,
-                          onPressed: onBluetoothPressed,
-                          width: 70,
-                          height: 70,
-                        );
-                      }
+                    child: BluetoothButton(
+                      buttonKey: _sensorBluetoothKey, 
+                      onPressed: onBluetooth
                     ),
                   ),
                   const SizedBox(height: 10),

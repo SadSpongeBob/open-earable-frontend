@@ -2,10 +2,10 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
+import 'package:openearable/app/widgets/devices_popup_overlay.dart';
 import '../../../app/routing/routes.dart';
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
-import 'package:openearable/app/utils/helpers.dart';
 
 class RecordingPage extends StatefulWidget {
   const RecordingPage({
@@ -23,6 +23,7 @@ class RecordingPage extends StatefulWidget {
 
 class _RecordingPageState extends State<RecordingPage> {
   late final RecordingController _controller;
+
   final GlobalKey bluetoothKey = GlobalKey();
 
   @override

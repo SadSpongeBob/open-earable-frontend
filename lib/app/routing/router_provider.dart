@@ -13,7 +13,7 @@ import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
 import 'package:openearable/features/sensors/pages/sensor_page.dart';
-import 'package:openearable/app/utils/helpers.dart';
+import 'package:openearable/app/widgets/devices_popup_overlay.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = GoRouterRefreshStream(
@@ -58,7 +58,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           
           return SensorPage(
             isRecordingSource: isRecordingSource,
-            onBluetoothPressed: () {
+            onBluetooth: () {
               showDevicesPopup(
                 context: context,
                 isSensorPage: true,

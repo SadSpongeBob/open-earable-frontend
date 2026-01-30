@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:openearable/app/widgets/image_button.dart';
-import 'package:openearable/features/home/state/wearables_provider.dart';
+import 'package:openearable/app/widgets/bluetooth_button.dart';
 
 class HomeRecordingRightBar extends StatelessWidget {
   const HomeRecordingRightBar({
@@ -85,20 +83,8 @@ class HomeRecordingRightBar extends StatelessWidget {
           ),
 
           const Spacer(),
-          Consumer<WearablesProvider>(
-            builder: (context, provider, _) {
-              bool isConnected = provider.wearables.isNotEmpty;
-              return ImageButton(
-                buttonKey: bluetoothKey,
-                image: 'assets/buttons/bluetooth.png',
-                activeImage: 'assets/buttons/bluetooth_connected.png',
-                isActive: isConnected,
-                width: 70,
-                height: 70,
-                onPressed: onBluetooth,
-              );
-            },
-          ),
+
+          BluetoothButton(buttonKey: bluetoothKey, onPressed: onBluetooth),
         ],
       ),
     );

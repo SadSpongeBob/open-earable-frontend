@@ -29,7 +29,8 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   file_picker: ^10.3.10
-
+  uuid: ^4.4.2
+  path: ^1.9.0
   flutter_dotenv: ^5.1.0
   dio: ^5.2.0
   flutter_secure_storage: ^9.2.2

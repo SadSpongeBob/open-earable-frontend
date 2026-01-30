@@ -5,18 +5,21 @@ import 'package:openearable/api/services/auth/auth_service.dart';
 import 'package:openearable/api/services/auth/guest_storage.dart';
 import 'package:openearable/api/services/user/user_service.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
+import 'package:openearable/features/home/state/home_provider.dart';
 
 class AuthController {
   final AuthService _authService;
   final GuestStorage _guestStorage;
   final SessionNotifier _session;
   final UserService _userService;
+  final HomeStateNotifier _homeState;
 
   AuthController(
     this._authService,
     this._userService,
     this._guestStorage,
     this._session,
+    this._homeState,
   );
 
   Future<void> bootstrap() async {
@@ -77,6 +80,7 @@ class AuthController {
   Future<void> logout({String? message}) async {
     await _authService.logout();
     await _guestStorage.clear();
+    _homeState.setProjectsLoaded(false);
     _session.setLoggedOut(message);
   }
 }
@@ -86,6 +90,13 @@ final authControllerProvider = Provider<AuthController>((ref) {
   final userService = ref.read(userServiceProvider);
   final session = ref.read(sessionProvider.notifier);
   final guestStorage = ref.read(guestStorageProvider);
+  final homeState = ref.read(homeStateProvider.notifier);
 
-  return AuthController(authService, userService, guestStorage, session);
+  return AuthController(
+    authService,
+    userService,
+    guestStorage,
+    session,
+    homeState,
+  );
 });
