@@ -2,7 +2,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
-import 'package:openearable/app/widgets/devices_popup_overlay.dart';
+import 'package:openearable/app/ui/device/devices_popup_controller.dart';
+import 'package:openearable/app/widgets/devices_popup.dart';
 import '../../../app/routing/routes.dart';
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
@@ -23,6 +24,7 @@ class RecordingPage extends StatefulWidget {
 
 class _RecordingPageState extends State<RecordingPage> {
   late final RecordingController _controller;
+  final DevicesPopupController _popupController = DevicesPopupController();
 
   final GlobalKey bluetoothKey = GlobalKey();
 
@@ -36,8 +38,11 @@ class _RecordingPageState extends State<RecordingPage> {
 
   @override
   void dispose() {
+    _popupController.hide();
+
     _controller.removeListener(_onControllerChanged);
     _controller.dispose();
+    
     super.dispose();
   }
 
@@ -107,9 +112,13 @@ class _RecordingPageState extends State<RecordingPage> {
             onShutter: _onShutterPressed,
             onFlipCamera: _onFlipOrPausePressed,
             onBluetooth: () {
-              showDevicesPopup(
+              _popupController.toggle(
                 context: context,
-                isSensorPage: false,
+                positionedPopup: const Positioned(
+                  bottom: 30,
+                  right: 165,
+                  child: DevicesPopup(),
+                ),
               );
             },
             padding: const EdgeInsets.symmetric(vertical: 24),

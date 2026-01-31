@@ -7,7 +7,8 @@ import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/home/widgets/project_bar.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
 import 'package:openearable/features/home/widgets/delete_project_dialog.dart';
-import 'package:openearable/app/widgets/devices_popup_overlay.dart';
+import 'package:openearable/app/ui/device/devices_popup_controller.dart';
+import 'package:openearable/app/widgets/devices_popup.dart';
 import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
@@ -27,12 +28,19 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  final DevicesPopupController _popupController = DevicesPopupController();
   final GlobalKey bluetoothKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(homeControllerProvider).loadProjects());
+  }
+
+  @override
+  void dispose() {
+    _popupController.hide();
+    super.dispose();
   }
 
   @override
@@ -169,9 +177,13 @@ class _HomePageState extends ConsumerState<HomePage> {
               onWaveSound: () => context.go('${Routes.sensordata}?source=home'),
               onShutter: () => context.go(Routes.recording),
               onBluetooth: () {
-                showDevicesPopup(
+                _popupController.toggle(
                   context: context,
-                  isSensorPage: false,
+                  positionedPopup: const Positioned(
+                    bottom: 30,
+                    right: 165,
+                    child: DevicesPopup(),
+                  ),
                 );
               },
               padding: const EdgeInsets.symmetric(vertical: 24),
