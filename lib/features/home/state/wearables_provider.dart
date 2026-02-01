@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 import 'package:openearable/features/sensors/state/sensor_configurations_provider.dart';
+import 'package:openearable/features/recordings/controllers/sensors_recording_controller.dart';
 import 'package:openearable/features/sensors/state/sensor_data_provider.dart';
 import 'package:openearable/app/utils/logger.dart';
 
@@ -89,6 +90,8 @@ class WearablesProvider with ChangeNotifier {
       _sensorConfigurationProviders = {};
   final Map<Wearable, List<SensorDataProvider>> sensorDataProviders = {};
   List<SensorDataProvider> getSensorDataProviders(Wearable wearable) => sensorDataProviders[wearable] ?? [];
+
+  bool get isConnected => _wearables.isNotEmpty;
 
   List<Wearable> get wearables => _wearables;
   Map<Wearable, SensorConfigurationProvider> get sensorConfigurationProviders =>
@@ -439,6 +442,24 @@ class WearablesProvider with ChangeNotifier {
         failureDescription:
             'Failed to synchronize time for ${wearable.name} after capability change',
       ),);
+    }
+  }
+
+  void attachSensorsRecordingController(
+    SensorsRecordingController controller,
+  ) {
+    for (final providers in sensorDataProviders.values) {
+      for (final provider in providers) {
+        provider.sensorsController = controller;
+      }
+    }
+  }
+
+  void detachSensorsRecordingController() {
+    for (final providers in sensorDataProviders.values) {
+      for (final provider in providers) {
+        provider.sensorsController = null;
+      }
     }
   }
 }

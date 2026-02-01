@@ -3,10 +3,12 @@ import 'dart:collection';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
+import 'package:openearable/features/recordings/controllers/sensors_recording_controller.dart';
 
 class SensorDataProvider with ChangeNotifier {
   final Sensor sensor;
   final int timeWindow;
+  SensorsRecordingController? sensorsController;
 
   late final int _timestampCutoffMs;
   final Queue<SensorValue> sensorValues = Queue();
@@ -19,14 +21,24 @@ class SensorDataProvider with ChangeNotifier {
   SensorDataProvider({
     required this.sensor,
     this.timeWindow = 5,
+    this.sensorsController,
   }) {
-    _timestampCutoffMs = pow(10, -sensor.timestampExponent).toInt() * timeWindow;
+    _timestampCutoffMs = (timeWindow * pow(10, -sensor.timestampExponent)).toInt();
     _listenToStream();
   }
 
   void _listenToStream() {
     _sensorStreamSubscription = sensor.sensorStream.listen((sensorValue) {
       sensorValues.add(sensorValue);
+
+      if (sensorsController != null) {
+        // We convert the sensorValue to a simple list for JSON
+        final values = sensorValue is SensorDoubleValue 
+            ? sensorValue.values 
+            : (sensorValue as SensorIntValue).values;
+        
+        sensorsController!.recordData(sensor.sensorName, values);
+      }
 
     final cutoff = sensorValue.timestamp - _timestampCutoffMs;
     sensorValues.removeWhere((v) => v.timestamp < cutoff);
