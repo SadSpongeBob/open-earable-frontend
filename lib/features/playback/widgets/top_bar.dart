@@ -12,7 +12,7 @@ import '../controllers/playback_controller.dart';
 class TopBar extends ConsumerStatefulWidget {
   final PlaybackController controller;
   final GlobalKey speedKey;
-  final String recordingId;
+  final String? recordingId;
 
   const TopBar({
     required this.controller,
@@ -28,7 +28,7 @@ class TopBar extends ConsumerStatefulWidget {
 class _TopBarState extends ConsumerState<TopBar> {
   PlaybackController get controller => widget.controller;
   GlobalKey get speedKey => widget.speedKey;
-  String get videoPath => widget.recordingId;
+  String? get videoPath => widget.recordingId;
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +144,6 @@ class _TopBarState extends ConsumerState<TopBar> {
                         v.projectId == (ref.read(homeStateProvider).openProjectId  == "default" ? null : ref.read(homeStateProvider).openProjectId))
                             .map((v) => v.name)
                             .toList();
-
                         if (videoNames.contains(newName)) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('video name exists')),
@@ -166,7 +165,7 @@ class _TopBarState extends ConsumerState<TopBar> {
                 ),
                 TextButton(
                   onPressed: () {
-                    controller.deleteVideo(videoPath);
+                    controller.deleteVideo(videoPath!);
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (_) => RecordingPage()),

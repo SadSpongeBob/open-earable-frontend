@@ -15,23 +15,21 @@ class UploadRecordingResponse {
     this.thumbnailUpload,
   });
 
-  factory UploadRecordingResponse.fromJson(Map<String, dynamic>? json) {
-    if (json == null) throw Exception('Invalid response: json is null');
+  factory UploadRecordingResponse.fromJson(Map<String, dynamic> json) {
+
 
     final rawData = (json['data'] is Map<String, dynamic>) ? json['data'] as Map<String, dynamic> : json;
 
-    final recordingId = (rawData['recordingId'] as String?) ?? '';
-    final name = rawData['name'] as String? ?? '';
+    final recordingId = rawData['recordingId'] as String;
+    final name = rawData['name'] as String;
     final projectId = rawData['projectId'] as String?;
 
     final videoUploadRaw = rawData['videoUpload'];
-    if (videoUploadRaw == null || videoUploadRaw is! Map) {
-      throw Exception('videoUpload missing in response');
-    }
     final videoUpload = UploadInfo.fromJson(Map<String, dynamic>.from(videoUploadRaw));
 
     final sensorUploadsRaw = rawData['sensorUploads'];
     final sensorUploads = <SensorUploadInfo>[];
+    ///this will be fixed when sensors are ready
     if (sensorUploadsRaw is List) {
       for (final e in sensorUploadsRaw) {
         if (e is Map) {
@@ -72,7 +70,7 @@ class UploadInfo {
   factory UploadInfo.fromJson(Map<String, dynamic> json) {
     final filename = json['filename'] as String? ?? '';
     final key = json['key'] as String? ?? '';
-    final uploadUrl = json['uploadUrl'] as String? ?? '';
+    final uploadUrl = json['uploadUrl'] as String;
     final timestamp = json['timestamp'] as String? ?? '';
     final rawHeaders = json['requiredHeaders'];
     final headers = <String, String>{};
@@ -105,6 +103,7 @@ class SensorUploadInfo {
     required this.sensor,
     required this.type,
   });
+  ///I will fix this when sensors are ready
 
   factory SensorUploadInfo.fromJson(Map<String, dynamic> json) {
     final sensorId = json['sensorId'] as String? ?? '';

@@ -3,11 +3,9 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:openearable/features/playback/pages/Playback.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
-import 'package:openearable/features/settings/pages/settings_page.dart';
+import '../../../api/local_media.dart';
 import '../../../app/routing/routes.dart';
-
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
 
@@ -31,7 +29,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   @override
   void initState() {
     super.initState();
-    _controller = RecordingController(initialCamera: widget.initialCamera)
+    _controller = RecordingController(initialCamera: widget.initialCamera, localMedia: ref.read(localMediaProvider))
       ..addListener(_onControllerChanged)
       ..init();
   }
@@ -71,11 +69,8 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
     }
   }
 
-  void _navigateToPlayBack(String path) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => PlaybackPage(recordingId: path)),
-    );
+  void _navigateToPlayBack(String recordingId) {
+    context.go('${Routes.playback}/$recordingId');
   }
 
   void _navigateToHome() {
@@ -116,10 +111,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
           HomeRecordingRightBar(
             onSettings: () async {
               if (!_controller.isRecording) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => SettingsPage()),
-                );
+                context.go(Routes.settings);
               }
             },
             onWaveSound: () {

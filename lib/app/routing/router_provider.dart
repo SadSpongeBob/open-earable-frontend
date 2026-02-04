@@ -12,6 +12,8 @@ import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
+import 'package:openearable/features/playback/pages/Playback.dart';
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = GoRouterRefreshStream(
@@ -49,6 +51,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.requestResetPassword,
         builder: (_, _) => const RequestResetPage(),
       ),
+      GoRoute(
+        path: '${Routes.playback}/:recordingId',
+        builder: (context, state) {
+          final recordingId = state.pathParameters['recordingId'];
+          return PlaybackPage(recordingId: recordingId);
+        },
+      ),
     ],
 
     redirect: (context, state) {
@@ -62,8 +71,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               'loggedOut=${session.isLoggedOut}',
         );
       }
-
-
       final isPublic =
           loc == Routes.login ||
               loc == Routes.signup ||
@@ -81,14 +88,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       return null;
-    },
-
-    errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(title: const Text('Routing error')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text('No route for: ${state.uri}\n\n${state.error ?? ""}'),
-      ),
-    ),
+    }
   );
 });

@@ -3,102 +3,118 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:video_thumbnail/video_thumbnail.dart' as vt;
-import 'package:uuid/uuid.dart';
 import 'package:image/image.dart' as img;
+import 'package:uuid/uuid.dart';
+import 'package:video_thumbnail/video_thumbnail.dart' as vt;
+import '../../../api/local_media.dart';
 
 
 class RecordingController extends ChangeNotifier {
-  RecordingController({this.initialCamera = CameraLensDirection.back});
-  final CameraLensDirection initialCamera;
-  final recordingId = const Uuid().v4();
+  RecordingController({
+    required this.localMedia,
+    this.initialCamera = CameraLensDirection.back,
+  });
 
+  final LocalMedia localMedia;
+  final CameraLensDirection initialCamera;
   CameraController? cameraController;
   List<CameraDescription> cameras = [];
   CameraLensDirection currentLens = CameraLensDirection.back;
-  bool isInitialized = false, isRecording = false, isPaused = false;
-  String? error, uploadingRecordingId, lastSavedPath;
-
+  bool isInitialized = false;
+  bool isRecording = false;
+  bool isPaused = false;
+  String? error;
   Future<void> init() async {
     currentLens = initialCamera;
-    cameras = await availableCameras();
-    if (cameras.isNotEmpty) {
-      await _initCameraController(currentLens);
-    } else {
-      error = 'No cameras found on device';
-    }
-    notifyListeners();
-  }
 
-  Future<void> disposeController() async {
-    await cameraController?.dispose();
-    cameraController = null;
-    isInitialized = isRecording = false;
+    cameras = await availableCameras();
+
+    if (cameras.isEmpty) {
+      error = "No cameras found";
+      notifyListeners();
+      return;
+    }
+
+    await _initCameraController(currentLens);
     notifyListeners();
   }
 
   Future<void> _initCameraController(CameraLensDirection lens) async {
-    final camera = cameras.firstWhere((c) => c.lensDirection == lens, orElse: () => cameras.first);
+    final camera = cameras.firstWhere(
+          (c) => c.lensDirection == lens,
+      orElse: () => cameras.first,
+    );
+
     await cameraController?.dispose();
-    cameraController = CameraController(camera, ResolutionPreset.high, enableAudio: true);
+
+    cameraController = CameraController(
+      camera,
+      ResolutionPreset.high,
+      enableAudio: true,
+    );
+
     await cameraController!.initialize();
+
     isInitialized = true;
     error = null;
+
+    notifyListeners();
+  }
+  Future<void> startRecording() async {
+    if (!isInitialized || isRecording) return;
+
+    await cameraController!.startVideoRecording();
+
+    isRecording = true;
     notifyListeners();
   }
 
-  Future<void> startRecording() async {
-    if (isInitialized && !isRecording) {
-      await cameraController!.startVideoRecording();
-      isRecording = true;
-      notifyListeners();
-    }
-  }
-
-
   Future<String?> stopRecording() async {
-    if (isInitialized && isRecording) {
-      final file = await cameraController!.stopVideoRecording();
-      isRecording = isPaused = false;
-      notifyListeners();
-      return _saveVideo(file: file);
-    }
-    return null;
+    if (!isInitialized || !isRecording) return null;
+
+    final file = await cameraController!.stopVideoRecording();
+
+    isRecording = false;
+    isPaused = false;
+
+    notifyListeners();
+    return await _saveVideo(file: file);
   }
 
-  Future<String?> _saveVideo({
-    required XFile file,
-  }) async {
-    final appDir = await getApplicationDocumentsDirectory();
+  Future<String?> _saveVideo({required XFile file}) async {
     final recordingId = const Uuid().v4();
 
-    final dir = Directory(
-      '${appDir.path}/OpenEarable/default/$recordingId',
-    );
-    await dir.create(recursive: true);
-    final videoPath = '${dir.path}/video.mp4';
-    await File(file.path).copy(videoPath);
-    Uint8List? thumbData = await generateThumbnail(videoPath);
+    final projectId = LocalMedia.defaultProjectId;
+
+    final recordingDir = localMedia.recordingDir(projectId, recordingId);
+    await recordingDir.create(recursive: true);
+
+    final videoFile = localMedia.videoFile(projectId, recordingId);
+    await File(file.path).copy(videoFile.path);
+    final thumbData = await generateThumbnail(videoFile.path);
 
     if (thumbData != null) {
-      final image = img.decodeImage(thumbData);
-      if (image != null) {
-        final thumbFile = File('${dir.path}/thumbnail.png');
-        await thumbFile.writeAsBytes(img.encodePng(image));
+      final decoded = img.decodeImage(thumbData);
+
+      if (decoded != null) {
+        final thumbFile =
+        localMedia.thumbnailFile(projectId, recordingId);
+
+        await thumbFile.writeAsBytes(img.encodePng(decoded));
       }
     }
-    final metaFile = File('${dir.path}/meta.txt');
+    final metaFile =
+    localMedia.recordingMetaFile(projectId, recordingId);
     final meta = {
-      'name': recordingId,
-      'timestamp': DateTime.now().toUtc().toIso8601String(),
+      "id": recordingId,
+      "timestamp": DateTime.now().toUtc().toIso8601String(),
     };
     await metaFile.writeAsString(
-      const JsonEncoder.withIndent('  ').convert(meta),
+      const JsonEncoder.withIndent("  ").convert(meta),
     );
     return recordingId;
-
   }
+
   Future<Uint8List?> generateThumbnail(String videoPath) async {
     return vt.VideoThumbnail.thumbnailData(
       video: videoPath,
@@ -107,47 +123,34 @@ class RecordingController extends ChangeNotifier {
       quality: 75,
     );
   }
-  Future<void> writeMeta({
-    required String videoPath,
-    required String name,
-    required DateTime timestamp,
-  }) async {
-    final dir = Directory(File(videoPath).parent.path);
-    final metaFile = File('${dir.path}/meta.txt');
-
-    final meta = {
-      'name': name,
-      'timestamp': timestamp.toUtc().toIso8601String(),
-    };
-
-    await metaFile.writeAsString(
-      const JsonEncoder.withIndent('  ').convert(meta),
-    );
-
-  }
-
   Future<void> toggleCamera() async {
-    if (cameras.isNotEmpty) {
-      currentLens = currentLens == CameraLensDirection.front ? CameraLensDirection.back : CameraLensDirection.front;
-      isInitialized = false;
-      notifyListeners();
-      await _initCameraController(currentLens);
-    }
+    if (cameras.isEmpty) return;
+
+    currentLens = currentLens == CameraLensDirection.front
+        ? CameraLensDirection.back
+        : CameraLensDirection.front;
+
+    isInitialized = false;
+    notifyListeners();
+
+    await _initCameraController(currentLens);
+  }
+  Future<void> pauseRecording() async {
+    if (!isInitialized || !isRecording || isPaused) return;
+
+    await cameraController!.pauseVideoRecording();
+
+    isPaused = true;
+    notifyListeners();
   }
 
-  Future<void> pauseRecording() async {
-    if (isInitialized && isRecording && !isPaused) {
-      await cameraController!.pauseVideoRecording();
-      isPaused = true;
-      notifyListeners();
-    }
-  }
   Future<void> resumeRecording() async {
-    if (isInitialized && isRecording && isPaused) {
-      await cameraController!.resumeVideoRecording();
-      isPaused = false;
-      notifyListeners();
-    }
+    if (!isInitialized || !isRecording || !isPaused) return;
+
+    await cameraController!.resumeVideoRecording();
+
+    isPaused = false;
+    notifyListeners();
   }
   @override
   void dispose() {
@@ -155,4 +158,3 @@ class RecordingController extends ChangeNotifier {
     super.dispose();
   }
 }
-

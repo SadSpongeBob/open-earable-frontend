@@ -1,3 +1,4 @@
+
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,15 +34,32 @@ class LocalMedia {
 
   File recordingMetaFile(String projectId, String recordingId) =>
       File(p.join(baseDir.path, projectId, recordingId, metaName));
-
+  Future<Directory> exportDir(String recordingId) async {
+    final baseExportDir = Directory(
+      p.join(
+        "/storage/emulated/0/Download",
+        "OpenEarable",
+      ),
+    );
+    await baseExportDir.create(recursive: true);
+    final targetDir = Directory(
+      p.join(baseExportDir.path, recordingId),
+    );
+    await targetDir.create(recursive: true);
+    return targetDir;
+  }
   static Future<LocalMedia> initLocalMedia() async {
     final base = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(base.path, 'openEarable', 'folder'));
+    final dir = Directory(
+      p.join(base.path, "OpenEarable"),
+    );
+
     await dir.create(recursive: true);
+
     return LocalMedia(dir);
   }
 }
 
 final localMediaProvider = Provider<LocalMedia>((_) {
-  throw UnimplementedError('localMediaProvider not overridden');
+  throw UnimplementedError("localMediaProvider not overridden");
 });
