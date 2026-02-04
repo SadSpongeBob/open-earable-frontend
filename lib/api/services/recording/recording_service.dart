@@ -8,7 +8,6 @@ import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/services/recording//recording_endpoints.dart';
-
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
 import 'package:openearable/api/models/recording/upload_recording_response.dart';
 class RecordingService {
@@ -24,27 +23,16 @@ class RecordingService {
       data: req.toJson(),
       options: Options(validateStatus: (status) => true),
     );
-    final raw = res.data;
-    if (raw is Map<String, dynamic>) {
-      return UploadRecordingResponse.fromJson(raw.containsKey('data') ? raw : {'data': raw});
-    }
-    if (raw is String) {
-      try {
-        final decoded = jsonDecode(raw) as Map<String, dynamic>;
-        return UploadRecordingResponse.fromJson(decoded.containsKey('data') ? decoded : {'data': decoded});
-      } catch (_) {
-        throw Exception('startUpload: Failed to decode response string');
-      }
-    }
-    throw Exception('startUpload: unexpected response shape: ${raw.runtimeType}');
+    final raw = res.asMap();
+    return UploadRecordingResponse.fromJson(raw.containsKey('data') ? raw : {'data': raw});
+
   }
-  Future<Recording?> completeUpload(String recordingId) async {
+  Future<Recording> completeUpload(String recordingId) async {
     final res = await _dio.put(
       RecordingEndpoints.complete(recordingId),
       options: Options(validateStatus: (status) => true),
     );
     final raw = res.data;
-    if (raw == null) return null;
 
     if (raw is Map<String, dynamic>) {
       if (raw.containsKey('data') && raw['data'] is Map<dynamic, dynamic>) {
@@ -121,7 +109,6 @@ class RecordingService {
         // corrupted metadata -> skip recording
         continue;
       }
-
       final name = meta['name'] as String? ?? 'Recording - $recordingId';
       final userId = meta['userId'] as String? ?? 'local';
       final timestampRaw = meta['timestamp'] as String?;
