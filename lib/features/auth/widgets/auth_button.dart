@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 import '../../../app/theme/text_styles.dart';
 
 class AuthButton extends StatelessWidget {
@@ -35,8 +36,8 @@ class AuthButton extends StatelessWidget {
             ? const CircularProgressIndicator(color: Colors.white)
             : Text(
           text,
-          style: AuthTextStyles.button.copyWith(
-            color: Colors.white,
+          style: AppTextStyles.textRegular.copyWith(
+            color: AppColors.fifty,
           ),
         ),
       ),

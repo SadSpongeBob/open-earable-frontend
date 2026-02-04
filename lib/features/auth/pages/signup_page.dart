@@ -86,7 +86,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                 const Text(
                   "Create your account",
                   textAlign: TextAlign.center,
-                  style: AuthTextStyles.title,
+                  style: AppTextStyles.titleBold,
                 ),
 
                 const SizedBox(height: 35),
@@ -143,11 +143,11 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                   children: [
                     const Text(
                       "Already have an account? ",
-                      style: AuthTextStyles.body,
+                      style: AppTextStyles.footerRegular,
                     ),
                     GestureDetector(
                       onTap: () => context.go(Routes.login),
-                      child: Text("Log in", style: AuthTextStyles.link),
+                      child: Text("Log in", style: AppTextStyles.footerBold),
                     ),
                   ],
                 ),

@@ -64,7 +64,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
                 const Text(
                   "Reset Password",
                   textAlign: TextAlign.center,
-                  style: AuthTextStyles.title,
+                  style: AppTextStyles.titleBold,
                 ),
 
                 const SizedBox(height: 12),
@@ -72,7 +72,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
                 const Text(
                   "Enter a new password.",
                   textAlign: TextAlign.center,
-                  style: AuthTextStyles.body,
+                  style: AppTextStyles.textRegular,
                 ),
 
                 const SizedBox(height: 30),

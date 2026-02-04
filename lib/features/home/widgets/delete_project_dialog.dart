@@ -58,7 +58,7 @@ class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
                   child: Text(
                     'Do you really want to \ndelete these projects?',
                     textAlign: TextAlign.center,
-                    style: AuthTextStyles.title.copyWith(fontSize: 20, fontWeight: FontWeight.w800),
+                    style: AppTextStyles.subheaderBold,
                   ),
                 ),
               ),
@@ -71,7 +71,7 @@ class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
                 child: Text(
                   'This action cannot be undone',
                   textAlign: TextAlign.center,
-                  style: AuthTextStyles.body.copyWith(fontSize: 18, color: Colors.grey[700]),
+                  style: AppTextStyles.textRegular,
                 ),
               ),
 

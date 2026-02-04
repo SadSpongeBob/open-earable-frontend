@@ -87,7 +87,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                 child: Center(
                   child: Text(
                     'Add Project',
-                    style: AuthTextStyles.title.copyWith(fontSize: 30),
+                    style: AppTextStyles.subheaderBold,
                   ),
                 ),
               ),

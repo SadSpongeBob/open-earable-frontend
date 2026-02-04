@@ -51,8 +51,8 @@ class _CustomDropdownState extends ConsumerState<CustomDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    final itemStyle = AuthTextStyles.fieldInput.copyWith(fontSize: 18);
-    final dropdownItemStyle = AuthTextStyles.fieldInput.copyWith(fontSize: 14);
+    final itemStyle = AppTextStyles.textMedium;
+    final dropdownItemStyle = AppTextStyles.textMedium;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),

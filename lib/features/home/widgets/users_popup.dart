@@ -48,7 +48,7 @@ class RoleDropdownPill extends StatelessWidget {
             value: value,
             isExpanded: true,
             icon: const Icon(Icons.arrow_drop_down),
-            style: AuthTextStyles.fieldInput,
+            style: AppTextStyles.textMedium,
             items: RoleChoice.values
                 .map(
                   (r) => DropdownMenuItem<RoleChoice>(
@@ -141,7 +141,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
             child: Column(
               children: [
                 const SizedBox(height: 6),
-                const Text('Users', style: GlobalTextStyles.cardTitle),
+                const Text('Users', style: AppTextStyles.headerBold),
                 const SizedBox(height: 18),
 
                 // input row

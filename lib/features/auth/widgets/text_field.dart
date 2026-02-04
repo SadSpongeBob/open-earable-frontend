@@ -30,10 +30,10 @@ class AuthTextField extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       textAlign: textAlign,
-      style: AuthTextStyles.fieldInput,
+      style: AppTextStyles.textRegular,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: AuthTextStyles.fieldHint,
+        hintStyle: AppTextStyles.textRegular.copyWith(color: AppColors.sevenHundred),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         border: _border(),

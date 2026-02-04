@@ -83,7 +83,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const Text(
                   "Log into\nyour account",
                   textAlign: TextAlign.center,
-                  style: AuthTextStyles.title,
+                  style: AppTextStyles.titleBold,
                 ),
 
                 const SizedBox(height: 35),
@@ -133,11 +133,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   children: [
                     const Text(
                       "Don’t have an account yet? ",
-                      style: AuthTextStyles.body,
+                      style: AppTextStyles.footerRegular,
                     ),
                     GestureDetector(
                       onTap: () => context.go(Routes.signup),
-                      child: Text("Sign Up", style: AuthTextStyles.link),
+                      child: Text("Sign Up", style: AppTextStyles.footerBold),
                     ),
                   ],
                 ),
@@ -166,7 +166,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         const Spacer(),
         GestureDetector(
           onTap: () => context.go(Routes.requestResetPassword),
-          child: Text("Forgot Password?", style: AuthTextStyles.body),
+          child: Text("Forgot Password?", style: AppTextStyles.footerRegular),
         ),
       ],
     );

@@ -61,7 +61,7 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
                 const Text(
                   "Forgot your password?",
                   textAlign: TextAlign.center,
-                  style: AuthTextStyles.title,
+                  style: AppTextStyles.titleBold,
                 ),
 
                 const SizedBox(height: 12),
@@ -69,7 +69,7 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
                 const Text(
                   "Enter your Email so that we can send you password reset link.",
                   textAlign: TextAlign.center,
-                  style: AuthTextStyles.body,
+                  style: AppTextStyles.textRegular,
                 ),
 
                 const SizedBox(height: 35),

@@ -105,7 +105,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                         const Text(
                           'Guest Account',
                           textAlign: TextAlign.center,
-                          style: GlobalTextStyles.cardTitle,
+                          style: AppTextStyles.headerMedium,
                         ),
 
                         const SizedBox(height: 10),
@@ -117,12 +117,12 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                           children: [
                             const Text(
                               "Already have an account? ",
-                              style: AuthTextStyles.body,
+                              style: AppTextStyles.footerRegular,
                             ),
                             GestureDetector(
                               onTap: () =>
                                   ref.read(authControllerProvider).logout(),
-                              child: Text("Log In", style: AuthTextStyles.link),
+                              child: Text("Log In", style: AppTextStyles.footerBold),
                             ),
                           ],
                         ),
@@ -139,7 +139,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                 const Text(
                                   'Account',
                                   textAlign: TextAlign.center,
-                                  style: GlobalTextStyles.cardTitle,
+                                  style: AppTextStyles.headerMedium,
                                 ),
                                 const SizedBox(height: 10),
                                 SettingsAvatar(
@@ -214,10 +214,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                         ),
                                         child: Text(
                                           'Sign Out',
-                                          style: AuthTextStyles.button.copyWith(
-                                            color: AppColors.nineHundred,
-                                            fontSize: 16,
-                                          ),
+                                          style: AppTextStyles.footerMedium,
                                         ),
                                       ),
                                       ElevatedButton(
@@ -247,8 +244,8 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                               )
                                             : Text(
                                                 'Delete Account',
-                                                style: AuthTextStyles.button
-                                                    .copyWith(fontSize: 16),
+                                                style: AppTextStyles.footerMedium
+                                                    .copyWith(color: AppColors.fifty),
                                               ),
                                       ),
                                     ],
