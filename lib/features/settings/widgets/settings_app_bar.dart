@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:openearable/app/theme/app_bar_styles.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool loading;
@@ -28,19 +29,24 @@ class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      flexibleSpace: Container(decoration: GlobalAppBarStyles.appBarDecoration),
+      flexibleSpace: Container(decoration: BoxDecoration(
+        color: AppColors.fifty,
+        boxShadow: [BoxShadow(color: AppColors.fiveHundred, blurRadius: 30)],
+      )),
       titleSpacing: 0,
       title: Row(
         children: [
           TextButton(
             onPressed: onBack,
-            child: const Text(
+            child: Text(
               'Back',
-              style: GlobalAppBarStyles.appBarSecondaryText,
+              style: AppTextStyles.footerRegular.copyWith(
+                color: AppColors.primary,
+              ),
             ),
           ),
           const Spacer(),
-          const Text('Settings', style: GlobalAppBarStyles.appBarTitle),
+          const Text('Settings', style: AppTextStyles.titleBold),
           const Spacer(),
         ],
       ),
@@ -66,8 +72,9 @@ class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
               : Text(
                   'Save',
                   style: (canSave
-                      ? GlobalAppBarStyles.appBarMainText
-                      : GlobalAppBarStyles.appBarInactiveText),
+                      ? AppTextStyles.footerRegular
+                      : AppTextStyles.footerRegular.copyWith(
+                      color: AppColors.fiveHundred)),
                 ),
         ),
         const SizedBox(width: 8),
