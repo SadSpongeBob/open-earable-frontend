@@ -121,9 +121,8 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
 
     final users = state.projectUsers;
     final canAdd = _canAdd(state.isUsersLoading);
-
-    // You can decide policy here:
-    final canManage = myUserId != null && controller.canManageUsers(myUserId: myUserId);
+    final canManage = myUserId != null &&
+        users.any((u) => u.userId == myUserId && u.role is Owner);
 
     return Dialog(
       insetPadding: const EdgeInsets.all(18),
@@ -144,57 +143,57 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                 const Text('Users', style: GlobalTextStyles.cardTitle),
                 const SizedBox(height: 18),
 
-                // input row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 330,
-                      height: 55,
-                      child: HomeTextField(
-                        controller: _emailController,
-                        hint: 'User Email',
-                        keyboardType: TextInputType.emailAddress,
+                if (canManage) ...[
+                  // input row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 330,
+                        height: 55,
+                        child: HomeTextField(
+                          controller: _emailController,
+                          hint: 'User Email',
+                          keyboardType: TextInputType.emailAddress,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    RoleDropdownPill(
-                      value: _role,
-                      onChanged: (v) => setState(() => _role = v),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 12),
+                      RoleDropdownPill(
+                        value: _role,
+                        onChanged: (v) => setState(() => _role = v),
+                      ),
+                    ],
+                  ),
 
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
 
-                // add button
-                SizedBox(
-                  width: 490,
-                  height: 55,
-                  child: Opacity(
-                    opacity: canAdd ? 1.0 : 0.45,
-                    child: IgnorePointer(
-                      ignoring: !canAdd,
-                      child: AuthButton(
-                        text: 'Add',
-                        onTap: () async {
-                          if (myUserId == null) return;
+                  // add button
+                  SizedBox(
+                    width: 490,
+                    height: 55,
+                    child: Opacity(
+                      opacity: canAdd ? 1.0 : 0.45,
+                      child: IgnorePointer(
+                        ignoring: !canAdd,
+                        child: AuthButton(
+                          text: 'Add',
+                          onTap: () async {
+                            await controller.addUserToOpenProject(
+                              myUserId: myUserId,
+                              emailAddress: _emailController.text,
+                              role: _role.toProjectRole(),
+                            );
 
-                          await controller.addUserToOpenProject(
-                            myUserId: myUserId,
-                            emailAddress: _emailController.text,
-                            role: _role.toProjectRole(),
-                          );
-
-                          _emailController.clear();
-                          setState(() => _role = RoleChoice.viewer);
-                        },
+                            _emailController.clear();
+                            setState(() => _role = RoleChoice.viewer);
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
+                ],
 
                 // list
                 Expanded(
@@ -264,15 +263,6 @@ class _UsersList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (users.isEmpty) {
-      return const Center(
-        child: Text(
-          'No users in this project yet',
-          style: TextStyle(color: Colors.black54),
-        ),
-      );
-    }
-
     return ListView.separated(
       padding: const EdgeInsets.all(14),
       itemCount: users.length,
@@ -302,7 +292,6 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Adjust this field name if your model uses a different one:
     final isMe = myUserId != null && user.userId == myUserId;
 
     final showRemove = canManage && !isMe;

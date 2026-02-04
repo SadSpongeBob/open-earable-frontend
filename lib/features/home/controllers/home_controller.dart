@@ -272,8 +272,6 @@ class HomeController {
       if (project.projectSource == ProjectSource.cloud) {
         await _projectService.renameProject(projectId, trimmed);
       }
-
-      // Always keep local metadata in sync
       await _projectService.updateLocalProject(project: updatedProject);
 
       _state.renameProjectInList(projectId, trimmed);
@@ -482,7 +480,7 @@ class HomeController {
         return;
       }
       if (code == 404) {
-        _toast(const ToastEvent.error('Project or user not found'));
+        _toast(const ToastEvent.error('User not found'));
         return;
       }
 
@@ -519,10 +517,4 @@ class HomeController {
   }
 
   void clearUsersPopupState() => _state.clearUsersPopupState();
-
-  bool canManageUsers({required String myUserId}) {
-    final open = state.openProject;
-    if (open == null) return false;
-    return open.isOwner(myUserId);
-  }
 }
