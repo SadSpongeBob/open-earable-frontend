@@ -235,16 +235,7 @@ class ProjectService {
 
   Future<List<ProjectUser>> getProjectUsers(String projectId) async {
     final res = await _dioClient.get(ProjectEndpoints.projectUsers(projectId));
-
-    final root = res.data;
-    final data = root is Map<String, dynamic> ? root['data'] : root;
-
-    if (data is! List) {
-      throw StateError(
-        'Expected List or {data: List} from GET ${ProjectEndpoints.projectUsers(projectId)} '
-            'but got ${data.runtimeType}',
-      );
-    }
+    final data = res.asList();
 
     return data
         .map((e) => ProjectUser.fromJson(e as Map<String, dynamic>))
@@ -263,16 +254,7 @@ class ProjectService {
         'role': role.toApi(),
       },
     );
-
-    final root = res.data;
-    final data = root is Map<String, dynamic> ? root['data'] : root;
-
-    if (data is! List) {
-      throw StateError(
-        'Expected List or {data: List} from POST ${ProjectEndpoints.projectUsers(projectId)} '
-            'but got ${data.runtimeType}',
-      );
-    }
+    final data = res.asList();
 
     return data
         .map((e) => ProjectUser.fromJson(e as Map<String, dynamic>))
