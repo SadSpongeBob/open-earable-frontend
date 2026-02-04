@@ -37,7 +37,7 @@ class AuthTextStyles {
   static const fieldHint = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w400,
-    color: AppColors.fieldHint,
+    color: AppColors.sevenHundred,
     fontFamily: "Roboto",
   );
 
@@ -45,7 +45,7 @@ class AuthTextStyles {
   static const fieldInput = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: AppColors.fieldText,
+    color: AppColors.nineHundred,
     fontFamily: "Roboto",
   );
 

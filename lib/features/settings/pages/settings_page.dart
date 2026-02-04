@@ -215,7 +215,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                         child: Text(
                                           'Sign Out',
                                           style: AuthTextStyles.button.copyWith(
-                                            color: AppColors.fieldText,
+                                            color: AppColors.nineHundred,
                                             fontSize: 16,
                                           ),
                                         ),

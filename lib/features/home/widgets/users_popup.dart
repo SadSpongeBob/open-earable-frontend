@@ -41,7 +41,7 @@ class RoleDropdownPill extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(36),
-          border: Border.all(width: 3, color: AppColors.fieldBorder),
+          border: Border.all(width: 3, color: AppColors.nineHundred),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<RoleChoice>(

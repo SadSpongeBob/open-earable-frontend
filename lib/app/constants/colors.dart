@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFF5B3B63);       // purple theme color
-  static const Color accent = Color(0xFFCA4C63);        // pink accent
-  static const Color light = Color(0xFFF0D9EA);         // soft background
-  static const Color dark = Color(0xFF3A2A3D);          // dark shade
+  static const Color primary = Color(0xFFFF4442);
+  static const Color secondary = Color(0xFFAF83B9);
 
-  // Field and text specific colors
-  static const Color fieldText = Color(0xFF111111);     // darker text for input values
-  static const Color fieldHint = Color(0xFF3A3A3A);     // slightly lighter hint text
-  static const Color fieldBorder = Color(0xFF1F1F1F);   // border color for inputs
+  static const Color zero = Color(0xFFFFFFFF);
+  static const Color fifty = Color(0xFFF2F2F2);
+  static const Color hundred = Color(0xFFE6E6E6);
+  static const Color twoHundred = Color(0xFFD1D1D1);
+  static const Color threeHundred = Color(0xFFBCBABA);
+  static const Color fourHundred = Color(0xFFA3A3A3);
+  static const Color fiveHundred = Color(0xFF8F8F8F);
+  static const Color sixHundred = Color(0xFF6E6E6E);
+  static const Color sevenHundred = Color(0xFF4E4E4E);
+  static const Color eightHundred = Color(0xFF2E2E2E);
+  static const Color nineHundred = Color(0xFF1F1F1F);
 }
