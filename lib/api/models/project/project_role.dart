@@ -4,19 +4,19 @@ abstract class ProjectRole {
   const ProjectRole({required this.userId});
 
   bool canViewVideos() => true;
+
   bool canEditVideos() => false;
+
   bool canRecord() => false;
+
   bool canManageUsers() => false;
 
-  factory ProjectRole.fromApi({
-    required String userId,
-    required String role,
-  }) {
-    return switch (role.toUpperCase()) {
+  factory ProjectRole.fromApi({required String userId, required String role}) {
+    return switch (role) {
       'OWNER' => Owner(userId: userId),
       'EDITOR' => Editor(userId: userId),
       'VIEWER' => Viewer(userId: userId),
-      _ => Viewer(userId: userId),
+      _ => throw ArgumentError.value(role, 'role', 'Invalid role'),
     };
   }
 
