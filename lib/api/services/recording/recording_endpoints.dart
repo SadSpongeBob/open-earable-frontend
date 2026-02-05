@@ -15,7 +15,7 @@ class RecordingEndpoints {
 
   static String deleteRecording(String recordingId) => '$base/$recordingId/delete';
 
-  static String rename(String recordingId) => '$base/$recordingId/rename';
+  static String rename(String recordingId) => '$base/$recordingId';
 
 
   static String duplicate(String recordingId) => '$base/$recordingId/duplicate';

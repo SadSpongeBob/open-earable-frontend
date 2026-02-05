@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 import 'package:video_player/video_player.dart';
 import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
@@ -10,7 +11,7 @@ import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
 
 class PlaybackController extends ChangeNotifier {
-  PlaybackController({required this.localMedia});
+  PlaybackController({required this.localMedia, required this.recordingService, required this.recordingId, required this.cloudVideo});
 
   final LocalMedia localMedia;
 
@@ -20,39 +21,47 @@ class PlaybackController extends ChangeNotifier {
   double speed = 1.0;
   String speedString = "1.0x";
 
-  String videoName = const Uuid().v4();
+  String videoName = "";
   DateTime? recordingStartedAt;
+  final String recordingId;
 
-  File _getVideoFile(String recordingId) {
+  final RecordingService recordingService;
+
+  final bool cloudVideo;
+
+  File _getVideoFile() {
     return localMedia.videoFile(
       LocalMedia.defaultProjectId,
       recordingId,
     );
   }
-  Directory _getRecordingDir(String recordingId) {
+  Directory _getRecordingDir() {
     return localMedia.recordingDir(
       LocalMedia.defaultProjectId,
       recordingId,
     );
   }
-  Future<void> loadVideo(String? recordingId) async {
+  Future<void> loadVideo() async {
     recordingStartedAt = DateTime.now().toUtc();
+    if (cloudVideo) {
+      Recording rec = await recordingService.getRecording(recordingId);
+      videoName = rec.name;
 
-    final videoFile = _getVideoFile(recordingId!);
+      videoController = VideoPlayerController.networkUrl(
+        Uri.parse(rec.videoUrl!),
+      );
+    } else {
+      videoName = recordingId;
+      final videoFile = _getVideoFile();
+      if (!await videoFile.exists()) return;
 
-    if (!await videoFile.exists()) return;
-
-    await videoController?.dispose();
-
-    videoController = VideoPlayerController.file(videoFile);
-
+      videoController = VideoPlayerController.file(videoFile);
+    }
     await videoController!.initialize();
     videoController!.play();
-
     notifyListeners();
   }
 
-  /// Toggle play/pause
   void togglePlay() {
     if (videoController == null ||
         !videoController!.value.isInitialized) return;
@@ -66,7 +75,6 @@ class PlaybackController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Toggle mute/unmute
   void toggleMute() {
     if (videoController == null) return;
 
@@ -75,8 +83,6 @@ class PlaybackController extends ChangeNotifier {
 
     notifyListeners();
   }
-
-  /// Change playback speed
   void setSpeed(double value) {
     final clamped = value.clamp(0.25, 2.0);
 
@@ -90,7 +96,6 @@ class PlaybackController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Seek forward/backward
   void seekBySeconds(int seconds) {
     if (videoController?.value.isInitialized != true) return;
 
@@ -108,53 +113,63 @@ class PlaybackController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> deleteVideo(String recordingId) async {
-    final dir = _getRecordingDir(recordingId);
+  Future<void> deleteVideo() async {
+    if (cloudVideo) {
+      await recordingService.deleteRecording(recordingId);
+      return;
+    }
+    final dir = _getRecordingDir();
 
     if (await dir.exists()) {
       await dir.delete(recursive: true);
     }
   }
-  Future<void> exportVideoFolder({
-    required String? recordingId,
-  }) async {
-    final sourceDir = _getRecordingDir(recordingId!);
-    if (!await sourceDir.exists()) return;
+  Future<void> exportVideoFolder() async {
+    final dio = Dio();
     final exportDir = await localMedia.exportDir(videoName);
     await exportDir.create(recursive: true);
+    if (cloudVideo) {
+      Recording rec = await recordingService.getRecording(recordingId);
+      final String videoUrl = rec.videoUrl!;
+      final videoFilePath = "${exportDir.path}/video.mp4";
+      await dio.download(
+        videoUrl,
+        videoFilePath,
+      );
+      return;
+    }
+    final sourceDir = _getRecordingDir();
+    if (!await sourceDir.exists()) return;
     await for (var entity in sourceDir.list()) {
-      if (entity is File && entity.uri.pathSegments.last!="meta.json") {
+      if (entity is File && entity.uri.pathSegments.last != "meta.json") {
         final fileName = entity.uri.pathSegments.last;
-        await entity.copy('${exportDir .path}/$fileName');
+        await entity.copy('${exportDir.path}/$fileName');
       }
     }
   }
 
+
   Future<void> stopAndUpload({
-    required RecordingService recordingService,
     Dio? dioClient,
-    required String? recordingId,
     required String? projectId,
   }) async {
+    if (cloudVideo) return;
     await uploadVideo(
-      recordingId!,
-      recordingService: recordingService,
+
       dioClient: dioClient,
       projectId: projectId,
     );
 
-    await deleteVideo(recordingId);
+    await deleteVideo();
   }
 
-  Future<void> uploadVideo(
-      String recordingId, {
-        required RecordingService recordingService,
+  Future<void> uploadVideo( {
         Dio? dioClient,
         String? projectId,
       }) async {
     final dio = dioClient ?? Dio();
 
-    final videoFile = _getVideoFile(recordingId);
+    final videoFile = _getVideoFile();
 
     if (!await videoFile.exists()) return;
     final Uint8List? thumbnailBytes =
@@ -169,7 +184,6 @@ class PlaybackController extends ChangeNotifier {
     }
 
     final timestamp = recordingStartedAt ?? DateTime.now().toUtc();
-
     final req = UploadRecordingRequest(
       name: videoName,
       video: RecordingFile(
@@ -182,9 +196,7 @@ class PlaybackController extends ChangeNotifier {
       projectId: projectId == 'default' ? null : projectId,
       thumbnailContent: thumbnailBytes != null ? 'JPEG' : null,
     );
-
     final uploadResp = await recordingService.startUpload(req);
-
     await _uploadFile(
       videoFile,
       uploadResp.videoUpload.uploadUrl,
@@ -230,8 +242,12 @@ class PlaybackController extends ChangeNotifier {
   }
 
   Future<void> renameVideo(String newName) async {
+    if (cloudVideo) {
+      await recordingService.rename(recordingId, newName);
+    }
     videoName = newName;
     notifyListeners();
+
   }
 
   String getVideoName() => videoName;

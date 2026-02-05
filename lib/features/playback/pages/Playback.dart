@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:openearable/api/local_media.dart';
+import '../../../api/services/recording/recording_service.dart';
+import '../../home/state/home_provider.dart';
 import '../controllers/playback_controller.dart';
 import '../widgets/top_bar.dart';
 import '../widgets/video_card.dart';
@@ -25,11 +27,15 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
   @override
   void initState() {
     super.initState();
-    _controller = PlaybackController(localMedia: ref.read(localMediaProvider));
+    final svc = ref.read(recordingServiceProvider);
+    
+    _controller = PlaybackController(localMedia: ref.read(localMediaProvider),
+        recordingService: svc, recordingId: widget.recordingId!,
+        cloudVideo: widget.recordingId!.startsWith("rcd_"));
+   
 
-    // ✅ Video laden
     if (widget.recordingId!.isNotEmpty) {
-      _controller.loadVideo(widget.recordingId);
+      _controller.loadVideo();
     }
   }
 

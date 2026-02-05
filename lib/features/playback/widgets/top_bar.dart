@@ -77,8 +77,7 @@ class _TopBarState extends ConsumerState<TopBar> {
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios),
                   onPressed: () async {
-                    final svc = ref.read(recordingServiceProvider);
-                    unawaited(controller.stopAndUpload(recordingService: svc, projectId:  ref.read(homeStateProvider).openProjectId, recordingId: widget.recordingId));
+                    unawaited(controller.stopAndUpload(projectId:  ref.read(homeStateProvider).openProjectId));
                     context.go(Routes.home);
                   },
                   color: const Color(0xFFFF4442),
@@ -128,7 +127,7 @@ class _TopBarState extends ConsumerState<TopBar> {
 
               final right = Row(mainAxisSize: MainAxisSize.min, children: [
                 TextButton(
-                  onPressed: () => controller.exportVideoFolder( recordingId: widget.recordingId),
+                  onPressed: () => controller.exportVideoFolder(),
                   child: const Text("Export", style: GlobalAppBarStyles.appBarBlackText),
                 ),
                 PopupMenuButton<String>(
@@ -165,11 +164,9 @@ class _TopBarState extends ConsumerState<TopBar> {
                 ),
                 TextButton(
                   onPressed: () {
-                    controller.deleteVideo(videoPath!);
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => RecordingPage()),
-                    );
+                    controller.deleteVideo();
+                    context.go(Routes.home);
+
                   },
                   child: Text("Delete", style: GlobalAppBarStyles.appBarSecondaryText),
                 ),

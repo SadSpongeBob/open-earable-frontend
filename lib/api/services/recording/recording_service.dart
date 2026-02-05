@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:path/path.dart' as p;
 import 'package:dio/dio.dart';
@@ -70,6 +71,7 @@ class RecordingService {
   }
   Future<void> rename(String recordingId, String name) async {
     await _dio.put(RecordingEndpoints.rename(recordingId), data: {'name': name});
+    debugPrint('Renamed recording $recordingId to "$name"');
   }
   Future<void> duplicate(String recordingId) async {
     await _dio.post(RecordingEndpoints.duplicate(recordingId));
