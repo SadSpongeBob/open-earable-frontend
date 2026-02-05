@@ -19,15 +19,34 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
   // Generic setters
   // ----------------
 
-  void setSelection(Set<String> ids) {
+  // Projects selection
+  void setProjectSelection(Set<String> ids) {
     state = state.copyWith(
       selectedProjectIds: ids,
-      isSelectionMode: ids.isNotEmpty,
+      isProjectSelectionMode: ids.isNotEmpty,
     );
   }
 
-  void clearSelection() {
-    state = state.copyWith(selectedProjectIds: {}, isSelectionMode: false);
+  void clearProjectSelection() {
+    state = state.copyWith(
+      selectedProjectIds: const <String>{},
+      isProjectSelectionMode: false,
+    );
+  }
+
+  // Recordings selection
+  void setRecordingSelection(Set<String> ids) {
+    state = state.copyWith(
+      selectedRecordingIds: ids,
+      isRecordingSelectionMode: ids.isNotEmpty,
+    );
+  }
+
+  void clearRecordingSelection() {
+    state = state.copyWith(
+      selectedRecordingIds: const <String>{},
+      isRecordingSelectionMode: false,
+    );
   }
 
   void setProjectsLoaded(bool loaded) =>
@@ -45,13 +64,15 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
 
   void setOpenProject({
     required String projectId,
-    required List<Recording> videos,
+    required List<Recording> recordings,
   }) {
     state = state.copyWith(
       openProjectId: projectId,
-      videos: videos,
-      clearSelectedVideoId: true,
+      recordings: recordings,
+      clearSelectedRecordingId: true,
       clearError: true,
+      isRecordingSelectionMode: false,
+      selectedRecordingIds: const <String>{},
     );
   }
 
@@ -81,7 +102,7 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
     state = state.copyWith(
       projects: updated,
       selectedProjectIds: nextSelected,
-      isSelectionMode: nextSelected.isNotEmpty,
+      isProjectSelectionMode: nextSelected.isNotEmpty,
       clearError: true,
     );
   }
@@ -101,7 +122,6 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
       usersErrorMessage: null,
     );
   }
-
 
   void setUsersError(String message) {
     state = state.copyWith(

@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
-import 'package:openearable/features/home/widgets/project_bar.dart';
+import 'package:openearable/features/home/widgets/project_grid.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
-import 'package:openearable/features/home/widgets/delete_project_dialog.dart';
+import 'package:openearable/features/home/widgets/delete_confirm_dialog.dart';
 
 import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
@@ -16,6 +16,7 @@ import '../../../app/ui/toast_event.dart';
 import '../../auth/state/session_provider.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/project_action_bar.dart';
+import '../widgets/recording_action_bar.dart';
 import '../widgets/rename_project_dialog.dart';
 import '../widgets/users_button.dart';
 import '../widgets/users_popup.dart';
@@ -64,7 +65,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: ProjectBar(
                       projects: state.projects,
                       openProjectId: state.openProjectId,
-                      isSelectionMode: state.isSelectionMode,
+                      isSelectionMode: state.isProjectSelectionMode,
                       selectedProjectIds: state.selectedProjectIds,
                       onAddProject: () async {
                         final name = await AddProjectDialog.show(context);
@@ -78,7 +79,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
 
-                  if (state.isSelectionMode)
+                  if (state.isProjectSelectionMode)
                     Positioned(
                       left: 0,
                       right: 0,
@@ -89,11 +90,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                           if (selectedCount == 0) return;
 
                           final projectIds = state.selectedProjectIds;
-                          DeleteProjectDialog.show(
+                          DeleteConfirmDialog.show(
                             context,
+                            title: 'Do you really want to\ndelete these projects?',
                             onDelete: () async {
                               await controller.deleteProjects(projectIds);
-                              controller.exitSelectionMode();
+                              controller.exitProjectSelectionMode();
                             },
                           );
                         },
@@ -117,7 +119,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             }
                           });
                         },
-                        onDone: controller.exitSelectionMode,
+                        onDone: controller.exitProjectSelectionMode,
                       ),
                     ),
                 ],
@@ -136,17 +138,49 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                     child: RecordingGrid(
-                      recordings: state.videos,
-                      isSelectionMode: false,
-                      selectedRecordingIds: const <String>{},
-                      onTapRecording: (item) {},
-                      onLongPressRecording: (item) {},
+                      recordings: state.recordings,
+                      isSelectionMode: state.isRecordingSelectionMode,
+                      selectedRecordingIds:
+                      state.selectedRecordingIds,
+                      onTapRecording: (item) =>
+                          controller.handleRecordingTap(item.id),
+                      onLongPressRecording: (item) =>
+                          controller.handleRecordingLongPress(item.id),
                     ),
                   ),
 
+                  if (state.isRecordingSelectionMode)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: RecordingSelectionActionBar(
+                        selectedCount: state.selectedRecordingIds.length,
+                        onDelete: () {
+                          DeleteConfirmDialog.show(
+                            context,
+                            title: 'Do you really want to\ndelete these recordings?',
+                            onDelete: () async {
+                              await controller.deleteRecordings(state.selectedRecordingIds);
+                              controller.exitRecordingSelectionMode();
+                            },
+                          );
+                        },
+                        onDuplicate: () {
+                          controller.duplicateRecordings(state.selectedRecordingIds);
+                        },
+                        onMove: () {
+                          controller.moveRecordings(state.selectedRecordingIds);
+                        },
+                        onDone: () {
+                          controller.exitRecordingSelectionMode();
+                        },
+                      ),
+                    ),
+
                   if (showUsersButton)
                     Positioned(
-                      bottom: 20,
+                      bottom: state.isRecordingSelectionMode ? 20 + 52 + 10 : 20,
                       right: 24,
                       child: UsersButton(
                         onTap: () {

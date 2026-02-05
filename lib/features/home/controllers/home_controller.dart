@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
@@ -26,6 +30,7 @@ final homeControllerProvider = Provider<HomeController>((ref) {
   final recordingService = ref.read(recordingServiceProvider);
   final homeState = ref.read(homeStateProvider.notifier);
   final authState = ref.watch(sessionProvider);
+  final localMedia = ref.read(localMediaProvider);
 
   void toast(ToastEvent event) => emitToast(ref, event);
 
@@ -36,6 +41,7 @@ final homeControllerProvider = Provider<HomeController>((ref) {
     homeState: homeState,
     authState: authState,
     toast: toast,
+    localMedia: localMedia,
   );
 });
 
@@ -47,17 +53,20 @@ class HomeController {
     required HomeStateNotifier homeState,
     required AuthState authState,
     required ToastSink toast,
+    required LocalMedia localMedia,
   })  : _projectService = projectService,
         _recordingService = recordingService,
         _state = homeState,
         _authState = authState,
-        _toast = toast;
+        _toast = toast,
+        _localMedia = localMedia;
 
   final ProjectService _projectService;
   final RecordingService _recordingService;
   final HomeStateNotifier _state;
   final AuthState _authState;
   final ToastSink _toast;
+  final LocalMedia _localMedia;
 
   HomeState get state => _state.current;
 
@@ -121,6 +130,41 @@ class HomeController {
 
   List<Recording> _mergeRecordings(List<Recording> local, List<Recording> cloud) {
     return [...local, ...cloud];
+  }
+
+  Recording? _findRecordingById(String id) {
+    for (final r in state.recordings) {
+      if (r.id == id) return r;
+    }
+    return null;
+  }
+
+  // Parent folder containing video/meta/thumbnail
+  Directory _recordingDir(String projectId, String recordingId) {
+    final videoPath = _localMedia.videoFile(projectId, recordingId).path;
+    return Directory(p.dirname(videoPath));
+  }
+
+  String _newRecordingId() => Helpers.getProjectId();
+
+  bool _recordingNameExists(String name) {
+    final normalized = name.trim().toLowerCase();
+    return state.recordings.any((r) => r.name.trim().toLowerCase() == normalized);
+  }
+
+  String _duplicateRecordingName(String name) {
+    final base = '$name (Copy)';
+    var candidate = base;
+    var i = 2;
+    while (_recordingNameExists(candidate)) {
+      candidate = '$base $i';
+      i++;
+    }
+    return candidate;
+  }
+
+  Future<void> _refreshOpenProjectRecordings() async {
+    await openProject(state.openProjectId);
   }
 
   // ----------------
@@ -189,8 +233,7 @@ class HomeController {
       }
 
       _state.clearUsersPopupState();
-
-      _state.setOpenProject(projectId: projectId, videos: recordings);
+      _state.setOpenProject(projectId: projectId, recordings: recordings);
     } on DioException catch (e) {
       _error(e, userMessage: 'Failed to load project with id $projectId');
     } catch (e) {
@@ -199,7 +242,7 @@ class HomeController {
   }
 
   Future<void> handleProjectTap(String projectId) async {
-    if (state.isSelectionMode) {
+    if (state.isProjectSelectionMode) {
       toggleProjectSelection(projectId);
       return;
     }
@@ -214,7 +257,7 @@ class HomeController {
   }
 
   // ----------------
-  // Create/Rename/Delete/Duplicate
+  // Create/Rename/Delete/Duplicate Projects
   // ----------------
 
   Future<void> createProject(String name) async {
@@ -238,7 +281,7 @@ class HomeController {
       }
 
       _state.addProject(created);
-      _state.setOpenProject(projectId: created.id, videos: const []);
+      _state.setOpenProject(projectId: created.id, recordings: const []);
       _state.clearError();
       _success('Project "$trimmed" created');
     } catch (e) {
@@ -385,7 +428,7 @@ class HomeController {
   }
 
   // ----------------
-  // Selection UI state
+  // Project Selection UI state
   // ----------------
 
   void enterSelectionMode({String? initialProjectId}) {
@@ -394,10 +437,10 @@ class HomeController {
         initialProjectId != LocalMedia.defaultProjectId) {
       ids.add(initialProjectId);
     }
-    _state.setSelection(ids);
+    _state.setProjectSelection(ids);
   }
 
-  void exitSelectionMode() => _state.clearSelection();
+  void exitProjectSelectionMode() => _state.clearProjectSelection();
 
   void toggleProjectSelection(String projectId) {
     if (projectId == LocalMedia.defaultProjectId) return;
@@ -408,14 +451,166 @@ class HomeController {
     } else {
       next.add(projectId);
     }
-    _state.setSelection(next);
+    _state.setProjectSelection(next);
   }
 
   void handleProjectLongPress(String projectId) {
     if (projectId == LocalMedia.defaultProjectId) return;
-    if (!state.isSelectionMode) {
-      _state.setSelection({projectId});
+    if (!state.isProjectSelectionMode) {
+      _state.setProjectSelection({projectId});
     }
+  }
+
+  // ----------------
+  // Recording selection UI state
+  // ----------------
+
+  void exitRecordingSelectionMode() => _state.clearRecordingSelection();
+
+  void toggleRecordingSelection(String recordingId) {
+    final next = Set<String>.from(state.selectedRecordingIds);
+    if (next.contains(recordingId)) {
+      next.remove(recordingId);
+    } else {
+      next.add(recordingId);
+    }
+    _state.setRecordingSelection(next);
+  }
+
+  void handleRecordingTap(String recordingId) {
+    if (state.isRecordingSelectionMode) {
+      toggleRecordingSelection(recordingId);
+      return;
+    }
+    // TODO: navigate to playback page
+  }
+
+  void handleRecordingLongPress(String recordingId) {
+    if (!state.isRecordingSelectionMode) {
+      _state.setRecordingSelection({recordingId});
+    }
+  }
+
+  Future<void> deleteRecordings(Set<String> recordingIds) async {
+    if (recordingIds.isEmpty) return;
+
+    final projectId = state.openProjectId;
+    var successCount = 0;
+    final failed = <String>[];
+
+    _state.setLoading(true);
+    try {
+      for (final id in recordingIds) {
+        final rec = _findRecordingById(id);
+        if (rec == null) {
+          failed.add(id);
+          continue;
+        }
+
+        if (rec.localVideoPath == null) {
+          failed.add(id);
+          _toast(const ToastEvent.error('Deleting cloud recordings is not supported yet'));
+          continue;
+        }
+
+        try {
+          final dir = _recordingDir(projectId, id);
+          if (await dir.exists()) {
+            await dir.delete(recursive: true);
+          }
+          successCount++;
+        } catch (e) {
+          failed.add(id);
+          _error(e, userMessage: 'Failed to delete recording "${rec.name}"');
+        }
+      }
+
+      await _refreshOpenProjectRecordings();
+      _state.clearRecordingSelection();
+
+      if (failed.isEmpty) {
+        _success(successCount == 1 ? 'Recording deleted' : 'Recordings deleted');
+      } else {
+        _toast(ToastEvent.error('Deleted $successCount, failed ${failed.length}'));
+      }
+    } finally {
+      _state.setLoading(false);
+    }
+  }
+
+  Future<void> duplicateRecordings(Set<String> recordingIds) async {
+    if (recordingIds.isEmpty) return;
+
+    final projectId = state.openProjectId;
+    var successCount = 0;
+    final failed = <String>[];
+
+    _state.setLoading(true);
+    try {
+      for (final id in recordingIds) {
+        final rec = _findRecordingById(id);
+        if (rec == null) {
+          failed.add(id);
+          continue;
+        }
+
+        if (rec.localVideoPath == null) {
+          failed.add(id);
+          _toast(const ToastEvent.error('Duplicating cloud recordings is not supported yet'));
+          continue;
+        }
+
+        try {
+          final newId = _newRecordingId();
+          final newName = _duplicateRecordingName(rec.name);
+
+          final dstDir = _recordingDir(projectId, newId);
+          await dstDir.create(recursive: true);
+
+          // Copy known files
+          final srcVideo = _localMedia.videoFile(projectId, id);
+          final dstVideo = _localMedia.videoFile(projectId, newId);
+          if (await srcVideo.exists()) await srcVideo.copy(dstVideo.path);
+
+          final srcThumb = _localMedia.thumbnailFile(projectId, id);
+          final dstThumb = _localMedia.thumbnailFile(projectId, newId);
+          if (await srcThumb.exists()) await srcThumb.copy(dstThumb.path);
+
+          // Copy + rewrite meta
+          final srcMeta = _localMedia.recordingMetaFile(projectId, id);
+          final dstMeta = _localMedia.recordingMetaFile(projectId, newId);
+
+          if (await srcMeta.exists()) {
+            final raw = await srcMeta.readAsString();
+            final json = jsonDecode(raw) as Map<String, dynamic>;
+            json['name'] = newName;
+            await dstMeta.writeAsString(jsonEncode(json));
+          }
+
+          successCount++;
+        } catch (e) {
+          failed.add(id);
+          _error(e, userMessage: 'Failed to duplicate recording "${rec.name}"');
+        }
+      }
+
+      await _refreshOpenProjectRecordings();
+      _state.clearRecordingSelection();
+
+      if (failed.isEmpty) {
+        _success(successCount == 1 ? 'Recording duplicated' : 'Recordings duplicated');
+      } else {
+        _toast(ToastEvent.error('Duplicated $successCount, failed ${failed.length}'));
+      }
+    } finally {
+      _state.setLoading(false);
+    }
+  }
+
+  Future<void> moveRecordings(Set<String> recordingIds) async {
+    // TODO: implement UI to choose target project, then change signature to:
+    // Future<void> moveRecordings(Set<String> recordingIds, {required String targetProjectId})
+    _toast(const ToastEvent.error('Move is not implemented yet'));
   }
 
   // ----------------
