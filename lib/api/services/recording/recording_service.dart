@@ -20,7 +20,7 @@ class RecordingService {
         _localMedia = localMedia;
   Future<UploadRecordingResponse> startUpload(UploadRecordingRequest req) async {
     final res = await _dio.post(
-      RecordingEndpoints.startUpload,
+      RecordingEndpoints.startUpload(),
       data: req.toJson(),
       options: Options(validateStatus: (status) => true),
     );
@@ -78,7 +78,7 @@ class RecordingService {
   }
 
   Future<List<Recording>> getRecordings() async {
-    final res = await _dio.get(RecordingEndpoints.baseUrl);
+    final res = await _dio.get(RecordingEndpoints.base);
     final data = res.asList();
 
     return data.map((r) => Recording.fromJson(r)).toList();

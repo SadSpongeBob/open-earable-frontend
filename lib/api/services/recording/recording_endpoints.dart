@@ -5,7 +5,8 @@ class RecordingEndpoints {
   static String recording(String recordingId) => '$base/$recordingId';
 
 
-  static const String startUpload = base;
+
+  static String startUpload() => base;
 
 
   static String complete(String recordingId) => '$base/$recordingId/complete';
@@ -24,6 +25,4 @@ class RecordingEndpoints {
 
   static String userRecordings(String userId) => '$base/user/$userId';
 
-
-  static const baseUrl = '/api/recording';
 }
