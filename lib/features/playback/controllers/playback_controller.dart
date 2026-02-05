@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:video_player/video_player.dart';
 import 'package:dio/dio.dart';
-import 'package:uuid/uuid.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
@@ -51,6 +50,7 @@ class PlaybackController extends ChangeNotifier {
         Uri.parse(rec.videoUrl!),
       );
     } else {
+      /// das ist nicht schön aber habe keine bessere id bitte zeige mich nicht an
       videoName = recordingId;
       final videoFile = _getVideoFile();
       if (!await videoFile.exists()) return;
