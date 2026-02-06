@@ -1,45 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
 import 'package:openearable/app/theme/text_styles.dart';
-import 'package:openearable/features/sensors/state/sensor_configurations_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
 
-class SensorConfigurationDetailView extends StatefulWidget {
+class SensorConfigurationDetailView extends ConsumerWidget {
   final SensorConfiguration sensorConfiguration;
+  final String deviceId;
 
   const SensorConfigurationDetailView({
     super.key,
     required this.sensorConfiguration,
+    required this.deviceId,
   });
-  
-  @override
-  State<StatefulWidget> createState() {
-    return _SensorConfigurationDetailViewState();
-  }
-}
-
-class _SensorConfigurationDetailViewState extends State<SensorConfigurationDetailView> {
-  SensorConfigurationValue? _selectedValue;
 
   @override
-  Widget build(BuildContext context) {
-    SensorConfigurationProvider sensorConfigNotifier = Provider.of<SensorConfigurationProvider>(context);
-    _selectedValue = sensorConfigNotifier.getSelectedConfigurationValue(widget.sensorConfiguration);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sensorConfigNotifier = ref.watch(sensorConfigurationProviderFamily(deviceId));
 
     return ListView(
       children: [
-        if (widget.sensorConfiguration is ConfigurableSensorConfiguration)
-          ...(widget.sensorConfiguration as ConfigurableSensorConfiguration).availableOptions.map((option) {
+        if (sensorConfiguration is ConfigurableSensorConfiguration)
+          ...(sensorConfiguration as ConfigurableSensorConfiguration).availableOptions.map((option) {
             return ListTile(
               leading: Icon(Icons.bluetooth, color: Color(0xFF1F1F1F),),
               title: Text(option.name, style: GlobalTextStyles.text,),
               trailing: Switch(
-                value: sensorConfigNotifier.getSelectedConfigurationOptions(widget.sensorConfiguration).contains(option),
+                value: sensorConfigNotifier.getSelectedConfigurationOptions(sensorConfiguration).contains(option),
                 onChanged: (value) {
                   if (value) {
-                    sensorConfigNotifier.addSensorConfigurationOption(widget.sensorConfiguration, option);
+                    sensorConfigNotifier.addSensorConfigurationOption(sensorConfiguration, option);
                   } else {
-                    sensorConfigNotifier.removeSensorConfigurationOption(widget.sensorConfiguration, option);
+                    sensorConfigNotifier.removeSensorConfigurationOption(sensorConfiguration, option);
                   }
                 },
               ),
@@ -50,13 +42,13 @@ class _SensorConfigurationDetailViewState extends State<SensorConfigurationDetai
           title: Text("Sampling Rate", style: GlobalTextStyles.text,),
           trailing: Material(
             child: DropdownButton<SensorConfigurationValue>(
-              value: sensorConfigNotifier.getSelectedConfigurationValue(widget.sensorConfiguration),
-              items: sensorConfigNotifier.getSensorConfigurationValues(widget.sensorConfiguration, distinct: true).where(
+              value: sensorConfigNotifier.getSelectedConfigurationValue(sensorConfiguration),
+              items: sensorConfigNotifier.getSensorConfigurationValues(sensorConfiguration, distinct: true).where(
                 (value) {
                   if (value is SensorFrequencyConfigurationValue) {
                     return value.frequencyHz >= 0.1
                       || value.frequencyHz == 0
-                      || sensorConfigNotifier.getSelectedConfigurationValue(widget.sensorConfiguration) == value;
+                      || sensorConfigNotifier.getSelectedConfigurationValue(sensorConfiguration) == value;
                   }
                   return true;
                 },
@@ -79,11 +71,8 @@ class _SensorConfigurationDetailViewState extends State<SensorConfigurationDetai
                 );
               }).toList(),
               onChanged: (value) {
-                setState(() {
-                  _selectedValue = value;
-                });
-                if (_selectedValue != null) {
-                  sensorConfigNotifier.addSensorConfiguration(widget.sensorConfiguration, _selectedValue!);
+                if (value != null) {
+                  sensorConfigNotifier.addSensorConfiguration(sensorConfiguration, value);
                 }
               },
             ),

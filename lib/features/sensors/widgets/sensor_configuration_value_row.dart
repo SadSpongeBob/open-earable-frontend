@@ -1,25 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
 import 'package:openearable/features/sensors/state/sensor_configurations_provider.dart';
 import 'package:openearable/features/sensors/widgets/sensor_configuration_detail_view.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
 /// A row that displays a sensor configuration and allows the user to select a value.
 ///
 /// The selected value is added to the [SensorConfigurationProvider].
-class SensorConfigurationValueRow extends StatelessWidget {
+class SensorConfigurationValueRow extends ConsumerWidget {
   final SensorConfiguration sensorConfiguration;
+  final String deviceId;
 
   const SensorConfigurationValueRow({
     super.key,
     required this.sensorConfiguration,
+    required this.deviceId,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final sensorConfigNotifier =
-        Provider.of<SensorConfigurationProvider>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sensorConfigNotifier = ref.watch(
+      sensorConfigurationProviderFamily(deviceId),
+    );
 
     return ListTile(
       tileColor: Color(0xFFF2F2F2),
@@ -27,19 +31,17 @@ class SensorConfigurationValueRow extends StatelessWidget {
         showModalBottomSheet(
           context: context,
           builder: (modalContext) {
-            return ChangeNotifierProvider.value(
-              value: sensorConfigNotifier,
-              child: Scaffold(
-                appBar: AppBar(
-                  title: Text(sensorConfiguration.name, style: GlobalTextStyles.subHeaderMedium,),
-                  leading: IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => Navigator.of(modalContext).pop(),
-                  ),
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(sensorConfiguration.name, style: GlobalTextStyles.subHeaderMedium,),
+                leading: IconButton(
+                  icon: Icon(Icons.close),
+                  onPressed: () => Navigator.of(modalContext).pop(),
                 ),
-                body: SensorConfigurationDetailView(
-                  sensorConfiguration: sensorConfiguration,
-                ),
+              ),
+              body: SensorConfigurationDetailView(
+                sensorConfiguration: sensorConfiguration,
+                deviceId: deviceId,
               ),
             );
           },

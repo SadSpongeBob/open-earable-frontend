@@ -1,29 +1,29 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 import 'package:openearable/features/home/state/wearables_provider.dart';
-import 'package:openearable/api/models/device/wearable_connector.dart';
+import 'package:openearable/features/home/state/wearables_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
 /// Page for connecting to devices
 ///
 /// All BLE devices are listed and tapping on it will connect to the device.
 /// Connected Wearables are added to the [WearablesProvider].
-class Devices extends StatefulWidget {
+class Devices extends ConsumerStatefulWidget {
   const Devices({super.key});
 
   @override
-  State<Devices> createState() => _Devices();
+  ConsumerState<Devices> createState() => _Devices();
 }
 
-class _Devices extends State<Devices> {
+class _Devices extends ConsumerState<Devices> {
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<WearablesProvider>().startScanning();
+      ref.read(wearablesProvider).startScanning();
     });
   }
 
@@ -74,7 +74,7 @@ class _Devices extends State<Devices> {
           }
 
           // Bluetooth and Location are ON, show the devices list
-          final wearableProvider = context.watch<WearablesProvider>();
+          final wearableProvider = ref.watch(wearablesProvider);
 
           final discovered = wearableProvider.discoveredDevices;
           final connecting = wearableProvider.connectingDevices;
@@ -187,11 +187,11 @@ class _Devices extends State<Devices> {
     DiscoveredDevice device,
     BuildContext context,
   ) async {
-    final provider = context.read<WearablesProvider>();
+    final provider = ref.read(wearablesProvider);
     provider.setConnecting(device.id, true);
 
     try {
-      final connector = context.read<WearableConnector>();
+      final connector = ref.read(wearableConnectorProvider);
       final wearable = await connector.connect(device);
 
       provider.addWearable(wearable);
@@ -204,7 +204,7 @@ class _Devices extends State<Devices> {
   }
 
   Future<List<String>> _checkSystemStatus(BuildContext context) async {
-    final provider = context.read<WearablesProvider>();
+    final provider = ref.read(wearablesProvider);
     List<String> errors = [];
 
     if (!await provider.isBluetoothOn) {

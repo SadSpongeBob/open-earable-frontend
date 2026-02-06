@@ -52,11 +52,10 @@ dependencies:
   # Optional: Uncomment if you want centralized runtime permission handling
   # permission_handler: ^11.4.0
 
-  # Bluetooth connection and provider packages
+  # Bluetooth connection packages
   open_earable_flutter: ^2.3.0
   flutter_blue_plus: ^2.0.0
   geolocator: ^14.0.2 
-  provider: ^6.1.2
 
   # Sensor charts packages
   fl_chart: ^1.0.0

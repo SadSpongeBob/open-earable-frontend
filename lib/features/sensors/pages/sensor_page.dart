@@ -73,9 +73,7 @@ class _SensorPageState extends State<SensorPage> {
                   ),
                   const SizedBox(height: 10),
                   Expanded(
-                    child: SensorConfigurationView(
-                      onSetConfigPressed: () {},
-                    ),
+                    child: SensorConfigurationView(),
                   ),
                   Container(
                     decoration: BoxDecoration(

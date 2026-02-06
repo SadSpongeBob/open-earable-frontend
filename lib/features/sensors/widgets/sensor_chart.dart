@@ -2,29 +2,33 @@ import 'dart:collection';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
-import 'package:openearable/features/sensors/state/sensor_data_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
 
-class SensorChart extends StatefulWidget {
+class SensorChart extends ConsumerStatefulWidget {
   final bool allowToggleAxes;
+  final String deviceId;
+  final int sensorIndex;
 
   const SensorChart({
     super.key,
     this.allowToggleAxes = true,
+    required this.deviceId,
+    required this.sensorIndex,
   });
 
   @override
-  State<SensorChart> createState() => _SensorChartState();
+  ConsumerState<SensorChart> createState() => _SensorChartState();
 }
 
-class _SensorChartState extends State<SensorChart> {
+class _SensorChartState extends ConsumerState<SensorChart> {
   late Map<String, bool> _axisEnabled;
 
   @override
   void initState() {
     super.initState();
-    final provider = context.read<SensorDataProvider>();
+    final provider = ref.read(sensorDataProviderFamily((widget.deviceId, widget.sensorIndex)));
     _axisEnabled = { for (var axis in provider.sensor.axisNames) axis: true };
   }
 
@@ -36,7 +40,9 @@ class _SensorChartState extends State<SensorChart> {
 
   @override
   Widget build(BuildContext context) {
-    final sensorData = context.watch<SensorDataProvider>();
+    final sensorData = ref.watch(
+      sensorDataProviderFamily((widget.deviceId, widget.sensorIndex)),
+    );
     final sensor = sensorData.sensor;
     final enabledAxes = sensor.axisNames
         .where((axis) => _axisEnabled[axis] ?? false)
@@ -55,7 +61,7 @@ class _SensorChartState extends State<SensorChart> {
                   Checkbox(
                     value: _axisEnabled[axisName],
                     checkColor: Colors.white,
-                    activeColor: _axisColor(axisName),
+                    activeColor: _axisColor(axisName, sensor),
                     onChanged: (value) =>
                         _toggleAxis(axisName, value ?? false),
                   ),
@@ -102,7 +108,7 @@ class _SensorChartState extends State<SensorChart> {
                   spots: axisData[axisName] ?? [],
                   isCurved: false,
                   barWidth: 2,
-                  color: _axisColor(axisName),
+                  color: _axisColor(axisName, sensor),
                   isStrokeCapRound: true,
                   dotData: FlDotData(show: false),
                 );
@@ -132,10 +138,9 @@ class _SensorChartState extends State<SensorChart> {
     };
   }
 
-  Color _axisColor(String axisName) {
+  Color _axisColor(String axisName, Sensor sensor) {
     final name = axisName.toLowerCase();
-    final sensorData = context.read<SensorDataProvider>();
-    final index = sensorData.sensor.axisNames.indexOf(axisName);
+    final index = sensor.axisNames.indexOf(axisName);
 
     if (name == 'r' || name == 'red') return Colors.red;
     if (name == 'g' || name == 'green') return Colors.green;
