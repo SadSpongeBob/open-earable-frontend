@@ -7,19 +7,16 @@ class SensorsRecordingController extends ChangeNotifier {
   bool isPaused = false;
 
   int _recordingStartEpochMs = 0;
-  int _pausedAccumulatedMs = 0;
-  int _pauseStartEpochMs = 0;
 
   final Map<int, Map<String, List<dynamic>>> _bucket = {};
 
   void recordData(String sensorId, List<dynamic> values) {
     if (!isRecording || isPaused) return;
 
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final t = now - _recordingStartEpochMs - _pausedAccumulatedMs;
+    final nowEpochMs = DateTime.now().millisecondsSinceEpoch;
 
-    _bucket.putIfAbsent(t, () => {});
-    _bucket[t]![sensorId] = values;
+    _bucket.putIfAbsent(nowEpochMs, () => {});
+    _bucket[nowEpochMs]![sensorId] = values;
   }
 
   /// Call this at the SAME TIME as video start
@@ -29,7 +26,6 @@ class SensorsRecordingController extends ChangeNotifier {
     _bucket.clear();
 
     _recordingStartEpochMs = DateTime.now().millisecondsSinceEpoch;
-    _pausedAccumulatedMs = 0;
 
     notifyListeners();
   }
@@ -38,7 +34,6 @@ class SensorsRecordingController extends ChangeNotifier {
   void pauseRecording() {
     if (!isRecording || isPaused) return;
     isPaused = true;
-    _pauseStartEpochMs = DateTime.now().millisecondsSinceEpoch;
     notifyListeners();
   }
 
@@ -46,27 +41,34 @@ class SensorsRecordingController extends ChangeNotifier {
   void resumeRecording() {
     if (!isRecording || !isPaused) return;
     isPaused = false;
-    _pausedAccumulatedMs +=
-        DateTime.now().millisecondsSinceEpoch - _pauseStartEpochMs;
     notifyListeners();
   }
 
   /// Call when video stops
-  Future<String> stopRecording() async {
+  Future<String> stopRecording({
+    required int videoStartEpochMs,
+    int? samplingRateHz,
+  }) async {
     isRecording = false;
     isPaused = false;
 
     final samples = _bucket.entries
       .map((e) => {
-            "t": e.key,
+            "timestampMs": e.key,
             "values": e.value,
           })
       .toList()
-    ..sort((a, b) => (a["t"] as int).compareTo(b["t"] as int));
+    ..sort((a, b) => (a["timestampMs"] as int).compareTo(b["timestampMs"] as int));
 
     final json = {
       "version": 1,
-      "startTimeEpochMs": _recordingStartEpochMs,
+      "recording": {
+        "startTimeEpochMs": _recordingStartEpochMs,
+        if (samplingRateHz != null) "samplingRateHz": samplingRateHz,
+      },
+      "video": {
+        "startTimeEpochMs": videoStartEpochMs,
+      },
       "samples": samples,
     };
 

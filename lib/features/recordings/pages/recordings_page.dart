@@ -31,8 +31,9 @@ class _RecordingPageState extends State<RecordingPage> {
   late final SensorsRecordingController _sensorsController;
 
   final GlobalKey bluetoothKey = GlobalKey();
-  
 
+  int? _videoStartEpochMs;
+  
   @override
   void initState() {
     super.initState();
@@ -60,12 +61,16 @@ class _RecordingPageState extends State<RecordingPage> {
 
     if (_controller.isRecording) {
       final path = await _controller.stopRecording();
-      if (hasSensors) {
-        await _sensorsController.stopRecording();
+      if (hasSensors && _videoStartEpochMs != null) {
+        await _sensorsController.stopRecording(
+          videoStartEpochMs: _videoStartEpochMs!,
+        );
         wearablesProvider.detachSensorsRecordingController();
       }
       if (path != null) widget.onVideoRecorded?.call(path);
     } else {
+      _videoStartEpochMs = DateTime.now().millisecondsSinceEpoch;
+
       await _controller.startRecording();
       if (hasSensors) {
         _sensorsController.startRecording();
