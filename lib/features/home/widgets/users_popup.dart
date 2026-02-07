@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 
-import 'package:openearable/features/auth/widgets/auth_button.dart';
 import 'package:openearable/features/home/widgets/home_text_field.dart';
 
 import '../../../api/models/project/project_role.dart';
@@ -52,10 +52,10 @@ class RoleDropdownPill extends StatelessWidget {
             items: RoleChoice.values
                 .map(
                   (r) => DropdownMenuItem<RoleChoice>(
-                value: r,
-                child: Text(r.label),
-              ),
-            )
+                    value: r,
+                    child: Text(r.label),
+                  ),
+                )
                 .toList(),
             onChanged: (v) {
               if (v != null) onChanged(v);
@@ -96,9 +96,9 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
       final myUserId = session.user?.userId;
       if (myUserId == null) return;
 
-      await ref.read(homeControllerProvider).loadUsersForOpenProject(
-        myUserId: myUserId,
-      );
+      await ref
+          .read(homeControllerProvider)
+          .loadUsersForOpenProject(myUserId: myUserId);
     });
   }
 
@@ -175,9 +175,9 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                     opacity: canAdd ? 1.0 : 0.45,
                     child: IgnorePointer(
                       ignoring: !canAdd,
-                      child: AuthButton(
+                      child: PrimaryButton(
                         text: 'Add',
-                        onTap: () async {
+                        onPressed: () async {
                           if (myUserId == null) return;
 
                           await controller.addUserToOpenProject(

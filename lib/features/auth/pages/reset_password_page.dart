@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 
 import '../../../app/theme/text_styles.dart';
-import '../widgets/auth_button.dart';
 import '../widgets/auth_card.dart';
 import '../widgets/text_field.dart';
 
@@ -88,18 +88,18 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
                       icon: Icon(
                         _showPassword ? Icons.visibility_off : Icons.visibility,
                       ),
-                      onPressed: () => setState(() => _showPassword = !_showPassword),
+                      onPressed: () =>
+                          setState(() => _showPassword = !_showPassword),
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 30),
 
-                AuthButton(
+                PrimaryButton(
                   text: "Reset",
-                  loading: _loading,
-                  enabled: _isFormFilled && !_loading,
-                  onTap: _handleReset,
+                  onPressed: _isFormFilled ? _handleReset : null,
+                  isLoading: _loading,
                 ),
               ],
             ),

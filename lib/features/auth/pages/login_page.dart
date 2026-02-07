@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
 import 'package:openearable/app/routing/routes.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 
 import '../../../app/theme/text_styles.dart';
-import '../widgets/auth_button.dart';
 import '../widgets/auth_card.dart';
 import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_seperator.dart';
@@ -118,11 +118,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 _buildRememberForgotRow(context),
                 const SizedBox(height: 35),
 
-                AuthButton(
+                PrimaryButton(
                   text: "Log In",
-                  loading: loading,
-                  enabled: _isFormFilled && !loading,
-                  onTap: () => _handleLogin(),
+                  onPressed: _isFormFilled ? _handleLogin : null,
+                  isLoading: loading,
                 ),
 
                 const SizedBox(height: 10),

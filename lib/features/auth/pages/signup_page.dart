@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
 import 'package:openearable/app/routing/routes.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/app/utils/validators.dart';
 import '../../../app/theme/text_styles.dart';
-import '../widgets/auth_button.dart';
 import '../widgets/auth_card.dart';
 import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_seperator.dart';
@@ -60,9 +60,9 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     ref.listen<AuthState>(sessionProvider, (prev, next) {
       final msg = next.error;
       if (msg != null && msg.isNotEmpty && msg != prev?.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     });
 
@@ -128,11 +128,10 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                 const SizedBox(height: 20),
 
-                AuthButton(
-                  text: "Sign up",
-                  loading: loading,
-                  enabled: _isFormFilled && !loading,
-                  onTap: _handleSignup,
+                PrimaryButton(
+                  text: "Sign Up",
+                  onPressed: _isFormFilled ? _handleSignup : null,
+                  isLoading: loading,
                 ),
 
                 const SizedBox(height: 10),
@@ -173,10 +172,12 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   Future<void> _handleSignup() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    await ref.read(authControllerProvider).signup(
-      name: _namecontroller.text.trim(),
-      email: _emailController.text.trim(),
-      password: _pwController.text.trim(),
-    );
+    await ref
+        .read(authControllerProvider)
+        .signup(
+          name: _namecontroller.text.trim(),
+          email: _emailController.text.trim(),
+          password: _pwController.text.trim(),
+        );
   }
 }
