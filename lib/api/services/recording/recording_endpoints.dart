@@ -3,17 +3,7 @@ class RecordingEndpoints {
   static const String base = '/api/recording';
 
   static String recording(String recordingId) => '$base/$recordingId';
-
-
-
-  static String startUpload() => base;
-
-
   static String complete(String recordingId) => '$base/$recordingId/complete';
-
-  static String upload() => '$base/upload';
-
-
   static String deleteRecording(String recordingId) => '$base/$recordingId/delete';
 
   static String rename(String recordingId) => '$base/$recordingId';
