@@ -231,6 +231,20 @@ class ProjectService {
     }
   }
 
+  Future<void> moveRecordings({
+    required List<String> recordingIds,
+    required String? targetProjectId,
+  }) async {
+    await _dioClient.put(
+      ProjectEndpoints.moveRecordings,
+      data: {
+        'recordingIds': recordingIds,
+        'targetProjectId': targetProjectId,
+      },
+    );
+  }
+
+
   // Project Users Management
 
   Future<List<ProjectUser>> getProjectUsers(String projectId) async {

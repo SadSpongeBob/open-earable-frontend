@@ -152,6 +152,7 @@ class HomeController {
     return state.recordings.any((r) => r.name.trim().toLowerCase() == normalized);
   }
 
+
   String _duplicateRecordingName(String name) {
     final base = '$name (Copy)';
     var candidate = base;
@@ -161,6 +162,15 @@ class HomeController {
       i++;
     }
     return candidate;
+  }
+
+  bool get canManageRecordings {
+    final project = _findById(state.openProjectId);
+    if (project == null) return false;
+
+    if (project.projectSource == ProjectSource.local) return true;
+
+    return true;
   }
 
   Future<void> _refreshOpenProjectRecordings() async {
@@ -433,8 +443,7 @@ class HomeController {
 
   void enterSelectionMode({String? initialProjectId}) {
     final ids = <String>{};
-    if (initialProjectId != null &&
-        initialProjectId != LocalMedia.defaultProjectId) {
+    if (initialProjectId != null && initialProjectId != LocalMedia.defaultProjectId) {
       ids.add(initialProjectId);
     }
     _state.setProjectSelection(ids);
@@ -486,6 +495,10 @@ class HomeController {
   }
 
   void handleRecordingLongPress(String recordingId) {
+    if (!canManageRecordings) {
+      _toast(const ToastEvent.error('No permission to manage recordings'));
+      return;
+    }
     if (!state.isRecordingSelectionMode) {
       _state.setRecordingSelection({recordingId});
     }
@@ -495,21 +508,31 @@ class HomeController {
     if (recordingIds.isEmpty) return;
 
     final projectId = state.openProjectId;
+
+    final localIds = <String>[];
+    final cloudIds = <String>[];
+
+    for (final id in recordingIds) {
+      final rec = _findRecordingById(id);
+      if (rec == null) continue;
+
+      if (rec.localVideoPath != null) {
+        localIds.add(id);
+      } else {
+        cloudIds.add(id);
+      }
+    }
+
     var successCount = 0;
     final failed = <String>[];
 
     _state.setLoading(true);
     try {
-      for (final id in recordingIds) {
+      // ----- Local delete -----
+      for (final id in localIds) {
         final rec = _findRecordingById(id);
         if (rec == null) {
           failed.add(id);
-          continue;
-        }
-
-        if (rec.localVideoPath == null) {
-          failed.add(id);
-          _toast(const ToastEvent.error('Deleting cloud recordings is not supported yet'));
           continue;
         }
 
@@ -517,8 +540,36 @@ class HomeController {
           final dir = _recordingDir(projectId, id);
           if (await dir.exists()) {
             await dir.delete(recursive: true);
+            successCount++;
+          } else {
+            failed.add(id);
           }
+        } catch (e) {
+          failed.add(id);
+          _error(e, userMessage: 'Failed to delete recording "${rec.name}"');
+        }
+      }
+
+      // ----- Cloud delete -----
+      for (final id in cloudIds) {
+        final rec = _findRecordingById(id);
+        if (rec == null) {
+          failed.add(id);
+          continue;
+        }
+
+        try {
+          await _recordingService.deleteCloudRecording(id);
           successCount++;
+        } on DioException catch (e) {
+          failed.add(id);
+
+          final code = e.response?.statusCode;
+          if (code == 403) {
+            _toast(const ToastEvent.error('No permission'));
+          } else {
+            _error(e, userMessage: 'Failed to delete recording "${rec.name}"');
+          }
         } catch (e) {
           failed.add(id);
           _error(e, userMessage: 'Failed to delete recording "${rec.name}"');
@@ -542,21 +593,31 @@ class HomeController {
     if (recordingIds.isEmpty) return;
 
     final projectId = state.openProjectId;
+
+    final localIds = <String>[];
+    final cloudIds = <String>[];
+
+    for (final id in recordingIds) {
+      final rec = _findRecordingById(id);
+      if (rec == null) continue;
+
+      if (rec.localVideoPath != null) {
+        localIds.add(id);
+      } else {
+        cloudIds.add(id);
+      }
+    }
+
     var successCount = 0;
     final failed = <String>[];
 
     _state.setLoading(true);
     try {
-      for (final id in recordingIds) {
+      // ----- Local duplicate -----
+      for (final id in localIds) {
         final rec = _findRecordingById(id);
         if (rec == null) {
           failed.add(id);
-          continue;
-        }
-
-        if (rec.localVideoPath == null) {
-          failed.add(id);
-          _toast(const ToastEvent.error('Duplicating cloud recordings is not supported yet'));
           continue;
         }
 
@@ -567,7 +628,6 @@ class HomeController {
           final dstDir = _recordingDir(projectId, newId);
           await dstDir.create(recursive: true);
 
-          // Copy known files
           final srcVideo = _localMedia.videoFile(projectId, id);
           final dstVideo = _localMedia.videoFile(projectId, newId);
           if (await srcVideo.exists()) await srcVideo.copy(dstVideo.path);
@@ -576,7 +636,6 @@ class HomeController {
           final dstThumb = _localMedia.thumbnailFile(projectId, newId);
           if (await srcThumb.exists()) await srcThumb.copy(dstThumb.path);
 
-          // Copy + rewrite meta
           final srcMeta = _localMedia.recordingMetaFile(projectId, id);
           final dstMeta = _localMedia.recordingMetaFile(projectId, newId);
 
@@ -594,6 +653,38 @@ class HomeController {
         }
       }
 
+      // ----- Cloud duplicate -----
+      if (cloudIds.isNotEmpty) {
+        try {
+          final openId = state.openProjectId;
+          final isDefault = openId == LocalMedia.defaultProjectId;
+
+          final duplicated = await _recordingService.duplicateCloudRecordings(
+            recordingIds: cloudIds,
+            projectId: isDefault ? null : openId,
+          );
+
+          if (duplicated.isEmpty) {
+            failed.addAll(cloudIds);
+            _toast(const ToastEvent.error('No recordings duplicated from cloud'));
+          } else {
+            successCount += duplicated.length;
+          }
+        } on DioException catch (e) {
+          failed.addAll(cloudIds);
+
+          final code = e.response?.statusCode;
+          if (code == 403) {
+            _toast(const ToastEvent.error('No permission'));
+          } else {
+            _error(e, userMessage: 'Failed to duplicate cloud recordings');
+          }
+        } catch (e) {
+          failed.addAll(cloudIds);
+          _error(e, userMessage: 'Failed to duplicate cloud recordings');
+        }
+      }
+
       await _refreshOpenProjectRecordings();
       _state.clearRecordingSelection();
 
@@ -607,10 +698,94 @@ class HomeController {
     }
   }
 
-  Future<void> moveRecordings(Set<String> recordingIds) async {
-    // TODO: implement UI to choose target project, then change signature to:
-    // Future<void> moveRecordings(Set<String> recordingIds, {required String targetProjectId})
-    _toast(const ToastEvent.error('Move is not implemented yet'));
+  Future<void> moveRecordings(
+      Set<String> recordingIds, {
+        required String targetProjectId,
+      }) async {
+    if (recordingIds.isEmpty) return;
+
+    final sourceProjectId = state.openProjectId;
+    if (targetProjectId == sourceProjectId) return;
+
+    final localIds = <String>[];
+    final cloudIds = <String>[];
+
+    for (final id in recordingIds) {
+      final rec = _findRecordingById(id);
+      if (rec == null) continue;
+
+      if (rec.localVideoPath != null) {
+        localIds.add(id);
+      } else {
+        cloudIds.add(id);
+      }
+    }
+
+    var successCount = 0;
+    final failed = <String>[];
+
+    _state.setLoading(true);
+    try {
+      // ---- Local move (filesystem) ----
+      for (final id in localIds) {
+        final rec = _findRecordingById(id);
+        if (rec == null) {
+          failed.add(id);
+          continue;
+        }
+
+        try {
+          final srcDir = _recordingDir(sourceProjectId, id);
+          final dstDir = _recordingDir(targetProjectId, id);
+
+          if (!await srcDir.exists()) {
+            failed.add(id);
+            continue;
+          }
+
+          await dstDir.parent.create(recursive: true);
+          await srcDir.rename(dstDir.path);
+          successCount++;
+        } catch (e) {
+          failed.add(id);
+          _error(e, userMessage: 'Failed to move recording "${rec.name}"');
+        }
+      }
+
+      // ---- Cloud move ----
+      if (cloudIds.isNotEmpty) {
+        try {
+          await _projectService.moveRecordings(
+            recordingIds: cloudIds,
+            targetProjectId: targetProjectId == LocalMedia.defaultProjectId ? null : targetProjectId,
+          );
+          successCount += cloudIds.length;
+        } on DioException catch (e) {
+          failed.addAll(cloudIds);
+
+          final code = e.response?.statusCode;
+          if (code == 403) {
+            _toast(const ToastEvent.error('No permission'));
+          } else {
+            _error(e, userMessage: 'Failed to move cloud recordings');
+          }
+        } catch (e) {
+          failed.addAll(cloudIds);
+          _error(e, userMessage: 'Failed to move cloud recordings');
+        }
+      }
+
+      await _refreshOpenProjectRecordings();
+      _state.clearRecordingSelection();
+
+      if (failed.isEmpty) {
+        _success(successCount == 1 ? 'Recording moved' : 'Recordings moved');
+      } else {
+        _toast(ToastEvent.error('Moved $successCount, failed ${failed.length}'));
+      }
+    } finally {
+      _state.setLoading(false);
+    }
   }
 
   // ----------------

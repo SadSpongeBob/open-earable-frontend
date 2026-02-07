@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:openearable/api/local_media.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
@@ -9,6 +10,7 @@ import 'package:openearable/features/home/widgets/project_grid.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
 import 'package:openearable/features/home/widgets/delete_confirm_dialog.dart';
 
+import '../../../api/models/project/project_metadata.dart';
 import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
@@ -49,8 +51,19 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final selectedCount = state.selectedProjectIds.length;
 
+    final openProject = state.projects
+        .where((p) => p.id == state.openProjectId)
+        .toList();
+
+    final isLocalOpenProject =
+        state.openProjectId == LocalMedia.defaultProjectId ||
+            (openProject.isNotEmpty &&
+                openProject.first.projectSource == ProjectSource.local);
+
+
     final showUsersButton =
-        session.isAuthenticated && state.openProjectId != 'default';
+        session.isAuthenticated && !isLocalOpenProject && state.openProjectId != 'default';
+    final canManageRecordings = controller.canManageRecordings;
 
     return Scaffold(
       body: SafeArea(
@@ -139,17 +152,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     child: RecordingGrid(
                       recordings: state.recordings,
-                      isSelectionMode: state.isRecordingSelectionMode,
-                      selectedRecordingIds:
-                      state.selectedRecordingIds,
-                      onTapRecording: (item) =>
-                          controller.handleRecordingTap(item.id),
-                      onLongPressRecording: (item) =>
-                          controller.handleRecordingLongPress(item.id),
+                      isSelectionMode: canManageRecordings && state.isRecordingSelectionMode,
+                      selectedRecordingIds: state.selectedRecordingIds,
+                      onTapRecording: (item) => controller.handleRecordingTap(item.id),
+                      onLongPressRecording: canManageRecordings
+                          ? (item) => controller.handleRecordingLongPress(item.id)
+                          : null,
                     ),
                   ),
 
-                  if (state.isRecordingSelectionMode)
+                  if (canManageRecordings && state.isRecordingSelectionMode)
                     Positioned(
                       left: 0,
                       right: 0,
@@ -170,7 +182,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                           controller.duplicateRecordings(state.selectedRecordingIds);
                         },
                         onMove: () {
-                          controller.moveRecordings(state.selectedRecordingIds);
+                          // TODO: enter "choose target project" mode
+
                         },
                         onDone: () {
                           controller.exitRecordingSelectionMode();

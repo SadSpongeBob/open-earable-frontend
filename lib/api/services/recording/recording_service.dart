@@ -82,6 +82,32 @@ class RecordingService {
   Future<List<Recording>> getLocalRecordings() async {
     return getLocalProjectRecordings(LocalMedia.defaultProjectId);
   }
+
+  Future<void> deleteCloudRecording(String recordingId) async {
+    await _dio.delete('${RecordingEndpoints.baseUrl}/$recordingId/delete');
+  }
+
+  Future<List<Recording>> duplicateCloudRecordings({
+    required List<String> recordingIds,
+    String? projectId,
+  }) async {
+    final res = await _dio.post(
+      '${RecordingEndpoints.baseUrl}/duplicate',
+      data: {
+        'recordingIds': recordingIds,
+        if (projectId != null) 'projectId': projectId,
+      },
+    );
+
+    final root = res.data;
+    final data = root is Map<String, dynamic> ? root['data'] : root;
+
+    if (data is! List) return const [];
+
+    return data
+        .map((e) => Recording.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }
 
 final recordingServiceProvider = Provider<RecordingService>((ref) {
