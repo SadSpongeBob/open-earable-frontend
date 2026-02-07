@@ -55,7 +55,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '${Routes.playback}/:recordingId',
         builder: (context, state) {
           final recordingId = state.pathParameters['recordingId'];
-          return PlaybackPage(recordingId: recordingId);
+          return PlaybackPage(recordingId: recordingId!);
         },
       ),
     ],

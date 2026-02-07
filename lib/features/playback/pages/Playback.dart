@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:openearable/api/local_media.dart';
-import '../../../api/services/recording/recording_service.dart';
-import '../../home/state/home_provider.dart';
 import '../controllers/playback_controller.dart';
 import '../widgets/top_bar.dart';
 import '../widgets/video_card.dart';
@@ -27,16 +24,22 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
   @override
   void initState() {
     super.initState();
-    final svc = ref.read(recordingServiceProvider);
-    
-    _controller = PlaybackController(localMedia: ref.read(localMediaProvider),
-        recordingService: svc, recordingId: widget.recordingId!,
-        cloudVideo: widget.recordingId!.startsWith("rcd_"));
-   
 
-    if (widget.recordingId!.isNotEmpty) {
-      _controller.loadVideo();
-    }
+    final id = widget.recordingId!;
+    final cloud = id.startsWith("rcd_");
+    _controller = ref.read(
+      playbackControllerProvider(
+        PlaybackArgs(
+          recordingId: id,
+          cloudVideo: cloud,
+        ),
+      ),
+    );
+
+    /// Load Video
+    _controller.loadVideo().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -47,6 +50,8 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
 
   @override
   Widget build(BuildContext context) {
+    final vc = _controller.videoController;
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       body: SafeArea(
@@ -60,21 +65,13 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
                 recordingId: widget.recordingId,
               ),
             ),
+
             Expanded(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  final vc = _controller.videoController;
-
-                  if (vc == null || !vc.value.isInitialized) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-
-                  return VideoCard(controller: vc);
-                },
-              ),
+              child: (vc == null || !vc.value.isInitialized)
+                  ? const Center(
+                child: CircularProgressIndicator(),
+              )
+                  : VideoCard(controller: vc),
             ),
           ],
         ),

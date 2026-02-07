@@ -1,21 +1,27 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image/image.dart' as img;
 import 'package:uuid/uuid.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import '../../../api/local_media.dart';
+final recordingControllerProvider = Provider<RecordingController>((ref) {
+  final localMedia = ref.read(localMediaProvider);
 
+  return RecordingController(
+    localMedia: localMedia,
+  );
+});
 
-class RecordingController extends ChangeNotifier {
+class RecordingController {
   RecordingController({
-    required this.localMedia,
+    required LocalMedia localMedia,
     this.initialCamera = CameraLensDirection.back,
-  });
+  }) : _localMedia = localMedia;
 
-  final LocalMedia localMedia;
+  final LocalMedia _localMedia;
   final CameraLensDirection initialCamera;
   CameraController? cameraController;
   List<CameraDescription> cameras = [];
@@ -23,20 +29,14 @@ class RecordingController extends ChangeNotifier {
   bool isInitialized = false;
   bool isRecording = false;
   bool isPaused = false;
-  String? error;
   Future<void> init() async {
     currentLens = initialCamera;
-
     cameras = await availableCameras();
-
     if (cameras.isEmpty) {
-      error = "No cameras found";
-      notifyListeners();
-      return;
+      throw Exception("No cameras found");
     }
-
     await _initCameraController(currentLens);
-    notifyListeners();
+    isInitialized = true;
   }
 
   Future<void> _initCameraController(CameraLensDirection lens) async {
@@ -54,11 +54,6 @@ class RecordingController extends ChangeNotifier {
     );
 
     await cameraController!.initialize();
-
-    isInitialized = true;
-    error = null;
-
-    notifyListeners();
   }
   Future<void> startRecording() async {
     if (!isInitialized || isRecording) return;
@@ -66,62 +61,30 @@ class RecordingController extends ChangeNotifier {
     await cameraController!.startVideoRecording();
 
     isRecording = true;
-    notifyListeners();
+    isPaused = false;
   }
 
-  Future<String?> stopRecording() async {
-    if (!isInitialized || !isRecording) return null;
-
+  Future<String?> stopRecording(String projectId) async {
     final file = await cameraController!.stopVideoRecording();
-
     isRecording = false;
     isPaused = false;
-
-    notifyListeners();
-    return await _saveVideo(file: file);
+    return await _saveVideo(file, projectId);
   }
 
-  Future<String?> _saveVideo({required XFile file}) async {
-    final recordingId = const Uuid().v4();
+  Future<void> pauseRecording() async {
+    if (!isRecording || isPaused) return;
 
-    final projectId = LocalMedia.defaultProjectId;
+    await cameraController!.pauseVideoRecording();
 
-    final recordingDir = localMedia.recordingDir(projectId, recordingId);
-    await recordingDir.create(recursive: true);
-
-    final videoFile = localMedia.videoFile(projectId, recordingId);
-    await File(file.path).copy(videoFile.path);
-    final thumbData = await generateThumbnail(videoFile.path);
-
-    if (thumbData != null) {
-      final decoded = img.decodeImage(thumbData);
-
-      if (decoded != null) {
-        final thumbFile =
-        localMedia.thumbnailFile(projectId, recordingId);
-
-        await thumbFile.writeAsBytes(img.encodePng(decoded));
-      }
-    }
-    final metaFile =
-    localMedia.recordingMetaFile(projectId, recordingId);
-    final meta = {
-      "id": recordingId,
-      "timestamp": DateTime.now().toUtc().toIso8601String(),
-    };
-    await metaFile.writeAsString(
-      const JsonEncoder.withIndent("  ").convert(meta),
-    );
-    return recordingId;
+    isPaused = true;
   }
 
-  Future<Uint8List?> generateThumbnail(String videoPath) async {
-    return vt.VideoThumbnail.thumbnailData(
-      video: videoPath,
-      imageFormat: vt.ImageFormat.JPEG,
-      maxWidth: 512,
-      quality: 75,
-    );
+  Future<void> resumeRecording() async {
+    if (!isRecording || !isPaused) return;
+
+    await cameraController!.resumeVideoRecording();
+
+    isPaused = false;
   }
   Future<void> toggleCamera() async {
     if (cameras.isEmpty) return;
@@ -131,30 +94,57 @@ class RecordingController extends ChangeNotifier {
         : CameraLensDirection.front;
 
     isInitialized = false;
-    notifyListeners();
 
     await _initCameraController(currentLens);
+
+    isInitialized = true;
   }
-  Future<void> pauseRecording() async {
-    if (!isInitialized || !isRecording || isPaused) return;
+  Future<String> _saveVideo(XFile file, String projectId) async {
+    final recordingId = const Uuid().v4();
+    final dir = _localMedia.recordingDir(projectId, recordingId);
+    await dir.create(recursive: true);
 
-    await cameraController!.pauseVideoRecording();
+    final videoFile = _localMedia.videoFile(projectId, recordingId);
+    await File(file.path).copy(videoFile.path);
 
-    isPaused = true;
-    notifyListeners();
+    final thumbData = await generateThumbnail(videoFile.path);
+
+    if (thumbData != null) {
+      final decoded = img.decodeImage(thumbData);
+
+      if (decoded != null) {
+        final thumbFile =
+        _localMedia.thumbnailFile(projectId, recordingId);
+
+        await thumbFile.writeAsBytes(img.encodePng(decoded));
+      }
+    }
+
+    // Metadata
+    final metaFile =
+    _localMedia.recordingMetaFile(projectId, recordingId);
+
+    final meta = {
+      "id": recordingId,
+      "timestamp": DateTime.now().toUtc().toIso8601String(),
+    };
+
+    await metaFile.writeAsString(
+      const JsonEncoder.withIndent("  ").convert(meta),
+    );
+
+    return recordingId;
   }
 
-  Future<void> resumeRecording() async {
-    if (!isInitialized || !isRecording || !isPaused) return;
-
-    await cameraController!.resumeVideoRecording();
-
-    isPaused = false;
-    notifyListeners();
+  Future<Uint8List?> generateThumbnail(String videoPath) {
+    return vt.VideoThumbnail.thumbnailData(
+      video: videoPath,
+      imageFormat: vt.ImageFormat.JPEG,
+      maxWidth: 512,
+      quality: 75,
+    );
   }
-  @override
-  void dispose() {
-    cameraController?.dispose();
-    super.dispose();
+  Future<void> dispose() async {
+    await cameraController?.dispose();
   }
 }

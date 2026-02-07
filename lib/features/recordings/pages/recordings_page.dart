@@ -1,11 +1,10 @@
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
-import '../../../api/local_media.dart';
 import '../../../app/routing/routes.dart';
+import '../../home/state/home_provider.dart';
 import '../controllers/recording_controller.dart';
 import '../widgets/left_bar.dart';
 
@@ -29,32 +28,30 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   @override
   void initState() {
     super.initState();
-    _controller = RecordingController(initialCamera: widget.initialCamera, localMedia: ref.read(localMediaProvider))
-      ..addListener(_onControllerChanged)
-      ..init();
+
+    _controller = ref.read(recordingControllerProvider);
+    _controller.init().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_onControllerChanged);
     _controller.dispose();
     super.dispose();
   }
-
-  void _onControllerChanged() {
-    if (!mounted) return;
-    setState(() {});
-  }
-
   Future<void> _onShutterPressed() async {
     if (_controller.isRecording) {
+      final path = await _controller.stopRecording(ref.read(homeStateProvider).openProjectId);
 
-
-      String? path = await _controller.stopRecording();
-      _navigateToPlayBack(path!);
+      if (path != null) {
+        _navigateToPlayBack(path);
+      }
     } else {
       await _controller.startRecording();
     }
+
+    setState(() {});
   }
 
   Future<void> _onFlipOrPausePressed() async {
@@ -67,8 +64,9 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
         await _controller.pauseRecording();
       }
     }
-  }
 
+    setState(() {});
+  }
   void _navigateToPlayBack(String recordingId) {
     context.go('${Routes.playback}/$recordingId');
   }
@@ -78,15 +76,6 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   }
 
   Widget _buildCameraPreview() {
-    if (_controller.error != null) {
-      return Center(
-        child: Text(
-          _controller.error!,
-          style: const TextStyle(color: Colors.white),
-        ),
-      );
-    }
-
     if (!_controller.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -101,26 +90,32 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
     return SafeArea(
       child: Row(
         children: [
-          RecordingLeftBar(onBackToProjects: _navigateToHome),
+          RecordingLeftBar(
+            onBackToProjects: _navigateToHome,
+          ),
           Expanded(
             child: Container(
               color: Colors.black,
-              child: Stack(children: [_buildCameraPreview()]),
+              child: Stack(
+                children: [
+                  _buildCameraPreview(),
+                ],
+              ),
             ),
           ),
           HomeRecordingRightBar(
-            onSettings: () async {
+            onSettings: () {
               if (!_controller.isRecording) {
                 context.go(Routes.settings);
               }
             },
             onWaveSound: () {
-              // TODO: implement sensors data page and visualization
+              // TODO sensors page
             },
             onShutter: _onShutterPressed,
             onFlipCamera: _onFlipOrPausePressed,
             onBluetooth: () {
-              // TODO: implement bluetooth devices popup
+              // TODO bluetooth popup
             },
             padding: const EdgeInsets.symmetric(vertical: 24),
             isRecording: _controller.isRecording,

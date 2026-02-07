@@ -10,7 +10,7 @@ Future<String?> showRenameDialog(BuildContext context, {required String oldName}
 
 class RenameDialog extends StatefulWidget {
   final String oldName;
-  const RenameDialog({Key? key, required this.oldName}) : super(key: key);
+  const RenameDialog({super.key, required this.oldName});
 
   @override
   State<RenameDialog> createState() => _RenameDialogState();
