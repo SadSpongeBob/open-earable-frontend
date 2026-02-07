@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
@@ -8,13 +7,12 @@ import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
+import 'package:openearable/api/services/s3/s3_service.dart';
 import '../../home/state/home_provider.dart';
-
 final playbackControllerProvider =
 Provider.family<PlaybackController, PlaybackArgs>((ref, args) {
   final localMedia = ref.read(localMediaProvider);
   final recordingService = ref.read(recordingServiceProvider);
-
   return PlaybackController(
     localMedia: localMedia,
     recordingService: recordingService,
@@ -22,6 +20,7 @@ Provider.family<PlaybackController, PlaybackArgs>((ref, args) {
     cloudVideo: args.cloudVideo, ref: ref,
   );
 });
+
 class PlaybackArgs {
   final String recordingId;
   final bool cloudVideo;
@@ -39,10 +38,8 @@ class PlaybackController {
     required this.cloudVideo,
     required this.ref,
   });
-
   final LocalMedia localMedia;
   final RecordingService recordingService;
-
   final String recordingId;
   final bool cloudVideo;
 
@@ -70,67 +67,50 @@ class PlaybackController {
   }
   Future<void> loadVideo() async {
     recordingStartedAt = DateTime.now().toUtc();
-
     if (cloudVideo) {
       final Recording rec = await recordingService.getRecording(recordingId);
-
       videoName = rec.name;
-
       videoController = VideoPlayerController.networkUrl(
         Uri.parse(rec.videoUrl!),
       );
     } else {
       videoName = recordingId;
-
       final file = _getVideoFile();
       if (!await file.exists()) return;
-
       videoController = VideoPlayerController.file(file);
     }
-
     await videoController!.initialize();
     await videoController!.play();
   }
   void togglePlay() {
     if (videoController?.value.isInitialized != true) return;
-
     if (videoController!.value.isPlaying) {
       videoController!.pause();
     } else {
       videoController!.play();
     }
   }
-
   void toggleMute() {
     if (videoController == null) return;
-
     isMuted = !isMuted;
     videoController!.setVolume(isMuted ? 0 : 1);
   }
-
   void setSpeed(double value) {
     final clamped = value.clamp(0.25, 2.0);
-
     speed = clamped;
     speedString = "${clamped}x";
-
     if (videoController?.value.isInitialized == true) {
       videoController!.setPlaybackSpeed(clamped);
     }
   }
-
   void seekBySeconds(int seconds) {
     if (videoController?.value.isInitialized != true) return;
-
     final current = videoController!.value.position;
     final total = videoController!.value.duration;
-
     final newPos = current + Duration(seconds: seconds);
-
     final clamped = newPos < Duration.zero
         ? Duration.zero
         : (newPos > total ? total : newPos);
-
     videoController!.seekTo(clamped);
   }
 
@@ -139,31 +119,22 @@ class PlaybackController {
       await recordingService.deleteRecording(recordingId);
       return;
     }
-
     final dir = _getRecordingDir();
-
     if (await dir.exists()) {
       await dir.delete(recursive: true);
     }
   }
   Future<void> exportVideoFolder() async {
-    final dio = Dio();
+    final s3 = ref.read(s3ServiceProvider);
     final exportDir = await localMedia.exportDir(videoName);
-
     await exportDir.create(recursive: true);
-
     if (cloudVideo) {
       final rec = await recordingService.getRecording(recordingId);
-      await dio.download(
-        rec.videoUrl!,
-        "${exportDir.path}/video.mp4",
-      );
+      await s3.downloadToFile(rec.videoUrl!, "${exportDir.path}/video.mp4");
       return;
     }
-
     final sourceDir = _getRecordingDir();
     if (!await sourceDir.exists()) return;
-
     await for (var entity in sourceDir.list()) {
       if (entity is File && entity.uri.pathSegments.last != "meta.json") {
         final fileName = entity.uri.pathSegments.last;
@@ -172,37 +143,27 @@ class PlaybackController {
     }
   }
   Future<void> stopAndUpload({
-    Dio? dioClient,
     required String? projectId,
   }) async {
     if (cloudVideo) return;
-
-    await uploadVideo(
-      dioClient: dioClient,
-      projectId: projectId,
-    );
+    await uploadVideo(projectId: projectId);
 
     await deleteVideo();
   }
 
   Future<void> uploadVideo({
-    Dio? dioClient,
     String? projectId,
   }) async {
-    final dio = dioClient ?? Dio();
+    final awsDio = ref.read(s3ServiceProvider);
     final videoFile = _getVideoFile();
-
     if (!await videoFile.exists()) return;
-
     final thumbBytes = await generateThumbnail(videoFile.path);
-
     File? thumbFile;
     if (thumbBytes != null) {
       final temp = await Directory.systemTemp.createTemp();
       thumbFile = File("${temp.path}/thumb.jpg");
       await thumbFile.writeAsBytes(thumbBytes);
     }
-
     final timestamp = recordingStartedAt ?? DateTime.now().toUtc();
 
     final req = UploadRecordingRequest(
@@ -219,42 +180,22 @@ class PlaybackController {
     );
 
     final uploadResp = await recordingService.startUpload(req);
-
-    await _uploadFile(
-      videoFile,
+    final videoBytes = await videoFile.readAsBytes();
+    await awsDio.put(
       uploadResp.videoUpload.uploadUrl,
       uploadResp.videoUpload.requiredHeaders,
-      dio,
+      videoBytes,
     );
 
     if (uploadResp.thumbnailUpload != null && thumbFile != null) {
-      await _uploadFile(
-        thumbFile,
+      final tbytes = await thumbFile.readAsBytes();
+      await awsDio.put(
         uploadResp.thumbnailUpload!.uploadUrl,
         uploadResp.thumbnailUpload!.requiredHeaders,
-        dio,
+        tbytes,
       );
     }
-
     await recordingService.completeUpload(uploadResp.recordingId);
-  }
-
-  Future<Response> _uploadFile(
-      File file,
-      String url,
-      Map<String, String> headers,
-      Dio dio,
-      ) async {
-    final bytes = await file.readAsBytes();
-
-    return dio.put(
-      url,
-      data: bytes,
-      options: Options(
-        headers: headers,
-        validateStatus: (_) => true,
-      ),
-    );
   }
 
   Future<Uint8List?> generateThumbnail(String videoPath) {
@@ -270,7 +211,6 @@ class PlaybackController {
     if (cloudVideo) {
       await recordingService.rename(recordingId, newName);
     }
-
     videoName = newName;
   }
   bool getVideoNamesInProject(String videoName) {

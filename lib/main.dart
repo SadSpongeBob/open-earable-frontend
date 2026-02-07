@@ -6,9 +6,6 @@ import 'package:openearable/api/local_media.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/routing//router_provider.dart';
 import 'package:openearable/app/routing/app_bootstrapper.dart';
-import 'package:openearable/features/recordings/pages/recordings_page.dart';
-import 'app/constants/colors.dart';
-import 'features/auth/pages/login_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

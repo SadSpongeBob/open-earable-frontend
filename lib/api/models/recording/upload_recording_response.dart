@@ -29,13 +29,8 @@ class UploadRecordingResponse {
 
     final sensorUploadsRaw = rawData['sensorUploads'];
     final sensorUploads = <SensorUploadInfo>[];
-    ///this will be fixed when sensors are ready
-    if (sensorUploadsRaw is List) {
-      for (final e in sensorUploadsRaw) {
-        if (e is Map) {
-          sensorUploads.add(SensorUploadInfo.fromJson(Map<String, dynamic>.from(e)));
-        }
-      }
+    for (final e in sensorUploadsRaw) {
+      sensorUploads.add(SensorUploadInfo.fromJson(Map<String, dynamic>.from(e)));
     }
 
     final thumbnailRaw = rawData['thumbnailUpload'];
@@ -74,11 +69,10 @@ class UploadInfo {
     final timestamp = json['timestamp'] as String? ?? '';
     final rawHeaders = json['requiredHeaders'];
     final headers = <String, String>{};
-    if (rawHeaders is Map) {
-      rawHeaders.forEach((k, v) {
-        if (k is String && v != null) headers[k] = v.toString();
-      });
-    }
+    rawHeaders.forEach((k, v) {
+      if (k is String && v != null) headers[k] = v.toString();
+    });
+
     return UploadInfo(
       filename: filename,
       key: key,
