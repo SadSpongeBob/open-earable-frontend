@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:path/path.dart' as p;
 import 'package:dio/dio.dart';
@@ -32,45 +31,20 @@ class RecordingService {
     final res = await _dio.put(
       RecordingEndpoints.complete(recordingId),
     );
-    final raw = res.data;
-
-    if (raw is Map<String, dynamic>) {
-      if (raw.containsKey('data') && raw['data'] is Map<dynamic, dynamic>) {
-        return Recording.fromJson(raw['data']);
-      }
-      try {
-        return Recording.fromJson(raw);
-      } catch (_) {
-        throw Exception('completeUpload: unexpected data shape');
-      }
-    }
-
-    if (raw is String) {
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is Map<String, dynamic>) {
-          if (decoded.containsKey('data') && decoded['data'] is Map<String, dynamic>) {
-            return Recording.fromJson(decoded['data']);
-          }
-          return Recording.fromJson(decoded);
-        }
-      } catch (_) {
-        throw Exception('completeUpload: failed to decode response');
-      }
-    }
-    throw Exception('completeUpload: unexpected response type ${raw.runtimeType}');
+    return Recording.fromJson((res.data as Map).cast<String, dynamic>());
   }
+
 
   Future<Recording> getRecording(String recordingId) async {
     final res = await _dio.get(RecordingEndpoints.recording(recordingId));
-    return Recording.fromJson(res.data as Map<String, dynamic>);
+    return Recording.fromJson(res.asMap());
   }
   Future<void> deleteRecording(String recordingId) async {
     await _dio.delete(RecordingEndpoints.deleteRecording(recordingId));
   }
   Future<void> rename(String recordingId, String name) async {
     await _dio.put(RecordingEndpoints.rename(recordingId), data: {'name': name});
-    debugPrint('Renamed recording $recordingId to "$name"');
+    
   }
   Future<void> duplicate(String recordingId) async {
     await _dio.post(RecordingEndpoints.duplicate(recordingId));
