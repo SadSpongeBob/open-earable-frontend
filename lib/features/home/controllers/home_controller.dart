@@ -172,6 +172,42 @@ class HomeController {
 
     return true;
   }
+  Future<bool> canMoveToCloudProject({
+    required String targetProjectId,
+    required String myUserId,
+  }) async {
+    try {
+      final users = await _projectService.getProjectUsers(targetProjectId);
+
+      final me = users.where((u) => u.userId == myUserId).toList();
+      if (me.isEmpty) {
+        _toast(const ToastEvent.error('No permission'));
+        return false;
+      }
+
+      final role = me.first.role;
+      final canWrite = role is Owner || role is Editor;
+
+      if (!canWrite) {
+        _toast(const ToastEvent.error('No permission'));
+        return false;
+      }
+
+      return true;
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      if (code == 403) {
+        _toast(const ToastEvent.error('No permission'));
+        return false;
+      }
+      _toast(const ToastEvent.error('Failed to check permissions'));
+      return false;
+    } catch (_) {
+      _toast(const ToastEvent.error('Failed to check permissions'));
+      return false;
+    }
+  }
+
 
   Future<void> _refreshOpenProjectRecordings() async {
     await openProject(state.openProjectId);
@@ -291,7 +327,6 @@ class HomeController {
       }
 
       _state.addProject(created);
-      _state.setOpenProject(projectId: created.id, recordings: const []);
       _state.clearError();
       _success('Project "$trimmed" created');
     } catch (e) {

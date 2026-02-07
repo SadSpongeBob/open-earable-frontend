@@ -99,18 +99,15 @@ class HomeState {
     return HomeState(
       projects: projects ?? this.projects,
       openProjectId: openProjectId ?? this.openProjectId,
-      openProject:
-      clearOpenProject ? null : (openProject ?? this.openProject),
+      openProject: clearOpenProject ? null : (openProject ?? this.openProject),
 
       isProjectSelectionMode:
       isProjectSelectionMode ?? this.isProjectSelectionMode,
-      selectedProjectIds:
-      selectedProjectIds ?? this.selectedProjectIds,
+      selectedProjectIds: selectedProjectIds ?? this.selectedProjectIds,
 
       isRecordingSelectionMode:
       isRecordingSelectionMode ?? this.isRecordingSelectionMode,
-      selectedRecordingIds:
-      selectedRecordingIds ?? this.selectedRecordingIds,
+      selectedRecordingIds: selectedRecordingIds ?? this.selectedRecordingIds,
       recordings: recordings ?? this.recordings,
       selectedRecordingId: clearSelectedRecordingId
           ? null
@@ -121,8 +118,7 @@ class HomeState {
       areProjectsLoaded: areProjectsLoaded ?? this.areProjectsLoaded,
 
       isUsersLoading: isUsersLoading ?? this.isUsersLoading,
-      projectUsers:
-      clearProjectUsers ? const [] : (projectUsers ?? this.projectUsers),
+      projectUsers: clearProjectUsers ? const [] : (projectUsers ?? this.projectUsers),
       usersErrorMessage:
       clearUsersError ? null : (usersErrorMessage ?? this.usersErrorMessage),
     );

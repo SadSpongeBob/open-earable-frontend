@@ -22,6 +22,7 @@ import '../widgets/recording_action_bar.dart';
 import '../widgets/rename_project_dialog.dart';
 import '../widgets/users_button.dart';
 import '../widgets/users_popup.dart';
+import '../widgets/move_recordings_modal.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -31,10 +32,26 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  bool _isChoosingMoveTarget = false;
+  Set<String> _recordingIdsToMove = const <String>{};
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(homeControllerProvider).loadProjects());
+  }
+  void _exitMoveMode() {
+    if (!_isChoosingMoveTarget) return;
+    setState(() {
+      _isChoosingMoveTarget = false;
+      _recordingIdsToMove = const <String>{};
+    });
+  }
+
+  bool _isLocalProject(ProjectMetadata? p, String idFallback) {
+    if (idFallback == LocalMedia.defaultProjectId) return true;
+    if (p == null) return false;
+    return p.projectSource == ProjectSource.local;
   }
 
   @override
@@ -49,21 +66,41 @@ class _HomePageState extends ConsumerState<HomePage> {
     final controller = ref.read(homeControllerProvider);
     final session = ref.watch(sessionProvider);
 
-    final selectedCount = state.selectedProjectIds.length;
+    final selectedProjectCount = state.selectedProjectIds.length;
 
-    final openProject = state.projects
+    final openMeta = state.projects
         .where((p) => p.id == state.openProjectId)
-        .toList();
+        .cast<ProjectMetadata?>()
+        .toList()
+        .firstOrNull;
 
-    final isLocalOpenProject =
-        state.openProjectId == LocalMedia.defaultProjectId ||
-            (openProject.isNotEmpty &&
-                openProject.first.projectSource == ProjectSource.local);
+    final isLocalOpenProject = _isLocalProject(openMeta, state.openProjectId);
 
+    final showUsersButton = session.isAuthenticated && !isLocalOpenProject &&
+            state.openProjectId != 'default' && !_isChoosingMoveTarget;
 
-    final showUsersButton =
-        session.isAuthenticated && !isLocalOpenProject && state.openProjectId != 'default';
     final canManageRecordings = controller.canManageRecordings;
+
+    Future<void> handlePickMoveTarget(ProjectMetadata target) async {
+      final targetIsLocal = _isLocalProject(target, target.id);
+      final sourceIsLocal = _isLocalProject(openMeta, state.openProjectId);
+      if (sourceIsLocal != targetIsLocal) {
+        emitToast(ref as Ref, const ToastEvent.error('You can only move local→local or cloud→cloud'));
+        return;
+      }
+      if (target.id == state.openProjectId) {
+        emitToast(ref as Ref, const ToastEvent.error('Choose a different project'));
+        return;
+      }
+
+      final ids = _recordingIdsToMove;
+      _exitMoveMode();
+
+      await controller.moveRecordings(ids, targetProjectId: target.id);
+
+      if (!mounted) return;
+      controller.exitRecordingSelectionMode();
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -83,10 +120,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                       onAddProject: () async {
                         final name = await AddProjectDialog.show(context);
                         if (name == null) return;
-                        await controller.createProject(name);
+                        await controller.createProject(name);},
+                      onTapProject: (item) {
+                        if (_isChoosingMoveTarget) {
+                          handlePickMoveTarget(item);
+                        } else {
+                          controller.handleProjectTap(item.id);
+                        }
                       },
-                      onTapProject: (item) =>
-                          controller.handleProjectTap(item.id),
                       onLongPressProject: (item) =>
                           controller.handleProjectLongPress(item.id),
                     ),
@@ -98,9 +139,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                       right: 0,
                       bottom: 0,
                       child: ProjectSelectionActionBar(
-                        selectedCount: selectedCount,
+                        selectedCount: selectedProjectCount,
                         onDelete: () {
-                          if (selectedCount == 0) return;
+                          if (selectedProjectCount == 0) return;
 
                           final projectIds = state.selectedProjectIds;
                           DeleteConfirmDialog.show(
@@ -108,16 +149,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                             title: 'Do you really want to\ndelete these projects?',
                             onDelete: () async {
                               await controller.deleteProjects(projectIds);
+                              if (!mounted) return;
                               controller.exitProjectSelectionMode();
                             },
                           );
                         },
                         onDuplicate: () {
-                          if (selectedCount == 0) return;
+                          if (selectedProjectCount == 0) return;
                           controller.duplicateProjects(state.selectedProjectIds);
                         },
                         onRename: () {
-                          if (selectedCount != 1) return;
+                          if (selectedProjectCount != 1) return;
                           final projectId = state.selectedProjectIds.first;
                           final project =
                           state.projects.firstWhere((p) => p.id == projectId);
@@ -152,11 +194,22 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     child: RecordingGrid(
                       recordings: state.recordings,
-                      isSelectionMode: canManageRecordings && state.isRecordingSelectionMode,
+                      isSelectionMode: canManageRecordings &&
+                          state.isRecordingSelectionMode &&
+                          !_isChoosingMoveTarget,
                       selectedRecordingIds: state.selectedRecordingIds,
-                      onTapRecording: (item) => controller.handleRecordingTap(item.id),
+                      onTapRecording: (item) {
+                        if (_isChoosingMoveTarget) {
+                          _exitMoveMode();
+                          return;
+                        }
+                        controller.handleRecordingTap(item.id);
+                      },
                       onLongPressRecording: canManageRecordings
-                          ? (item) => controller.handleRecordingLongPress(item.id)
+                          ? (item) {
+                        if (_isChoosingMoveTarget) return;
+                        controller.handleRecordingLongPress(item.id);
+                      }
                           : null,
                     ),
                   ),
@@ -174,6 +227,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             title: 'Do you really want to\ndelete these recordings?',
                             onDelete: () async {
                               await controller.deleteRecordings(state.selectedRecordingIds);
+                              if (!mounted) return;
                               controller.exitRecordingSelectionMode();
                             },
                           );
@@ -182,12 +236,31 @@ class _HomePageState extends ConsumerState<HomePage> {
                           controller.duplicateRecordings(state.selectedRecordingIds);
                         },
                         onMove: () {
-                          // TODO: enter "choose target project" mode
+                          setState(() {
+                            _isChoosingMoveTarget = true;
+                            _recordingIdsToMove =
+                            Set<String>.from(state.selectedRecordingIds);
+                          });
+                        },
+                        onDone: controller.exitRecordingSelectionMode,
+                      ),
+                    ),
 
-                        },
-                        onDone: () {
-                          controller.exitRecordingSelectionMode();
-                        },
+                  // MOVE MODE OVERLAY
+                  if (_isChoosingMoveTarget)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _exitMoveMode,
+                        child: Container(
+                          color: Colors.black.withOpacity(0.35),
+                          child: Center(
+                            child: GestureDetector(
+                              onTap: () {},
+                              child: const MoveRecordingsModal(),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
 
@@ -210,19 +283,29 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
 
             // RIGHT BAR
-            HomeRecordingRightBar(
-              onSettings: () => context.go(Routes.settings),
-              onWaveSound: () {},
-              onShutter: () => context.go(Routes.recording),
-              onBluetooth: () {},
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              isRecording: false,
-              isPaused: false,
-              showFlipButton: false,
+            AbsorbPointer(
+              absorbing: _isChoosingMoveTarget,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _isChoosingMoveTarget ? 0.4 : 1.0,
+                child: HomeRecordingRightBar(
+                  onSettings: () => context.go(Routes.settings),
+                  onWaveSound: () {},
+                  onShutter: () => context.go(Routes.recording),
+                  onBluetooth: () {},
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  isRecording: false,
+                  isPaused: false,
+                  showFlipButton: false,
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
+extension _FirstOrNullX<T> on List<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }
