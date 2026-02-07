@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 
-class AuthCard extends StatelessWidget {
+class UserCard extends StatelessWidget {
   final Widget child;
 
-  const AuthCard({super.key, required this.child});
+  const UserCard({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -15,11 +16,11 @@ class AuthCard extends StatelessWidget {
         width: cardWidth,
         padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 50),
         decoration: BoxDecoration(
-          color: const Color(0xFFF2F2F2),
+          color: AppColors.fifty,
           borderRadius: BorderRadius.circular(50),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x601F1F1F),
+              color: AppColors.fiveHundred,
               blurRadius: 50,
               offset: Offset(0, 4),
             )

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/text_styles.dart';
-import '../../../app/constants/colors.dart';
+import '../theme/text_styles.dart';
+import '../constants/colors.dart';
 
-class AuthTextField extends StatelessWidget {
+class InputBox extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final String? Function(String?)? validator;
@@ -11,7 +11,7 @@ class AuthTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final TextAlign textAlign;
 
-  const AuthTextField({
+  const InputBox({
     super.key,
     required this.controller,
     required this.hint,
@@ -33,9 +33,13 @@ class AuthTextField extends StatelessWidget {
       style: AppTextStyles.textRegular,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: AppTextStyles.textRegular.copyWith(color: AppColors.sevenHundred),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        hintStyle: AppTextStyles.textRegular.copyWith(
+          color: AppColors.sevenHundred,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
         border: _border(),
         enabledBorder: _border(),
         focusedBorder: _border(),
@@ -47,10 +51,7 @@ class AuthTextField extends StatelessWidget {
   OutlineInputBorder _border() {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(36),
-      borderSide: const BorderSide(
-        width: 3,
-        color: AppColors.nineHundred,
-      ),
+      borderSide: const BorderSide(width: 3, color: AppColors.nineHundred),
     );
   }
 }

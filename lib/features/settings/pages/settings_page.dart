@@ -14,8 +14,8 @@ import 'package:openearable/features/settings/controllers/settings_controller.da
 import 'package:openearable/features/settings/widgets/settings_avatar.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../settings/widgets/download_method_dropdown.dart';
-import '../../auth/widgets/auth_card.dart';
-import '../../auth/widgets/text_field.dart';
+import '../../../app/widgets/user_card.dart';
+import '../../../app/widgets/input_box.dart';
 import '../widgets/settings_app_bar.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -88,7 +88,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
           ),
         ),
         child: SafeArea(
-          child: AuthCard(
+          child: UserCard(
             child: Form(
               key: _formKey,
               child: Column(
@@ -149,21 +149,21 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                       .refreshUser(),
                                 ),
                                 const SizedBox(height: 10),
-                                AuthTextField(
+                                InputBox(
                                   controller: _nameController,
                                   hint: 'Enter a new name',
                                   validator: Validators.name,
                                   keyboardType: TextInputType.name,
                                 ),
                                 const SizedBox(height: 10),
-                                AuthTextField(
+                                InputBox(
                                   controller: _emailController,
                                   hint: 'Enter a new email address',
                                   validator: Validators.email,
                                   keyboardType: TextInputType.emailAddress,
                                 ),
                                 const SizedBox(height: 10),
-                                AuthTextField(
+                                InputBox(
                                   controller: _pwController,
                                   hint: 'Enter a new password to change',
                                   validator: _pwController.text.isEmpty

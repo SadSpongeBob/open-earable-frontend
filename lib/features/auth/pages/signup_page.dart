@@ -8,10 +8,10 @@ import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/app/utils/validators.dart';
 import '../../../app/theme/text_styles.dart';
-import '../widgets/auth_card.dart';
+import '../../../app/widgets/user_card.dart';
 import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_seperator.dart';
-import '../widgets/text_field.dart';
+import '../../../app/widgets/input_box.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
@@ -74,7 +74,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: AuthCard(
+        child: UserCard(
           child: Form(
             key: _formKey,
             child: Column(
@@ -91,7 +91,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                 const SizedBox(height: 35),
 
-                AuthTextField(
+                InputBox(
                   controller: _namecontroller,
                   hint: "Name",
                   validator: Validators.name,
@@ -100,7 +100,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                 const SizedBox(height: 20),
 
-                AuthTextField(
+                InputBox(
                   controller: _emailController,
                   hint: "Email Address",
                   validator: Validators.email,
@@ -109,7 +109,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                 const SizedBox(height: 20),
 
-                AuthTextField(
+                InputBox(
                   controller: _pwController,
                   hint: "Password",
                   validator: Validators.password,

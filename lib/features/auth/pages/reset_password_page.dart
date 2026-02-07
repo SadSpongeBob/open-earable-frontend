@@ -8,8 +8,8 @@ import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/app/widgets/app_button.dart';
 
 import '../../../app/theme/text_styles.dart';
-import '../widgets/auth_card.dart';
-import '../widgets/text_field.dart';
+import '../../../app/widgets/user_card.dart';
+import '../../../app/widgets/input_box.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
   final String authToken;
@@ -52,7 +52,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: AuthCard(
+        child: UserCard(
           child: Form(
             key: _formKey,
             child: Column(
@@ -77,7 +77,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
                 const SizedBox(height: 30),
 
-                AuthTextField(
+                InputBox(
                   controller: _pwController,
                   hint: "Password",
                   validator: Validators.password,

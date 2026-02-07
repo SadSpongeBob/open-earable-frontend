@@ -7,9 +7,9 @@ import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/app/widgets/app_button.dart';
 import '../../../app/theme/text_styles.dart';
-import '../widgets/auth_card.dart';
+import '../../../app/widgets/user_card.dart';
 import '../widgets/auth_footer_link.dart';
-import '../widgets/text_field.dart';
+import '../../../app/widgets/input_box.dart';
 
 class RequestResetPage extends ConsumerStatefulWidget {
   const RequestResetPage({super.key});
@@ -49,7 +49,7 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: AuthCard(
+        child: UserCard(
           child: Form(
             key: _formKey,
             child: Column(
@@ -74,7 +74,7 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
 
                 const SizedBox(height: 35),
 
-                AuthTextField(
+                InputBox(
                   controller: _emailController,
                   hint: "Email Address",
                   validator: Validators.email,

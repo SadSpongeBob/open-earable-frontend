@@ -9,10 +9,10 @@ import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 
 import '../../../app/theme/text_styles.dart';
-import '../widgets/auth_card.dart';
+import '../../../app/widgets/user_card.dart';
 import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_seperator.dart';
-import '../widgets/text_field.dart';
+import '../../../app/widgets/input_box.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -71,7 +71,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: AuthCard(
+        child: UserCard(
           child: Form(
             key: _formKey,
             child: Column(
@@ -88,7 +88,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                 const SizedBox(height: 35),
 
-                AuthTextField(
+                InputBox(
                   controller: _emailController,
                   hint: "Email Address",
                   validator: Validators.email,
@@ -97,7 +97,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                 const SizedBox(height: 20),
 
-                AuthTextField(
+                InputBox(
                   controller: _pwController,
                   hint: "Password",
                   validator: Validators.password,
