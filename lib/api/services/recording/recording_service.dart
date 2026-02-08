@@ -91,20 +91,16 @@ class RecordingService {
     required List<String> recordingIds,
     String? projectId,
   }) async {
-    final res = await _dio.post(
+    final res = await _dio.post<dynamic>(
       '${RecordingEndpoints.baseUrl}/duplicate',
       data: {
         'recordingIds': recordingIds,
         if (projectId != null) 'projectId': projectId,
       },
     );
+    final list = res.asList();
 
-    final root = res.data;
-    final data = root is Map<String, dynamic> ? root['data'] : root;
-
-    if (data is! List) return const [];
-
-    return data
+    return list
         .map((e) => Recording.fromJson(e as Map<String, dynamic>))
         .toList();
   }

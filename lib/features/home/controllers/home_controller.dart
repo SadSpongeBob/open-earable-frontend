@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
 
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
@@ -137,12 +135,6 @@ class HomeController {
       if (r.id == id) return r;
     }
     return null;
-  }
-
-  // Parent folder containing video/meta/thumbnail
-  Directory _recordingDir(String projectId, String recordingId) {
-    final videoPath = _localMedia.videoFile(projectId, recordingId).path;
-    return Directory(p.dirname(videoPath));
   }
 
   String _newRecordingId() => Helpers.getProjectId();
@@ -572,7 +564,7 @@ class HomeController {
         }
 
         try {
-          final dir = _recordingDir(projectId, id);
+          final dir = _localMedia.recordingDir(projectId, id);
           if (await dir.exists()) {
             await dir.delete(recursive: true);
             successCount++;
@@ -660,7 +652,7 @@ class HomeController {
           final newId = _newRecordingId();
           final newName = _duplicateRecordingName(rec.name);
 
-          final dstDir = _recordingDir(projectId, newId);
+          final dstDir = _localMedia.recordingDir(projectId, newId);
           await dstDir.create(recursive: true);
 
           final srcVideo = _localMedia.videoFile(projectId, id);
@@ -770,8 +762,8 @@ class HomeController {
         }
 
         try {
-          final srcDir = _recordingDir(sourceProjectId, id);
-          final dstDir = _recordingDir(targetProjectId, id);
+          final srcDir = _localMedia.recordingDir(sourceProjectId, id);
+          final dstDir = _localMedia.recordingDir(targetProjectId, id);
 
           if (!await srcDir.exists()) {
             failed.add(id);
