@@ -741,7 +741,7 @@ class HomeController {
       final rec = _findRecordingById(id);
       if (rec == null) continue;
 
-      if (rec.localVideoPath != null) {
+      if (rec.source == RecordingSource.local) {
         localIds.add(id);
       } else {
         cloudIds.add(id);

@@ -13,6 +13,6 @@ class ProjectEndpoints {
 
   static String removeProjectUser(String projectId, String userId) => '$baseUrl/$projectId/user/$userId';
 
-  static String get moveRecordings => '$baseUrl/recording';
+  static const String moveRecordings = '$baseUrl/recording';
 
 }
