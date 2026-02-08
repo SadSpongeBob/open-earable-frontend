@@ -848,9 +848,9 @@ class HomeController {
   }
 
   Future<void> addUserToOpenProject({
-    required String myUserId,
+    required String? myUserId,
     required String emailAddress,
-    required ProjectRole role,
+    required ProjectRoleType role,
   }) async {
     final projectId = state.openProjectId;
     if (projectId == LocalMedia.defaultProjectId) {
@@ -873,8 +873,6 @@ class HomeController {
       _state.setProjectUsers(updatedUsers);
       _toast(const ToastEvent.success('User added'));
     } on DioException catch (e) {
-      _state.setUsersLoading(false);
-
       final code = e.response?.statusCode;
       if (code == 409) {
         _toast(const ToastEvent.error('User already in project'));
@@ -891,8 +889,9 @@ class HomeController {
 
       _toast(const ToastEvent.error('Failed to add user'));
     } catch (_) {
-      _state.setUsersLoading(false);
       _toast(const ToastEvent.error('Failed to add user'));
+    } finally {
+      _state.setUsersLoading(false);
     }
   }
 

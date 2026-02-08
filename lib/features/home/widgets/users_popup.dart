@@ -13,13 +13,13 @@ import '../controllers/home_controller.dart';
 import '../state/home_state.dart';
 import '../state/home_provider.dart';
 
-enum RoleChoice { viewer, editor }
+enum RoleChoice { editor, viewer }
 
 extension _RoleChoiceX on RoleChoice {
   String get label => this == RoleChoice.editor ? 'Editor' : 'Viewer';
 
-  ProjectRole toProjectRole() =>
-      this == RoleChoice.editor ? Editor(userId: '') : Viewer(userId: '');
+  ProjectRoleType toRoleType() =>
+      this == RoleChoice.editor ? ProjectRoleType.editor : ProjectRoleType.viewer;
 }
 
 class RoleDropdownPill extends StatelessWidget {
@@ -181,7 +181,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                             await controller.addUserToOpenProject(
                               myUserId: myUserId,
                               emailAddress: _emailController.text,
-                              role: _role.toProjectRole(),
+                              role: _role.toRoleType(),
                             );
 
                             _emailController.clear();
@@ -359,7 +359,7 @@ class _UserCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _roleLabel(user.role),
+                    user.role.label,
                     style: const TextStyle(color: Colors.black54),
                   ),
                 ],
@@ -374,11 +374,5 @@ class _UserCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _roleLabel(ProjectRole role) {
-    if (role is Owner) return 'Owner';
-    if (role is Editor) return 'Editor';
-    return 'Viewer';
   }
 }

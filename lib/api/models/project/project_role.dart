@@ -1,3 +1,40 @@
+enum ProjectRoleType { owner, editor, viewer }
+
+extension ProjectRoleTypeApi on ProjectRoleType {
+  String toApi() {
+    switch (this) {
+      case ProjectRoleType.owner:
+        return 'OWNER';
+      case ProjectRoleType.editor:
+        return 'EDITOR';
+      case ProjectRoleType.viewer:
+        return 'VIEWER';
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case ProjectRoleType.owner:
+        return 'Owner';
+      case ProjectRoleType.editor:
+        return 'Editor';
+      case ProjectRoleType.viewer:
+        return 'Viewer';
+    }
+  }
+
+  static ProjectRoleType fromApi(String role) {
+    switch (role.toUpperCase()) {
+      case 'OWNER':
+        return ProjectRoleType.owner;
+      case 'EDITOR':
+        return ProjectRoleType.editor;
+      default:
+        return ProjectRoleType.viewer;
+    }
+  }
+}
+
 abstract class ProjectRole {
   final String userId;
 
@@ -12,13 +49,13 @@ abstract class ProjectRole {
     required String userId,
     required String role,
   }) {
-    return switch (role.toUpperCase()) {
-      'OWNER' => Owner(userId: userId),
-      'EDITOR' => Editor(userId: userId),
-      'VIEWER' => Viewer(userId: userId),
-      _ => Viewer(userId: userId),
+    return switch (ProjectRoleTypeApi.fromApi(role)) {
+      ProjectRoleType.owner => Owner(userId: userId),
+      ProjectRoleType.editor => Editor(userId: userId),
+      ProjectRoleType.viewer => Viewer(userId: userId),
     };
   }
+
 
   factory ProjectRole.fromJson(Map<String, dynamic> json) {
     final userId = json['userId'] as String;
