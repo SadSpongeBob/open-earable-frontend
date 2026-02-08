@@ -96,7 +96,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
                 const SizedBox(height: 30),
 
-                PrimaryButton(
+                AppButton.primary(
                   text: "Reset",
                   onPressed: _isFormFilled ? _handleReset : null,
                   isLoading: _loading,

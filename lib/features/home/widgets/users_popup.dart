@@ -174,7 +174,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                     opacity: canAdd ? 1.0 : 0.45,
                     child: IgnorePointer(
                       ignoring: !canAdd,
-                      child: PrimaryButton(
+                      child: AppButton.primary(
                         text: 'Add',
                         onPressed: () async {
                           if (myUserId == null) return;

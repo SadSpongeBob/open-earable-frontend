@@ -128,7 +128,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                 const SizedBox(height: 20),
 
-                PrimaryButton(
+                AppButton.primary(
                   text: "Sign Up",
                   onPressed: _isFormFilled ? _handleSignup : null,
                   isLoading: loading,

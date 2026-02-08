@@ -83,7 +83,7 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
 
                 const SizedBox(height: 30),
 
-                PrimaryButton(
+                AppButton.primary(
                   text: "Send",
                   onPressed: _isFormFilled ? _handleSendReset : null,
                   isLoading: _loading,

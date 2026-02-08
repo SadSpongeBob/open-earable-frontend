@@ -122,7 +122,7 @@ class _Pill extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
           boxShadow: const [
             BoxShadow(
-              color: AppColors.sevenHundred,
+              color: AppColors.fiveHundred,
               blurRadius: 10,
               offset: Offset(0, 4),
             ),

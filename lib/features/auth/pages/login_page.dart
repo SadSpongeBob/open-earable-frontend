@@ -118,7 +118,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 _buildRememberForgotRow(context),
                 const SizedBox(height: 35),
 
-                PrimaryButton(
+                AppButton.primary(
                   text: "Log In",
                   onPressed: _isFormFilled ? _handleLogin : null,
                   isLoading: loading,
