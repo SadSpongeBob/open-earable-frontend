@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/widgets/input_box.dart';
 
 class RenameProjectDialog extends StatefulWidget {
@@ -68,11 +69,11 @@ class _RenameProjectDialogState extends State<RenameProjectDialog> {
             width: 356,
             height: 307,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.fifty,
               borderRadius: BorderRadius.circular(16),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x1F000000),
+                  color: AppColors.fiveHundred,
                   blurRadius: 12,
                   offset: Offset(0, 6),
                 ),

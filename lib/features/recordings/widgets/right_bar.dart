@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 
 class HomeRecordingRightBar extends StatelessWidget {
   const HomeRecordingRightBar({
@@ -31,7 +32,7 @@ class HomeRecordingRightBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 150,
-      color: Colors.white,
+      color: AppColors.fifty,
       padding: padding,
       child: Column(
         children: [

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 class RecordingGrid extends StatelessWidget {
   const RecordingGrid({
@@ -93,7 +95,7 @@ class _RecordingTile extends StatelessWidget {
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey.shade600),
+                          border: Border.all(color: AppColors.sixHundred),
                           image: DecorationImage(
                             image: thumbnail,
                             fit: BoxFit.cover,
@@ -108,10 +110,7 @@ class _RecordingTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: AppTextStyles.footerBold
                   ),
                 ],
               ),
@@ -142,12 +141,12 @@ class _SelectionCircle extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(width: 2, color: Colors.grey.shade700),
-        color: isChecked ? (Colors.grey.shade700) : Colors.transparent,
+        border: Border.all(width: 2, color: AppColors.sevenHundred),
+        color: isChecked ? (AppColors.sevenHundred) : Colors.transparent,
       ),
       child: isChecked
           ? const Center(
-              child: Icon(Icons.check, size: 30, color: Colors.white),
+              child: Icon(Icons.check, size: 30, color: AppColors.fifty),
             )
           : null,
     );

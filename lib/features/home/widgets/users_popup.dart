@@ -122,7 +122,8 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
     final canAdd = _canAdd(state.isUsersLoading);
 
     // You can decide policy here:
-    final canManage = myUserId != null && controller.canManageUsers(myUserId: myUserId);
+    final canManage =
+        myUserId != null && controller.canManageUsers(myUserId: myUserId);
 
     return Dialog(
       insetPadding: const EdgeInsets.all(18),
@@ -132,7 +133,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
         height: 700,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.fifty,
             borderRadius: BorderRadius.circular(24),
           ),
           child: Padding(
@@ -200,8 +201,8 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                   child: Container(
                     decoration: const BoxDecoration(
                       border: Border(
-                        top: BorderSide(color: Colors.black12, width: 2),
-                        bottom: BorderSide(color: Colors.black12, width: 2),
+                        top: BorderSide(color: AppColors.fourHundred, width: 2),
+                        bottom: BorderSide(color: AppColors.fourHundred, width: 2),
                       ),
                     ),
                     child: Padding(
@@ -209,17 +210,17 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                       child: state.isUsersLoading
                           ? const Center(child: CircularProgressIndicator())
                           : _UsersList(
-                        users: users,
-                        myUserId: myUserId,
-                        canManage: canManage,
-                        onRemove: (userId) async {
-                          if (myUserId == null) return;
-                          await controller.removeUserFromOpenProject(
-                            myUserId: myUserId,
-                            userId: userId,
-                          );
-                        },
-                      ),
+                              users: users,
+                              myUserId: myUserId,
+                              canManage: canManage,
+                              onRemove: (userId) async {
+                                if (myUserId == null) return;
+                                await controller.removeUserFromOpenProject(
+                                  myUserId: myUserId,
+                                  userId: userId,
+                                );
+                              },
+                            ),
                     ),
                   ),
                 ),
@@ -227,16 +228,9 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                 const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
-                  child: TextButton(
+                  child: AppButton.ghost(
+                    text: 'Go Back',
                     onPressed: () => Navigator.of(context).pop(),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      textStyle: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    child: const Text('‹ Go Back'),
                   ),
                 ),
               ],
@@ -267,7 +261,7 @@ class _UsersList extends StatelessWidget {
       return const Center(
         child: Text(
           'No users in this project yet',
-          style: TextStyle(color: Colors.black54),
+          style: AppTextStyles.footerMedium,
         ),
       );
     }
@@ -313,14 +307,15 @@ class _UserCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
-          color: Colors.white,
+          color: AppColors.fifty,
         ),
         child: Row(
           children: [
             CircleAvatar(
               radius: 26,
-              backgroundImage:
-              user.pictureUrl == null ? null : NetworkImage(user.pictureUrl!),
+              backgroundImage: user.pictureUrl == null
+                  ? null
+                  : NetworkImage(user.pictureUrl!),
               child: user.pictureUrl == null
                   ? const Icon(Icons.person, size: 28)
                   : null,
@@ -336,7 +331,7 @@ class _UserCard extends StatelessWidget {
                         child: Text(
                           user.name,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
+                          style: AppTextStyles.footerBold,
                         ),
                       ),
                       if (isMe) ...[
@@ -352,10 +347,7 @@ class _UserCard extends StatelessWidget {
                           ),
                           child: const Text(
                             'You',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                            ),
+                            style: AppTextStyles.footerBold,
                           ),
                         ),
                       ],
@@ -364,13 +356,13 @@ class _UserCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     user.emailAddress,
-                    style: const TextStyle(color: Colors.black54),
+                    style: AppTextStyles.footerMedium,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
                   Text(
                     _roleLabel(user.role),
-                    style: const TextStyle(color: Colors.black54),
+                    style: AppTextStyles.footerMedium,
                   ),
                 ],
               ),

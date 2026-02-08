@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/app/constants/colors.dart';
 
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
@@ -129,11 +130,13 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: Stack(
                 children: [
                   Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       image: DecorationImage(
                         image: AssetImage('assets/images/background.png'),
                         fit: BoxFit.cover,
                       ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.sixHundred, width: 2)
                     ),
                     child: RecordingGrid(
                       recordings: state.videos,
@@ -176,6 +179,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ],
         ),
       ),
+      backgroundColor: AppColors.fifty,
     );
   }
 }
