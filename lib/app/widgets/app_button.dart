@@ -12,12 +12,14 @@ class AppButton extends StatelessWidget {
   final double borderRadius;
   final AppButtonVariant variant;
   final bool fullWidth;
+  final TextStyle? textStyle;
 
   const AppButton._({
     super.key,
     required this.text,
     required this.onPressed,
     required this.variant,
+    this.textStyle,
     this.isLoading = false,
     this.height = 48,
     this.borderRadius = 24,
@@ -28,6 +30,7 @@ class AppButton extends StatelessWidget {
     Key? key,
     required String text,
     required VoidCallback? onPressed,
+    TextStyle? textStyle,
     bool isLoading = false,
     double height = 48,
     double borderRadius = 24,
@@ -37,6 +40,7 @@ class AppButton extends StatelessWidget {
       key: key,
       text: text,
       onPressed: onPressed,
+      textStyle: textStyle,
       isLoading: isLoading,
       height: height,
       borderRadius: borderRadius,
@@ -49,6 +53,7 @@ class AppButton extends StatelessWidget {
     Key? key,
     required String text,
     required VoidCallback? onPressed,
+    TextStyle? textStyle,
     bool isLoading = false,
     double height = 48,
     double borderRadius = 24,
@@ -58,6 +63,7 @@ class AppButton extends StatelessWidget {
       key: key,
       text: text,
       onPressed: onPressed,
+      textStyle: textStyle,
       isLoading: isLoading,
       height: height,
       borderRadius: borderRadius,
@@ -70,6 +76,7 @@ class AppButton extends StatelessWidget {
     Key? key,
     required String text,
     required VoidCallback? onPressed,
+    TextStyle? textStyle,
     bool isLoading = false,
     double height = 48,
     double borderRadius = 24,
@@ -79,6 +86,7 @@ class AppButton extends StatelessWidget {
       key: key,
       text: text,
       onPressed: onPressed,
+      textStyle: textStyle,
       isLoading: isLoading,
       height: height,
       borderRadius: borderRadius,
@@ -91,6 +99,7 @@ class AppButton extends StatelessWidget {
     Key? key,
     required String text,
     required VoidCallback? onPressed,
+    TextStyle? textStyle,
     bool isLoading = false,
     double height = 48,
     double borderRadius = 24,
@@ -100,6 +109,7 @@ class AppButton extends StatelessWidget {
       key: key,
       text: text,
       onPressed: onPressed,
+      textStyle: textStyle,
       isLoading: isLoading,
       height: height,
       borderRadius: borderRadius,
@@ -112,6 +122,7 @@ class AppButton extends StatelessWidget {
     Key? key,
     required String text,
     required VoidCallback? onPressed,
+    TextStyle? textStyle,
     bool isLoading = false,
     double height = 48,
     double borderRadius = 24,
@@ -121,6 +132,7 @@ class AppButton extends StatelessWidget {
       key: key,
       text: text,
       onPressed: onPressed,
+      textStyle: textStyle,
       isLoading: isLoading,
       height: height,
       borderRadius: borderRadius,
@@ -190,7 +202,9 @@ class AppButton extends StatelessWidget {
 
     return Text(
       text,
-      style: AppTextStyles.textMedium.copyWith(color: scheme.foreground),
+      style: (textStyle ?? AppTextStyles.textMedium).copyWith(
+        color: scheme.foreground,
+      ),
     );
   }
 
@@ -221,21 +235,21 @@ class AppButton extends StatelessWidget {
           foreground: AppColors.fifty,
           backgroundDisabled: AppColors.primary.withValues(alpha: 0.35),
           foregroundDisabled: AppColors.twoHundred,
-          elevation: 2,
+          elevation: 4,
         );
 
       case AppButtonVariant.ghost:
         return _ButtonScheme(
           foreground: AppColors.sixHundred,
           foregroundDisabled: AppColors.threeHundred,
-          elevation: 0
+          elevation: 0,
         );
 
       case AppButtonVariant.dangerGhost:
         return _ButtonScheme(
           foreground: AppColors.primary,
           foregroundDisabled: AppColors.primary.withValues(alpha: 0.35),
-          elevation: 0
+          elevation: 0,
         );
     }
   }
