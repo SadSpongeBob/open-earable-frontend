@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/app/widgets/app_button.dart';
+import 'package:openearable/app/widgets/pill_menu.dart';
 import 'package:openearable/app/widgets/input_box.dart';
 
 import '../../../api/models/project/project_role.dart';
@@ -19,51 +20,6 @@ extension _RoleChoiceX on RoleChoice {
 
   ProjectRole toProjectRole() =>
       this == RoleChoice.editor ? Editor(userId: '') : Viewer(userId: '');
-}
-
-class RoleDropdownPill extends StatelessWidget {
-  const RoleDropdownPill({
-    super.key,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final RoleChoice value;
-  final ValueChanged<RoleChoice> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 140,
-      height: 55,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(36),
-          border: Border.all(width: 3, color: AppColors.nineHundred),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<RoleChoice>(
-            value: value,
-            isExpanded: true,
-            icon: const Icon(Icons.arrow_drop_down),
-            style: AppTextStyles.textMedium,
-            items: RoleChoice.values
-                .map(
-                  (r) => DropdownMenuItem<RoleChoice>(
-                    value: r,
-                    child: Text(r.label),
-                  ),
-                )
-                .toList(),
-            onChanged: (v) {
-              if (v != null) onChanged(v);
-            },
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class UsersPopup extends ConsumerStatefulWidget {
@@ -158,9 +114,15 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    RoleDropdownPill(
-                      value: _role,
-                      onChanged: (v) => setState(() => _role = v),
+                    SizedBox(
+                      width: 140,
+                      height: 55,
+                      child: PillMenu<RoleChoice>(
+                        value: _role,
+                        options: RoleChoice.values,
+                        labelOf: (r) => r.label,
+                        onChanged: (v) => setState(() => _role = v),
+                      ),
                     ),
                   ],
                 ),
@@ -202,7 +164,10 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                     decoration: const BoxDecoration(
                       border: Border(
                         top: BorderSide(color: AppColors.fourHundred, width: 2),
-                        bottom: BorderSide(color: AppColors.fourHundred, width: 2),
+                        bottom: BorderSide(
+                          color: AppColors.fourHundred,
+                          width: 2,
+                        ),
                       ),
                     ),
                     child: Padding(

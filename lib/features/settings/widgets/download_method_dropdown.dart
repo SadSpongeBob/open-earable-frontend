@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/services/user/user_preference_storage.dart';
-import '../../../app/theme/text_styles.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/widgets/pill_menu.dart';
 
-class CustomDropdown extends ConsumerStatefulWidget {
-  const CustomDropdown({super.key});
+class DownloadMethodDropdown extends ConsumerStatefulWidget {
+  const DownloadMethodDropdown({super.key});
 
   @override
-  ConsumerState<CustomDropdown> createState() => _CustomDropdownState();
+  ConsumerState<DownloadMethodDropdown> createState() =>
+      _DownloadMethodDropdownState();
 }
 
-class _CustomDropdownState extends ConsumerState<CustomDropdown> {
+class _DownloadMethodDropdownState
+    extends ConsumerState<DownloadMethodDropdown> {
   static const String _wifiOnlyText = 'Download with WiFi';
   static const String _mobileAndWifiText = 'Download with mobile data and WiFi';
 
-  static const List<String> _options = [
-    _wifiOnlyText,
-    _mobileAndWifiText,
-  ];
+  static const List<String> _options = [_wifiOnlyText, _mobileAndWifiText];
 
   String _selected = _wifiOnlyText;
   bool _loading = true;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -42,51 +43,30 @@ class _CustomDropdownState extends ConsumerState<CustomDropdown> {
   Future<void> _onSelected(String value) async {
     setState(() {
       _selected = value;
+      _saving = true;
     });
 
     final storage = ref.read(userPreferenceStorage);
     final wifiOnly = value == _wifiOnlyText;
     await storage.setWifiOnly(wifiOnly);
+
+    if (!mounted) return;
+    setState(() => _saving = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final itemStyle = AppTextStyles.textMedium;
-    final dropdownItemStyle = AppTextStyles.textMedium;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF1F1F1F), width: 3),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(_loading ? 'Loading' : _selected, style: itemStyle),
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.arrow_drop_down),
-            onSelected: _onSelected,
-            itemBuilder: (context) => _options.map((opt) {
-              return PopupMenuItem<String>(
-                value: opt,
-                child: Text(
-                  opt,
-                  style: dropdownItemStyle.copyWith(
-                    color: _getColor(opt),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
+    return PillMenu<String>(
+      value: (_loading || _saving) ? null : _selected,
+      options: _options,
+      labelOf: (s) => s,
+      onChanged: _onSelected,
+      itemColor: _getColor,
     );
   }
 
   Color _getColor(String value) {
-    return value == _selected ? Colors.red : Colors.black;
+    if (_loading) return AppColors.nineHundred;
+    return value == _selected ? AppColors.primary : AppColors.nineHundred;
   }
 }

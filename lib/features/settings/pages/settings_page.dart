@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/models/auth/user.dart';
-import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/auth/state/user_provider.dart';
@@ -109,7 +109,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                         ),
 
                         const SizedBox(height: 10),
-                        const CustomDropdown(),
+                        const DownloadMethodDropdown(),
                         const SizedBox(height: 10),
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -122,7 +122,10 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                             GestureDetector(
                               onTap: () =>
                                   ref.read(authControllerProvider).logout(),
-                              child: Text("Log In", style: AppTextStyles.footerBold),
+                              child: Text(
+                                "Log In",
+                                style: AppTextStyles.footerBold,
+                              ),
                             ),
                           ],
                         ),
@@ -185,68 +188,39 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                const CustomDropdown(),
+                                const DownloadMethodDropdown(),
                                 const SizedBox(height: 10),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
+                                    horizontal: 4,
                                   ),
                                   child: Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      OutlinedButton(
-                                        onPressed: busy
-                                            ? null
-                                            : () => ref
-                                                  .read(authControllerProvider)
-                                                  .logout(),
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 12,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              30,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Sign Out',
-                                          style: AppTextStyles.footerMedium,
+                                      Expanded(
+                                        child: AppButton.secondary(
+                                          text: 'Sign Out',
+                                          onPressed: busy
+                                              ? null
+                                              : ref
+                                                    .read(
+                                                      authControllerProvider,
+                                                    )
+                                                    .logout,
+                                          textStyle: AppTextStyles.footerMedium,
                                         ),
                                       ),
-                                      ElevatedButton(
-                                        onPressed: busy
-                                            ? null
-                                            : () => _handleDelete(),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: 12,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              30,
-                                            ),
-                                          ),
+                                      const SizedBox(width: 24),
+                                      Expanded(
+                                        child: AppButton.danger(
+                                          text: 'Delete Account',
+                                          onPressed: busy
+                                              ? null
+                                              : _handleDelete,
+                                          textStyle: AppTextStyles.footerMedium,
+                                          isLoading: _loading,
                                         ),
-                                        child: _loading
-                                            ? const SizedBox(
-                                                width: 18,
-                                                height: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : Text(
-                                                'Delete Account',
-                                                style: AppTextStyles.footerMedium
-                                                    .copyWith(color: AppColors.fifty),
-                                              ),
                                       ),
                                     ],
                                   ),
@@ -264,11 +238,12 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                               children: [
                                 const Text('Failed to load user'),
                                 const SizedBox(height: 8),
-                                OutlinedButton(
+                                AppButton.secondary(
+                                  text: 'Retry',
                                   onPressed: () async => ref
                                       .read(settingsControllerProvider)
                                       .refreshUser(),
-                                  child: const Text('Retry'),
+                                  textStyle: AppTextStyles.footerMedium,
                                 ),
                               ],
                             ),
