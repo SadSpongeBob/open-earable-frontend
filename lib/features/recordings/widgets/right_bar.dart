@@ -36,7 +36,7 @@ class HomeRecordingRightBar extends StatelessWidget {
       padding: padding,
       child: Column(
         children: [
-          Btn(
+          _Btn(
             asset: 'assets/buttons/settings_button.png',
             size: 70,
             onTap: onSettings,
@@ -46,14 +46,14 @@ class HomeRecordingRightBar extends StatelessWidget {
           const Spacer(),
           Column(
             children: [
-              Btn(
+              _Btn(
                 asset: 'assets/buttons/wave-sound.png',
                 size: 52,
                 onTap: onWaveSound,
                 semanticLabel: 'Wave sound',
               ),
 
-              Btn(
+              _Btn(
                 asset: isRecording
                     ? 'assets/buttons/shutter_on.png'
                     : 'assets/buttons/shutter.png',
@@ -64,7 +64,7 @@ class HomeRecordingRightBar extends StatelessWidget {
               ),
 
               if (showFlipButton)
-                Btn(
+                _Btn(
                   asset: isRecording
                       ? (isPaused
                           ? 'assets/buttons/pause_true.png'
@@ -80,7 +80,7 @@ class HomeRecordingRightBar extends StatelessWidget {
           ),
 
           const Spacer(),
-          Btn(
+          _Btn(
             asset: 'assets/buttons/bluetooth.png',
             size: 70,
             onTap: onBluetooth,
@@ -92,9 +92,8 @@ class HomeRecordingRightBar extends StatelessWidget {
   }
 }
 
-class Btn extends StatelessWidget {
-  const Btn({
-    super.key,
+class _Btn extends StatelessWidget {
+  const _Btn({
     required this.asset,
     required this.onTap,
     required this.semanticLabel,

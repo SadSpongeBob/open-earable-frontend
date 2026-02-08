@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 
 class RecordingLeftBar extends StatelessWidget {
   const RecordingLeftBar({
@@ -12,7 +13,7 @@ class RecordingLeftBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 110,
-      color: Colors.white,
+      color: AppColors.fifty,
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,

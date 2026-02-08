@@ -1,6 +1,8 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import '../../../app/routing/routes.dart';
 import '../controllers/recording_controller.dart';
@@ -72,7 +74,7 @@ class _RecordingPageState extends State<RecordingPage> {
       return Center(
         child: Text(
           _controller.error!,
-          style: const TextStyle(color: Colors.white),
+          style: AppTextStyles.textRegular.copyWith(color: AppColors.fifty),
         ),
       );
     }
@@ -94,7 +96,7 @@ class _RecordingPageState extends State<RecordingPage> {
           RecordingLeftBar(onBackToProjects: _navigateToHome),
           Expanded(
             child: Container(
-              color: Colors.black,
+              color: AppColors.nineHundred,
               child: Stack(children: [ _buildCameraPreview() ]),
             ),
           ),
