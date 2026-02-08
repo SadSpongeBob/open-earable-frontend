@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/app/widgets/input_box.dart';
 import '../../../app/theme/text_styles.dart';
 
 class AddProjectDialog extends StatefulWidget {
-  const AddProjectDialog({
-    super.key,
-    this.initialName = '',
-  });
+  const AddProjectDialog({super.key, this.initialName = ''});
 
   final String initialName;
 
@@ -14,9 +13,7 @@ class AddProjectDialog extends StatefulWidget {
     return showDialog<String>(
       context: context,
       barrierDismissible: true,
-      builder: (_) => Center(
-        child: AddProjectDialog(initialName: initialName),
-      ),
+      builder: (_) => Center(child: AddProjectDialog(initialName: initialName)),
     );
   }
 
@@ -67,11 +64,11 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
           width: 400,
           height: 248,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.fifty,
             borderRadius: BorderRadius.circular(36),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x1F000000),
+                color: AppColors.fiveHundred,
                 blurRadius: 12,
                 offset: Offset(0, 6),
               ),
@@ -111,17 +108,20 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                 width: 400,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade300),
+                  color: AppColors.fifty,
+                  border: Border.symmetric(
+                    horizontal: BorderSide(
+                      color: AppColors.sixHundred,
+                      width: 2,
+                    ),
+                  ),
                 ),
                 child: Align(
                   alignment: Alignment.center,
-                  child: TextButton(
+                  child: AppButton.dangerGhost(
+                    text: 'Add',
                     onPressed: _working ? null : _handleAdd,
-                    child: const Text(
-                      'Add',
-                      style: TextStyle(color: Colors.red, fontSize: 25),
-                    ),
+                    borderRadius: 0,
                   ),
                 ),
               ),
@@ -129,14 +129,15 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                 width: 400,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.fifty,
                   borderRadius: BorderRadius.circular(36),
                 ),
                 child: Align(
                   alignment: Alignment.center,
-                  child: TextButton(
+                  child: AppButton.ghost(
+                    text: 'Close',
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Close', style: TextStyle(color: Colors.grey[700], fontSize: 25)),
+                    borderRadius: 0,
                   ),
                 ),
               ),
