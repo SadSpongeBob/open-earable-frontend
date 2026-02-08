@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
-import 'home_text_field.dart';
+import 'package:openearable/app/widgets/input_box.dart';
 
 class RenameProjectDialog extends StatefulWidget {
-  const RenameProjectDialog({
-    super.key,
-    this.initialName = '',
-  });
+  const RenameProjectDialog({super.key, this.initialName = ''});
 
   final String initialName;
 
-  static Future<String?> show(
-      BuildContext context, {
-        String initialName = '',
-      }) {
+  static Future<String?> show(BuildContext context, {String initialName = ''}) {
     return showDialog<String>(
       context: context,
       barrierDismissible: true,
@@ -67,11 +61,7 @@ class _RenameProjectDialogState extends State<RenameProjectDialog> {
       child: AnimatedPadding(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          bottom: bottomInset,
-        ),
+        padding: EdgeInsets.only(left: 16, right: 16, bottom: bottomInset),
         child: Align(
           alignment: Alignment.center,
           child: Container(
@@ -104,10 +94,9 @@ class _RenameProjectDialogState extends State<RenameProjectDialog> {
                   SizedBox(
                     width: 300,
                     height: 55,
-                    child: HomeTextField(
+                    child: InputBox(
                       controller: _controller,
-                      hint: 'Project name',
-                      textAlign: TextAlign.center,
+                      hint: 'Project Name',
                       focusNode: _focus,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) {
@@ -125,5 +114,3 @@ class _RenameProjectDialogState extends State<RenameProjectDialog> {
     );
   }
 }
-
-

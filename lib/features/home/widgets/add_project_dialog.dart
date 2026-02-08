@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/widgets/input_box.dart';
 import '../../../app/theme/text_styles.dart';
-import 'home_text_field.dart';
 
 class AddProjectDialog extends StatefulWidget {
   const AddProjectDialog({
@@ -20,7 +20,6 @@ class AddProjectDialog extends StatefulWidget {
     );
   }
 
-
   @override
   State<AddProjectDialog> createState() => _AddProjectDialogState();
 }
@@ -34,7 +33,6 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialName);
-
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focus.requestFocus();
@@ -59,7 +57,6 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
       if (mounted) setState(() => _working = false);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -97,10 +94,9 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
               SizedBox(
                 width: 345,
                 height: 55,
-                child: HomeTextField(
+                child: InputBox(
                   controller: _controller,
-                  hint: 'Project name',
-                  textAlign: TextAlign.center,
+                  hint: 'Project Name',
                   focusNode: _focus,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) {
@@ -108,7 +104,6 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                   },
                 ),
               ),
-
 
               const SizedBox(height: 15),
 

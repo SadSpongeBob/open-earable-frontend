@@ -10,6 +10,9 @@ class InputBox extends StatelessWidget {
   final Widget? suffixIcon;
   final TextInputType keyboardType;
   final TextAlign textAlign;
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   const InputBox({
     super.key,
@@ -20,6 +23,9 @@ class InputBox extends StatelessWidget {
     this.suffixIcon,
     this.keyboardType = TextInputType.text,
     this.textAlign = TextAlign.start,
+    this.focusNode,
+    this.textInputAction,
+    this.onSubmitted,
   });
 
   @override
@@ -30,6 +36,9 @@ class InputBox extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       textAlign: textAlign,
+      focusNode: focusNode,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onSubmitted,
       style: AppTextStyles.textRegular,
       decoration: InputDecoration(
         hintText: hint,

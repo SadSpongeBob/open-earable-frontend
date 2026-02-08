@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/app/widgets/app_button.dart';
-
-import 'package:openearable/features/home/widgets/home_text_field.dart';
+import 'package:openearable/app/widgets/input_box.dart';
 
 import '../../../api/models/project/project_role.dart';
 import '../../../api/models/project/project_user.dart';
@@ -151,7 +150,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                     SizedBox(
                       width: 330,
                       height: 55,
-                      child: HomeTextField(
+                      child: InputBox(
                         controller: _emailController,
                         hint: 'User Email',
                         keyboardType: TextInputType.emailAddress,
