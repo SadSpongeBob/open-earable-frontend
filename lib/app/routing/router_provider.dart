@@ -12,7 +12,7 @@ import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
-import 'package:openearable/features/playback/pages/Playback.dart';
+import 'package:openearable/features/playback/pages/playback_page.dart';
 
 
 final routerProvider = Provider<GoRouter>((ref) {
