@@ -7,7 +7,6 @@ class Recording {
   final String name;
 
   final RecordingSource source;
-  final String? videoUrl;
 
   final String? thumbnailUrl;
   final String? localThumbnailPath;
@@ -29,7 +28,7 @@ class Recording {
     required this.videoTimestamp,
     this.projectId,
     required this.userId,
-    required this.uploadStatus, this.videoUrl,
+    required this.uploadStatus,
   });
 
   factory Recording.local({
@@ -59,7 +58,6 @@ class Recording {
     id: json['recordingId'] as String,
     name: json['name'] as String,
     source: RecordingSource.cloud,
-    videoUrl: json['videoUrl'] as String?,
     thumbnailUrl: json['thumbnailUrl'] as String?,
     videoTimestamp: DateTime.parse(json['videoTimestamp']).toUtc(),
     projectId: json['projectId'] as String?,
