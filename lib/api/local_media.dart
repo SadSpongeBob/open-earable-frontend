@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,8 +10,9 @@ class LocalMedia {
   static const defaultProjectId = 'default';
 
   final Directory baseDir;
+  final Directory exportDir;
 
-  LocalMedia(this.baseDir);
+  LocalMedia(this.baseDir, this.exportDir);
 
   Directory defaultProjectDir() =>
       Directory(p.join(baseDir.path, defaultProjectId));
@@ -34,29 +34,22 @@ class LocalMedia {
 
   File recordingMetaFile(String projectId, String recordingId) =>
       File(p.join(baseDir.path, projectId, recordingId, metaName));
-  Future<Directory> exportDir(String recordingId) async {
-    final baseExportDir = Directory(
-      p.join(
-        "/storage/emulated/0/Download",
-        "OpenEarable",
-      ),
-    );
-    await baseExportDir.create(recursive: true);
-    final targetDir = Directory(
-      p.join(baseExportDir.path, recordingId),
-    );
-    await targetDir.create(recursive: true);
-    return targetDir;
-  }
+
+  Directory recordingExportDir(String recordingId) =>
+      Directory(p.join(exportDir.path, recordingId));
+
   static Future<LocalMedia> initLocalMedia() async {
     final base = await getApplicationDocumentsDirectory();
-    final dir = Directory(
-      p.join(base.path, "OpenEarable"),
-    );
+    final baseDir = Directory(p.join(base.path, "OpenEarable"));
+    final export =
+        await getDownloadsDirectory() ??
+        Directory("/storage/emulated/0/Download");
+    final exportDir = Directory(p.join(export.path, "OpenEarable"));
 
-    await dir.create(recursive: true);
+    await baseDir.create(recursive: true);
+    await exportDir.create(recursive: true);
 
-    return LocalMedia(dir);
+    return LocalMedia(baseDir, exportDir);
   }
 }
 

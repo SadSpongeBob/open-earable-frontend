@@ -126,7 +126,7 @@ class PlaybackController {
   }
   Future<void> exportVideoFolder() async {
     final s3 = ref.read(s3ServiceProvider);
-    final exportDir = await localMedia.exportDir(videoName);
+    final exportDir = await localMedia.recordingExportDir(videoName);
     await exportDir.create(recursive: true);
     if (cloudVideo) {
       final rec = await recordingService.getRecording(recordingId);
