@@ -1,10 +1,12 @@
+import 'package:openearable/api/models/recording/upload_recording_request.dart';
+
 class UploadRecordingResponse {
   final String recordingId;
   final String name;
   final String? projectId;
   final UploadInfo videoUpload;
   final List<SensorUploadInfo> sensorUploads;
-  final UploadInfo? thumbnailUpload;
+  final ThumbnailUploadInfo? thumbnailUpload;
 
   UploadRecordingResponse({
     required this.recordingId,
@@ -16,25 +18,22 @@ class UploadRecordingResponse {
   });
 
   factory UploadRecordingResponse.fromJson(Map<String, dynamic> json) {
+    final recordingId = json['recordingId'] as String;
+    final name = json['name'] as String;
+    final projectId = json['projectId'] as String?;
 
+    final videoUpload = UploadInfo.fromJson(
+      json['videoUpload'] as Map<String, dynamic>,
+    );
 
-    final rawData = (json['data'] is Map<String, dynamic>) ? json['data'] as Map<String, dynamic> : json;
+    final sensorUploads = (json['sensorUploads'] as List)
+        .map((e) => SensorUploadInfo.fromJson(e as Map<String, dynamic>))
+        .toList();
 
-    final recordingId = rawData['recordingId'] as String;
-    final name = rawData['name'] as String;
-    final projectId = rawData['projectId'] as String?;
-
-    final videoUploadRaw = rawData['videoUpload'];
-    final videoUpload = UploadInfo.fromJson(Map<String, dynamic>.from(videoUploadRaw));
-
-    final sensorUploadsRaw = rawData['sensorUploads'];
-    final sensorUploads = <SensorUploadInfo>[];
-    for (final e in sensorUploadsRaw) {
-      sensorUploads.add(SensorUploadInfo.fromJson(Map<String, dynamic>.from(e)));
-    }
-
-    final thumbnailRaw = rawData['thumbnailUpload'];
-    final thumbnailUpload = (thumbnailRaw is Map) ? UploadInfo.fromJson(Map<String, dynamic>.from(thumbnailRaw)) : null;
+    final thumbnailRaw = json['thumbnailUpload'] as Map<String, dynamic>?;
+    final thumbnailUpload = thumbnailRaw != null
+        ? ThumbnailUploadInfo.fromJson(thumbnailRaw)
+        : null;
 
     return UploadRecordingResponse(
       recordingId: recordingId,
@@ -51,7 +50,7 @@ class UploadInfo {
   final String filename;
   final String key;
   final String uploadUrl;
-  final String timestamp;
+  final DateTime timestamp;
   final Map<String, String> requiredHeaders;
 
   UploadInfo({
@@ -63,15 +62,12 @@ class UploadInfo {
   });
 
   factory UploadInfo.fromJson(Map<String, dynamic> json) {
-    final filename = json['filename'] as String? ?? '';
-    final key = json['key'] as String? ?? '';
+    final filename = json['filename'] as String;
+    final key = json['key'] as String;
     final uploadUrl = json['uploadUrl'] as String;
-    final timestamp = json['timestamp'] as String? ?? '';
-    final rawHeaders = json['requiredHeaders'];
-    final headers = <String, String>{};
-    rawHeaders.forEach((k, v) {
-      if (k is String && v != null) headers[k] = v.toString();
-    });
+    final timestamp = DateTime.parse(json['timestamp']).toUtc();
+    final headers = (json['requiredHeaders'] as Map<String, dynamic>)
+        .cast<String, String>();
 
     return UploadInfo(
       filename: filename,
@@ -88,7 +84,7 @@ class SensorUploadInfo {
   final int sensorIndex;
   final String name;
   final UploadInfo sensor;
-  final String type;
+  final SensorType type;
 
   SensorUploadInfo({
     required this.sensorId,
@@ -97,22 +93,35 @@ class SensorUploadInfo {
     required this.sensor,
     required this.type,
   });
-  ///I will fix this when sensors are ready
 
   factory SensorUploadInfo.fromJson(Map<String, dynamic> json) {
-    final sensorId = json['sensorId'] as String? ?? '';
-    final sensorIndex = (json['sensorIndex'] is int) ? json['sensorIndex'] as int : int.tryParse('${json['sensorIndex'] ?? ''}') ?? 0;
-    final name = json['name'] as String? ?? '';
-    final sensorRaw = json['sensor'] as Map<String, dynamic>?;
-    if (sensorRaw == null) throw Exception('sensor field missing in SensorUploadInfo');
-    final sensor = UploadInfo.fromJson(sensorRaw);
-    final type = json['type'] as String? ?? '';
+    final sensorId = json['sensorId'] as String;
+    final sensorIndex = json['sensorIndex'] as int;
+    final name = json['name'] as String;
+    final type = SensorType.fromString(json['sensorType'] as String);
+    final sensor = UploadInfo.fromJson(json['sensor'] as Map<String, dynamic>);
+
     return SensorUploadInfo(
       sensorId: sensorId,
       sensorIndex: sensorIndex,
       name: name,
       sensor: sensor,
       type: type,
+    );
+  }
+}
+
+class ThumbnailUploadInfo {
+  final String uploadUrl;
+  final Map<String, String> requiredHeaders;
+
+  ThumbnailUploadInfo({required this.uploadUrl, required this.requiredHeaders});
+
+  factory ThumbnailUploadInfo.fromJson(Map<String, dynamic> json) {
+    return ThumbnailUploadInfo(
+      uploadUrl: json['uploadUrl'] as String,
+      requiredHeaders: (json['requiredHeaders'] as Map<String, dynamic>)
+          .cast<String, String>(),
     );
   }
 }
