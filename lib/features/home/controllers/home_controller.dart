@@ -159,11 +159,19 @@ class HomeController {
   bool get canManageRecordings {
     final project = _findById(state.openProjectId);
     if (project == null) return false;
-
     if (project.projectSource == ProjectSource.local) return true;
+    if (!_authState.isAuthenticated) return true;
+    final myUserId = _authState.user?.userId;
+    if (myUserId == null) return false;
+    final me = state.projectUsers
+        .where((u) => u.userId == myUserId)
+        .toList()
+        .firstOrNull;
 
-    return true;
+    if (me == null) return false;
+    return me.role is Owner || me.role is Editor;
   }
+
   Future<bool> canMoveToCloudProject({
     required String targetProjectId,
     required String myUserId,
