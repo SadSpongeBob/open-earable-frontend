@@ -756,70 +756,106 @@ class HomeController {
       }
     }
 
+    // Determine source/target project types
+    final sourceMeta = _findById(sourceProjectId);
+    final targetMeta = _findById(targetProjectId);
+
+    final sourceIsLocal = sourceProjectId == LocalMedia.defaultProjectId ||
+        (sourceMeta != null && sourceMeta.projectSource == ProjectSource.local);
+
+    final targetIsLocal = targetProjectId == LocalMedia.defaultProjectId ||
+        (targetMeta != null && targetMeta.projectSource == ProjectSource.local);
+
+    // Enforce: local->local OR cloud->cloud only
+    if (sourceIsLocal != targetIsLocal) {
+      _toast(const ToastEvent.error('You can only move local→local or cloud→cloud'));
+      return;
+    }
+
     var successCount = 0;
     final failed = <String>[];
 
     _state.setLoading(true);
     try {
       // ---- Local move (filesystem) ----
-      for (final id in localIds) {
-        final rec = _findRecordingById(id);
-        if (rec == null) {
-          failed.add(id);
-          continue;
-        }
-
-        try {
-          final srcDir = _localMedia.recordingDir(sourceProjectId, id);
-          final dstDir = _localMedia.recordingDir(targetProjectId, id);
-
-          if (!await srcDir.exists()) {
+      if (localIds.isNotEmpty) {
+        for (final id in localIds) {
+          final rec = _findRecordingById(id);
+          if (rec == null) {
             failed.add(id);
             continue;
           }
 
-          await dstDir.parent.create(recursive: true);
-          await srcDir.rename(dstDir.path);
-          successCount++;
-        } catch (e) {
-          failed.add(id);
-          _error(e, userMessage: 'Failed to move recording "${rec.name}"');
+          try {
+            final srcDir = _localMedia.recordingDir(sourceProjectId, id);
+            final dstDir = _localMedia.recordingDir(targetProjectId, id);
+
+            if (!await srcDir.exists()) {
+              failed.add(id);
+              continue;
+            }
+
+            await dstDir.parent.create(recursive: true);
+            await srcDir.rename(dstDir.path);
+            successCount++;
+          } catch (e) {
+            failed.add(id);
+            _error(e, userMessage: 'Failed to move recording "${rec.name}"');
+          }
         }
       }
 
       // ---- Cloud move ----
       if (cloudIds.isNotEmpty) {
+        // Permission check FIRST so we can show "No permission" instead of "moved 0 failed 1"
+        final myUserId = _authState.user?.userId;
+        if (myUserId == null) {
+          _toast(const ToastEvent.error('No permission'));
+          return;
+        }
+
+        final canMove = await canMoveToCloudProject(
+          targetProjectId: targetProjectId,
+          myUserId: myUserId,
+        );
+
+        if (!canMove) {
+          return;
+        }
+
         try {
           await _projectService.moveRecordings(
             recordingIds: cloudIds,
-            targetProjectId: targetProjectId == LocalMedia.defaultProjectId ? null : targetProjectId,
+            targetProjectId:
+            targetProjectId == LocalMedia.defaultProjectId ? null : targetProjectId,
           );
           successCount += cloudIds.length;
         } on DioException catch (e) {
-          failed.addAll(cloudIds);
-
           final code = e.response?.statusCode;
           if (code == 403) {
             _toast(const ToastEvent.error('No permission'));
-          } else {
-            _error(e, userMessage: 'Failed to move cloud recordings');
+            return;
           }
-        } catch (e) {
-          failed.addAll(cloudIds);
           _error(e, userMessage: 'Failed to move cloud recordings');
+          return;
+        } catch (e) {
+          _error(e, userMessage: 'Failed to move cloud recordings');
+          return;
         }
       }
+    } finally {
+      _state.setLoading(false);
 
       await _refreshOpenProjectRecordings();
       _state.clearRecordingSelection();
 
       if (failed.isEmpty) {
-        _success(successCount == 1 ? 'Recording moved' : 'Recordings moved');
+        if (successCount > 0) {
+          _success(successCount == 1 ? 'Recording moved' : 'Recordings moved');
+        }
       } else {
         _toast(ToastEvent.error('Moved $successCount, failed ${failed.length}'));
       }
-    } finally {
-      _state.setLoading(false);
     }
   }
 

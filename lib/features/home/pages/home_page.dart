@@ -40,6 +40,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.initState();
     Future.microtask(() => ref.read(homeControllerProvider).loadProjects());
   }
+
   void _exitMoveMode() {
     if (!_isChoosingMoveTarget) return;
     setState(() {
@@ -62,34 +63,60 @@ class _HomePageState extends ConsumerState<HomePage> {
       ref.read(toastProvider.notifier).state = null;
     });
 
-    final state = ref.watch(homeStateProvider);
+    // ✅ watch only what this widget needs (reduces rebuilds / lag)
+    final projects = ref.watch(homeStateProvider.select((s) => s.projects));
+    final openProjectId =
+    ref.watch(homeStateProvider.select((s) => s.openProjectId));
+
+    final isProjectSelectionMode =
+    ref.watch(homeStateProvider.select((s) => s.isProjectSelectionMode));
+    final selectedProjectIds =
+    ref.watch(homeStateProvider.select((s) => s.selectedProjectIds));
+
+    final recordings = ref.watch(homeStateProvider.select((s) => s.recordings));
+    final isRecordingSelectionMode = ref.watch(
+      homeStateProvider.select((s) => s.isRecordingSelectionMode),
+    );
+    final selectedRecordingIds = ref.watch(
+      homeStateProvider.select((s) => s.selectedRecordingIds),
+    );
+
     final controller = ref.read(homeControllerProvider);
     final session = ref.watch(sessionProvider);
 
-    final selectedProjectCount = state.selectedProjectIds.length;
+    final selectedProjectCount = selectedProjectIds.length;
 
-    final openMeta = state.projects
-        .where((p) => p.id == state.openProjectId)
+    final openMeta = projects
+        .where((p) => p.id == openProjectId)
         .cast<ProjectMetadata?>()
         .toList()
         .firstOrNull;
 
-    final isLocalOpenProject = _isLocalProject(openMeta, state.openProjectId);
+    final isLocalOpenProject = _isLocalProject(openMeta, openProjectId);
 
-    final showUsersButton = session.isAuthenticated && !isLocalOpenProject &&
-            state.openProjectId != 'default' && !_isChoosingMoveTarget;
+    // ✅ disable users button while choosing move target
+    final showUsersButton = session.isAuthenticated &&
+        !isLocalOpenProject &&
+        openProjectId != LocalMedia.defaultProjectId &&
+        !_isChoosingMoveTarget;
 
     final canManageRecordings = controller.canManageRecordings;
 
     Future<void> handlePickMoveTarget(ProjectMetadata target) async {
       final targetIsLocal = _isLocalProject(target, target.id);
-      final sourceIsLocal = _isLocalProject(openMeta, state.openProjectId);
+      final sourceIsLocal = _isLocalProject(openMeta, openProjectId);
+
       if (sourceIsLocal != targetIsLocal) {
-        emitToast(ref as Ref, const ToastEvent.error('You can only move local→local or cloud→cloud'));
+        ref.read(toastProvider.notifier).state =
+        const ToastEvent.error(
+          'You can only move local→local or cloud→cloud',
+        );
         return;
       }
-      if (target.id == state.openProjectId) {
-        emitToast(ref as Ref, const ToastEvent.error('Choose a different project'));
+
+      if (target.id == openProjectId) {
+        ref.read(toastProvider.notifier).state =
+        const ToastEvent.error('Choose a different project');
         return;
       }
 
@@ -102,6 +129,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       controller.exitRecordingSelectionMode();
     }
 
+    final selectionEnabled =
+        canManageRecordings && isRecordingSelectionMode && !_isChoosingMoveTarget;
+
     return Scaffold(
       body: SafeArea(
         child: Row(
@@ -113,14 +143,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                 children: [
                   Positioned.fill(
                     child: ProjectBar(
-                      projects: state.projects,
-                      openProjectId: state.openProjectId,
-                      isSelectionMode: state.isProjectSelectionMode,
-                      selectedProjectIds: state.selectedProjectIds,
+                      projects: projects,
+                      openProjectId: openProjectId,
+                      isSelectionMode: isProjectSelectionMode,
+                      selectedProjectIds: selectedProjectIds,
                       onAddProject: () async {
                         final name = await AddProjectDialog.show(context);
                         if (name == null) return;
-                        await controller.createProject(name);},
+                        await controller.createProject(name);
+                      },
                       onTapProject: (item) {
                         if (_isChoosingMoveTarget) {
                           handlePickMoveTarget(item);
@@ -133,7 +164,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
 
-                  if (state.isProjectSelectionMode)
+                  if (isProjectSelectionMode)
                     Positioned(
                       left: 0,
                       right: 0,
@@ -143,7 +174,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         onDelete: () {
                           if (selectedProjectCount == 0) return;
 
-                          final projectIds = state.selectedProjectIds;
+                          final projectIds = selectedProjectIds;
                           DeleteConfirmDialog.show(
                             context,
                             title: 'Do you really want to\ndelete these projects?',
@@ -156,13 +187,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                         },
                         onDuplicate: () {
                           if (selectedProjectCount == 0) return;
-                          controller.duplicateProjects(state.selectedProjectIds);
+                          controller.duplicateProjects(selectedProjectIds);
                         },
                         onRename: () {
                           if (selectedProjectCount != 1) return;
-                          final projectId = state.selectedProjectIds.first;
+                          final projectId = selectedProjectIds.first;
                           final project =
-                          state.projects.firstWhere((p) => p.id == projectId);
+                          projects.firstWhere((p) => p.id == projectId);
 
                           showDialog<String>(
                             context: context,
@@ -192,54 +223,56 @@ class _HomePageState extends ConsumerState<HomePage> {
                         fit: BoxFit.cover,
                       ),
                     ),
-                    child: RecordingGrid(
-                      recordings: state.recordings,
-                      isSelectionMode: canManageRecordings &&
-                          state.isRecordingSelectionMode &&
-                          !_isChoosingMoveTarget,
-                      selectedRecordingIds: state.selectedRecordingIds,
-                      onTapRecording: (item) {
-                        if (_isChoosingMoveTarget) {
-                          _exitMoveMode();
-                          return;
+                    child: RepaintBoundary(
+                      child: RecordingGrid(
+                        recordings: recordings,
+                        isSelectionMode: selectionEnabled,
+                        selectedRecordingIds: selectedRecordingIds,
+                        onTapRecording: (item) {
+                          if (_isChoosingMoveTarget) {
+                            _exitMoveMode();
+                            return;
+                          }
+                          controller.handleRecordingTap(item.id);
+                        },
+                        onLongPressRecording: canManageRecordings
+                            ? (item) {
+                          if (_isChoosingMoveTarget) return;
+                          controller.handleRecordingLongPress(item.id);
                         }
-                        controller.handleRecordingTap(item.id);
-                      },
-                      onLongPressRecording: canManageRecordings
-                          ? (item) {
-                        if (_isChoosingMoveTarget) return;
-                        controller.handleRecordingLongPress(item.id);
-                      }
-                          : null,
+                            : null,
+                      ),
                     ),
                   ),
 
-                  if (canManageRecordings && state.isRecordingSelectionMode)
+                  if (selectionEnabled)
                     Positioned(
                       left: 0,
                       right: 0,
                       bottom: 0,
                       child: RecordingSelectionActionBar(
-                        selectedCount: state.selectedRecordingIds.length,
+                        selectedCount: selectedRecordingIds.length,
                         onDelete: () {
                           DeleteConfirmDialog.show(
                             context,
-                            title: 'Do you really want to\ndelete these recordings?',
+                            title:
+                            'Do you really want to\ndelete these recordings?',
                             onDelete: () async {
-                              await controller.deleteRecordings(state.selectedRecordingIds);
+                              await controller
+                                  .deleteRecordings(selectedRecordingIds);
                               if (!mounted) return;
                               controller.exitRecordingSelectionMode();
                             },
                           );
                         },
                         onDuplicate: () {
-                          controller.duplicateRecordings(state.selectedRecordingIds);
+                          controller.duplicateRecordings(selectedRecordingIds);
                         },
                         onMove: () {
                           setState(() {
                             _isChoosingMoveTarget = true;
                             _recordingIdsToMove =
-                            Set<String>.from(state.selectedRecordingIds);
+                            Set<String>.from(selectedRecordingIds);
                           });
                         },
                         onDone: controller.exitRecordingSelectionMode,
@@ -266,7 +299,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                   if (showUsersButton)
                     Positioned(
-                      bottom: state.isRecordingSelectionMode ? 20 + 52 + 10 : 20,
+                      bottom: isRecordingSelectionMode ? 20 + 52 + 10 : 20,
                       right: 24,
                       child: UsersButton(
                         onTap: () {
@@ -282,7 +315,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
 
-            // RIGHT BAR
+            // RIGHT BAR (disabled/grey in move mode)
             AbsorbPointer(
               absorbing: _isChoosingMoveTarget,
               child: AnimatedOpacity(
