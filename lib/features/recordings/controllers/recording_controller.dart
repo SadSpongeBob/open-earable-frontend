@@ -3,16 +3,20 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image/image.dart' as img;
 import 'package:openearable/app/utils/helpers.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import '../../../api/local_media.dart';
 
-final recordingControllerProvider = Provider<RecordingController>((ref) {
-  final localMedia = ref.read(localMediaProvider);
-
-  return RecordingController(localMedia: localMedia);
-});
+final recordingControllerProvider = Provider.autoDispose
+    .family<RecordingController, CameraLensDirection>((ref, initial) {
+      final localMedia = ref.read(localMediaProvider);
+      final controller = RecordingController(
+        localMedia: localMedia,
+        initialCamera: initial,
+      );
+      ref.onDispose(controller.dispose);
+      return controller;
+    });
 
 class RecordingController {
   RecordingController({
@@ -31,11 +35,10 @@ class RecordingController {
   bool isPaused = false;
 
   Future<void> init() async {
+    if (isInitialized) return;
     currentLens = initialCamera;
     cameras = await availableCameras();
-    if (cameras.isEmpty) {
-      throw Exception("No cameras found");
-    }
+    if (cameras.isEmpty) throw Exception("No cameras found");
     await _initCameraController(currentLens);
     isInitialized = true;
   }
@@ -48,13 +51,19 @@ class RecordingController {
 
     await cameraController?.dispose();
 
-    cameraController = CameraController(
+    final next = CameraController(
       camera,
       ResolutionPreset.high,
       enableAudio: true,
     );
 
-    await cameraController!.initialize();
+    try {
+      await next.initialize();
+      cameraController = next;
+    } catch (_) {
+      await next.dispose();
+      rethrow;
+    }
   }
 
   Future<void> startRecording() async {
@@ -63,9 +72,8 @@ class RecordingController {
       throw Exception("Camera not initialized");
     }
 
-    await cameraController!.startVideoRecording();
-
     _recordingStartedAt = DateTime.now().toUtc();
+    await cameraController!.startVideoRecording();
 
     isRecording = true;
     isPaused = false;
@@ -102,7 +110,7 @@ class RecordingController {
   }
 
   Future<void> toggleCamera() async {
-    if (cameras.isEmpty) return;
+    if (isRecording || cameras.isEmpty) return;
 
     currentLens = currentLens == CameraLensDirection.front
         ? CameraLensDirection.back
@@ -123,16 +131,10 @@ class RecordingController {
     final videoFile = _localMedia.videoFile(projectId, recordingId);
     await File(file.path).copy(videoFile.path);
 
-    final thumbData = await generateThumbnail(videoFile.path);
-
+    final thumbData = await _generateThumbnail(videoFile.path);
     if (thumbData != null) {
-      final decoded = img.decodeImage(thumbData);
-
-      if (decoded != null) {
-        final thumbFile = _localMedia.thumbnailFile(projectId, recordingId);
-
-        await thumbFile.writeAsBytes(img.encodePng(decoded));
-      }
+      final thumbFile = _localMedia.thumbnailFile(projectId, recordingId);
+      await thumbFile.writeAsBytes(thumbData);
     }
 
     final metaFile = _localMedia.recordingMetaFile(projectId, recordingId);
@@ -150,7 +152,7 @@ class RecordingController {
     return recordingId;
   }
 
-  Future<Uint8List?> generateThumbnail(String videoPath) {
+  Future<Uint8List?> _generateThumbnail(String videoPath) {
     return vt.VideoThumbnail.thumbnailData(
       video: videoPath,
       imageFormat: vt.ImageFormat.JPEG,

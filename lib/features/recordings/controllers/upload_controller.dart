@@ -57,7 +57,7 @@ class UploadController {
         ),
         sensors: const [],
         projectId: projectId == LocalMedia.defaultProjectId ? null : projectId,
-        thumbnailContent: thumbnailExists ? ContentType.png : null,
+        thumbnailContent: thumbnailExists ? ContentType.jpeg : null,
       );
 
       final uploadResp = await recordingService.startUpload(req);

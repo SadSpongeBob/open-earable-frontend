@@ -24,51 +24,57 @@ class RecordingPage extends ConsumerStatefulWidget {
 
 class _RecordingPageState extends ConsumerState<RecordingPage> {
   late final RecordingController _controller;
+  bool _busy = false;
 
   @override
   void initState() {
     super.initState();
-
-    _controller = ref.read(recordingControllerProvider);
+    _controller = ref.read(recordingControllerProvider(widget.initialCamera));
     _controller.init().then((_) {
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      setState(() {});
     });
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
   Future<void> _onShutterPressed() async {
-    if (_controller.isRecording) {
-      final path = await _controller.stopRecording(ref.read(homeStateProvider).openProjectId);
-
-      if (path != null) {
-        _navigateToPlayBack(path);
+    if (_busy) return;
+    _busy = true;
+    try {
+      if (_controller.isRecording) {
+        final id = await _controller.stopRecording(
+          ref.read(homeStateProvider).openProjectId,
+        );
+        if (id != null && mounted) {
+          context.go('${Routes.playback}/local/$id');
+        }
+      } else {
+        await _controller.startRecording();
       }
-    } else {
-      await _controller.startRecording();
+    } finally {
+      _busy = false;
     }
 
+    if (!mounted) return;
     setState(() {});
   }
 
   Future<void> _onFlipOrPausePressed() async {
-    if (!_controller.isRecording) {
-      await _controller.toggleCamera();
-    } else {
-      if (_controller.isPaused) {
-        await _controller.resumeRecording();
+    if (_busy) return;
+    _busy = true;
+    try {
+      if (!_controller.isRecording) {
+        await _controller.toggleCamera();
       } else {
-        await _controller.pauseRecording();
+        _controller.isPaused
+            ? await _controller.resumeRecording()
+            : await _controller.pauseRecording();
       }
+    } finally {
+      _busy = false;
     }
 
+    if (!mounted) return;
     setState(() {});
-  }
-  void _navigateToPlayBack(String recordingId) {
-    context.go('${Routes.playback}/$recordingId');
   }
 
   void _navigateToHome() {
@@ -80,9 +86,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Positioned.fill(
-      child: CameraPreview(_controller.cameraController!),
-    );
+    return Positioned.fill(child: CameraPreview(_controller.cameraController!));
   }
 
   @override
@@ -90,17 +94,11 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
     return SafeArea(
       child: Row(
         children: [
-          RecordingLeftBar(
-            onBackToProjects: _navigateToHome,
-          ),
+          RecordingLeftBar(onBackToProjects: _navigateToHome),
           Expanded(
             child: Container(
               color: Colors.black,
-              child: Stack(
-                children: [
-                  _buildCameraPreview(),
-                ],
-              ),
+              child: Stack(children: [_buildCameraPreview()]),
             ),
           ),
           HomeRecordingRightBar(

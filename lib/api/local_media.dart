@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 class LocalMedia {
   static const videoName = 'video.mp4';
-  static const thumbName = 'thumbnail.png';
+  static const thumbName = 'thumbnail.jpeg';
   static const metaName = 'meta.json';
   static const defaultProjectId = 'default';
 
