@@ -38,6 +38,15 @@ class LocalMedia {
   Directory recordingExportDir(String recordingId) =>
       Directory(p.join(exportDir.path, recordingId));
 
+  File videoExportFile(String recordingId) =>
+      File(p.join(exportDir.path, recordingId, videoName));
+
+  File sensorExportFile(
+    String recordingId,
+    String sensorId,
+    String sensorName,
+  ) => File(p.join(exportDir.path, recordingId, sensorId, sensorName));
+
   static Future<LocalMedia> initLocalMedia() async {
     final base = await getApplicationDocumentsDirectory();
     final baseDir = Directory(p.join(base.path, "OpenEarable"));
