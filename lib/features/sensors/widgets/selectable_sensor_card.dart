@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 import 'package:openearable/features/sensors/widgets/sensor_chart.dart';
-import 'package:openearable/features/sensors/widgets/sensor_value_details.dart';
+import 'package:openearable/features/sensors/pages/sensor_details_page.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
@@ -30,7 +30,7 @@ class SelectableSensorCard extends ConsumerWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => SensorValueDetail(
+            builder: (_) => SensorDetailsPage(
               sensor: sensor,
               wearable: wearable,
               sensorIndex: sensorIndex,

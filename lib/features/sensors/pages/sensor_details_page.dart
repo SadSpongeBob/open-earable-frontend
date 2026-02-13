@@ -3,12 +3,12 @@ import 'package:open_earable_flutter/open_earable_flutter.dart';
 import 'package:openearable/features/sensors/widgets/sensor_chart.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
-class SensorValueDetail extends StatelessWidget {
+class SensorDetailsPage extends StatelessWidget {
   final Sensor sensor;
   final Wearable wearable;
   final int sensorIndex;
 
-  const SensorValueDetail({
+  const SensorDetailsPage({
     super.key, 
     required this.sensor, 
     required this.wearable,
