@@ -18,10 +18,12 @@ class Devices extends ConsumerStatefulWidget {
 }
 
 class _Devices extends ConsumerState<Devices> {
+  late final Future<List<SystemIssue>> _systemStatusFuture;
 
   @override
   void initState() {
     super.initState();
+    _systemStatusFuture = _checkSystemStatus();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(wearablesProvider).startScanning();
     });
@@ -30,29 +32,30 @@ class _Devices extends ConsumerState<Devices> {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: FutureBuilder<List<String>>(
-        future: _checkSystemStatus(context),
+      child: FutureBuilder<List<SystemIssue>>(
+        future: _systemStatusFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final errors = snapshot.data ?? [];
+          final issues = snapshot.data ?? [];
 
-          if (errors.isNotEmpty) {
+          if (issues.isNotEmpty) {
           // Bluetooth or Location is off
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: errors.map((error) {
-                  IconData icon;
-                  if (error.contains("Bluetooth")) {
-                    icon = Icons.bluetooth_disabled;
-                  } else if (error.contains("Location")) {
-                    icon = Icons.location_off;
-                  } else {
-                    icon = Icons.error;
-                  }
+                children: issues.map((issue) {
+                  final icon = switch (issue) {
+                    SystemIssue.bluetoothOff => Icons.bluetooth_disabled,
+                    SystemIssue.locationOff => Icons.location_off,
+                  };
+
+                  final message = switch (issue) {
+                    SystemIssue.bluetoothOff => "Bluetooth is off",
+                    SystemIssue.locationOff => "Location is off",
+                  };
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -62,7 +65,7 @@ class _Devices extends ConsumerState<Devices> {
                         Icon(icon, color: Color(0xFF1F1F1F), size: 26),
                         const SizedBox(width: 8),
                         Text(
-                          error,
+                          message,
                           style: GlobalTextStyles.subHeader,
                         ),
                       ],
@@ -203,18 +206,23 @@ class _Devices extends ConsumerState<Devices> {
     }
   }
 
-  Future<List<String>> _checkSystemStatus(BuildContext context) async {
+  Future<List<SystemIssue>> _checkSystemStatus() async {
     final provider = ref.read(wearablesProvider);
-    List<String> errors = [];
+    final issues = <SystemIssue>[];
 
     if (!await provider.isBluetoothOn) {
-      errors.add("Bluetooth is off");
+      issues.add(SystemIssue.bluetoothOff);
     }
 
     if (!await provider.isLocationOn) {
-      errors.add("Location is off");
+      issues.add(SystemIssue.locationOff);
     }
 
-    return errors;
+    return issues;
   }
+}
+
+enum SystemIssue {
+  bluetoothOff,
+  locationOff,
 }
