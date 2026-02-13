@@ -1,40 +1,34 @@
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/features/playback/controllers/playback_controller.dart';
+import 'package:openearable/features/playback/state/playback_state.dart';
+import 'package:video_player/video_player.dart';
 import '../../../app/routing/routes.dart';
 import '../../../app/theme/app_bar_styles.dart';
-import '../../home/state/home_provider.dart';
-import 'rename_dialog.dart';
-import '../controllers/playback_controller.dart';
-class TopBar extends ConsumerStatefulWidget {
-  final PlaybackController controller;
+
+class TopBar extends ConsumerWidget {
+  final VideoPlayerController vc;
   final GlobalKey speedKey;
-  final String? recordingId;
+  final Recording recording;
 
   const TopBar({
-    required this.controller,
-    required this.speedKey,
-    required this.recordingId,
     super.key,
+    required this.vc,
+    required this.speedKey,
+    required this.recording,
   });
 
   @override
-  ConsumerState<TopBar> createState() => _TopBarState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playbackState = ref.watch(playbackProvider(recording.id));
+    final playbackNotifier = ref.read(playbackProvider(recording.id).notifier);
 
-class _TopBarState extends ConsumerState<TopBar> {
-  PlaybackController get controller => widget.controller;
-  GlobalKey get speedKey => widget.speedKey;
-  String? get videoPath => widget.recordingId;
+    vc.setVolume(playbackState.isMuted ? 0 : 1);
+    vc.setPlaybackSpeed(playbackState.speed);
 
-  @override
-  Widget build(BuildContext context) {
-    final vc = controller.videoController;
-    if (vc == null) {
-      return const SizedBox.shrink();
-    }
     return SafeArea(
       child: Container(
         height: 88,
@@ -44,14 +38,16 @@ class _TopBarState extends ConsumerState<TopBar> {
           child: AnimatedBuilder(
             animation: vc,
             builder: (context, _) {
-
-              final isPlaying = vc.value.isPlaying == true;
+              final isPlaying = vc.value.isPlaying;
 
               final speedBadge = InkWell(
                 key: speedKey,
-                onTap: () => controller.setSpeed(controller.speed == 1.0 ? 0.5 : 1.0),
+                onTap: () => playbackNotifier.setSpeed(
+                  playbackState.speed == 1.0 ? 0.5 : 1.0,
+                ),
                 onLongPress: () async {
-                  final renderBox = speedKey.currentContext!.findRenderObject() as RenderBox;
+                  final renderBox =
+                      speedKey.currentContext!.findRenderObject() as RenderBox;
                   final offset = renderBox.localToGlobal(Offset.zero);
                   final size = renderBox.size;
                   final selected = await showMenu<double>(
@@ -64,117 +60,149 @@ class _TopBarState extends ConsumerState<TopBar> {
                       offset.dy,
                     ),
                     items: const [
-                      PopupMenuItem(value: 0.25, child: Text("0.25x", style: GlobalAppBarStyles.appBarBlackText)),
-                      PopupMenuItem(value: 0.5, child: Text("0.5x", style: GlobalAppBarStyles.appBarBlackText)),
-                      PopupMenuItem(value: 1.0, child: Text("1x", style: GlobalAppBarStyles.appBarBlackText)),
-                      PopupMenuItem(value: 1.5, child: Text("1.5x", style: GlobalAppBarStyles.appBarBlackText)),
-                      PopupMenuItem(value: 2.0, child: Text("2x", style: GlobalAppBarStyles.appBarBlackText)),
+                      PopupMenuItem(
+                        value: 0.25,
+                        child: Text(
+                          "0.25x",
+                          style: GlobalAppBarStyles.appBarBlackText,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 0.5,
+                        child: Text(
+                          "0.5x",
+                          style: GlobalAppBarStyles.appBarBlackText,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 1.0,
+                        child: Text(
+                          "1x",
+                          style: GlobalAppBarStyles.appBarBlackText,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 1.5,
+                        child: Text(
+                          "1.5x",
+                          style: GlobalAppBarStyles.appBarBlackText,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 2.0,
+                        child: Text(
+                          "2x",
+                          style: GlobalAppBarStyles.appBarBlackText,
+                        ),
+                      ),
                     ],
                   );
-                  if (selected != null) controller.setSpeed(selected);
+                  if (selected != null) playbackNotifier.setSpeed(selected);
                 },
-                child: Text(controller.speedString, style: GlobalAppBarStyles.appBarBlackText),
+                child: Text(
+                  playbackState.speedString,
+                  style: GlobalAppBarStyles.appBarBlackText,
+                ),
               );
-
-              final left = Row(mainAxisSize: MainAxisSize.min, children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios),
-                  onPressed: () async {
-                    unawaited(controller.stopAndUpload(projectId:  ref.read(homeStateProvider).openProjectId));
-                    context.go(Routes.home);
-                  },
-                  color: const Color(0xFFFF4442),
-                  splashRadius: 20,
-                ),
-                IconButton(
-                  icon: Image.asset('assets/buttons/wave-sound.png', width: 26, height: 26),
-                  onPressed: () {},
-                  splashRadius: 20,
-                ),
-                IconButton(
-                  icon: Icon(controller.isMuted ? Icons.volume_off : Icons.volume_up),
-                  onPressed: controller.toggleMute,
-                  color: Colors.black87,
-                  splashRadius: 20,
-                ),
-                speedBadge,
-                const SizedBox(width: 10),
-                Text(controller.getVideoName(), style: GlobalAppBarStyles.appBarBlackText),
-              ]);
-
-              final centerControls = Row(mainAxisSize: MainAxisSize.min, children: [
-                IconButton(
-                  icon: const Icon(Icons.fast_rewind),
-                  iconSize: 40,
-                  onPressed: () => controller.seekBySeconds(-10),
-                  color: Colors.black87,
-                  splashRadius: 20,
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  iconSize: 40,
-                  icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                  onPressed: controller.togglePlay,
-                  color: Colors.black87,
-                  splashRadius: 20,
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  iconSize: 40,
-                  icon: const Icon(Icons.fast_forward),
-                  onPressed: () => controller.seekBySeconds(10),
-                  color: Colors.black87,
-                  splashRadius: 20,
-                ),
-              ]);
-
-              final right = Row(mainAxisSize: MainAxisSize.min, children: [
-                TextButton(
-                  onPressed: () => controller.exportVideoFolder(),
-                  child: const Text("Export", style: GlobalAppBarStyles.appBarBlackText),
-                ),
-                PopupMenuButton<String>(
-                  color: Colors.white,
-                  onSelected: (value) async {
-                    if (value == "Rename") {
-                      final newName = await showRenameDialog(context, oldName: controller.getVideoName());
-                      if (newName != null && newName.isNotEmpty) {
-                        if (controller.getVideoNamesInProject(newName)) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('video name exists')),
-                          );
-                        } else {
-                          await controller.renameVideo(newName);
-                          setState(() {});
-                        }
-                      }
-                    }
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: "Duplicate", child: Text('Duplicate', style: GlobalAppBarStyles.appBarBlackText)),
-                    PopupMenuItem(value: "Rename", child: Text('Rename', style: GlobalAppBarStyles.appBarBlackText)),
-                  ],
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text("More", style: GlobalAppBarStyles.appBarBlackText),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    controller.deleteVideo();
-                    context.go(Routes.home);
-
-                  },
-                  child: Text("Delete", style: GlobalAppBarStyles.appBarSecondaryText),
-                ),
-              ]);
 
               return Stack(
                 alignment: Alignment.center,
                 children: [
-                  Align(alignment: Alignment.centerLeft, child: left),
-                  centerControls,
-                  Align(alignment: Alignment.centerRight, child: right),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios),
+                          onPressed: () async {
+                            unawaited(
+                              ref
+                                  .read(playbackControllerProvider)
+                                  .stopAndUpload(recording),
+                            );
+                            context.go(Routes.home);
+                          },
+                          color: const Color(0xFFFF4442),
+                          splashRadius: 20,
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            playbackState.isMuted
+                                ? Icons.volume_off
+                                : Icons.volume_up,
+                          ),
+                          onPressed: () => playbackNotifier.toggleMute(),
+                          color: Colors.black87,
+                          splashRadius: 20,
+                        ),
+                        speedBadge,
+                        const SizedBox(width: 10),
+                        Text(
+                          recording.name,
+                          style: GlobalAppBarStyles.appBarBlackText,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.fast_rewind),
+                        iconSize: 40,
+                        onPressed: () => vc.seekTo(
+                          vc.value.position - const Duration(seconds: 10),
+                        ),
+                        splashRadius: 20,
+                      ),
+                      IconButton(
+                        iconSize: 40,
+                        icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+                        onPressed: () => isPlaying ? vc.pause() : vc.play(),
+                        splashRadius: 20,
+                      ),
+                      IconButton(
+                        iconSize: 40,
+                        icon: const Icon(Icons.fast_forward),
+                        onPressed: () => vc.seekTo(
+                          vc.value.position + const Duration(seconds: 10),
+                        ),
+                        splashRadius: 20,
+                      ),
+                    ],
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            ref
+                                .read(playbackControllerProvider)
+                                .exportVideoFolder(recording);
+                          },
+                          child: const Text(
+                            "Export",
+                            style: GlobalAppBarStyles.appBarBlackText,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            ref
+                                .read(playbackControllerProvider)
+                                .deleteRecording(recording);
+                            context.go(Routes.home);
+                          },
+                          child: Text(
+                            "Delete",
+                            style: GlobalAppBarStyles.appBarSecondaryText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               );
             },
