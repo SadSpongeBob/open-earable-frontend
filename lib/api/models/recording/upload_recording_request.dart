@@ -3,7 +3,7 @@ class UploadRecordingRequest {
   final RecordingFile video;
   final List<SensorUpload> sensors;
   final String? projectId;
-  final String? thumbnailContent;
+  final ContentType? thumbnailContent;
 
   UploadRecordingRequest({
     required this.name,
@@ -18,13 +18,13 @@ class UploadRecordingRequest {
     'video': video.toJson(),
     'sensors': sensors.map((s) => s.toJson()).toList(),
     'projectId': projectId,
-    'thumbnailContent': thumbnailContent,
+    'thumbnailContent': thumbnailContent?.jsonRepresentation,
   };
 }
 
 class RecordingFile {
   final String filename;
-  final String contentType;
+  final ContentType contentType;
   final int sizeBytes;
   final DateTime timestamp;
 
@@ -37,7 +37,7 @@ class RecordingFile {
 
   Map<String, dynamic> toJson() => {
     'filename': filename,
-    'contentType': contentType,
+    'contentType': contentType.jsonRepresentation,
     'sizeBytes': sizeBytes,
     'timestamp': timestamp.toUtc().toIso8601String(),
   };
