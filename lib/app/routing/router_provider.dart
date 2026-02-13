@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/app/routing/refresh_stream.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/features/auth/pages/login_page.dart';
@@ -52,10 +52,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const RequestResetPage(),
       ),
       GoRoute(
-        path: '${Routes.playback}/:recordingId',
+        path: '${Routes.playback}/:source/:id',
         builder: (context, state) {
-          final recordingId = state.pathParameters['recordingId'];
-          return PlaybackPage(recordingId: recordingId!);
+          final sourceStr = state.pathParameters['source']!;
+          final id = state.pathParameters['id']!;
+
+          final rec = state.extra as Recording?;
+          final source = sourceStr == 'cloud'
+              ? RecordingSource.cloud
+              : RecordingSource.local;
+
+          return PlaybackPage(
+            recordingId: id,
+            source: source,
+            recording: rec,
+          );
         },
       ),
     ],
