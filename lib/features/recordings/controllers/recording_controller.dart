@@ -4,15 +4,14 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image/image.dart' as img;
-import 'package:uuid/uuid.dart';
+import 'package:openearable/app/utils/helpers.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import '../../../api/local_media.dart';
+
 final recordingControllerProvider = Provider<RecordingController>((ref) {
   final localMedia = ref.read(localMediaProvider);
 
-  return RecordingController(
-    localMedia: localMedia,
-  );
+  return RecordingController(localMedia: localMedia);
 });
 
 class RecordingController {
@@ -26,9 +25,11 @@ class RecordingController {
   CameraController? cameraController;
   List<CameraDescription> cameras = [];
   CameraLensDirection currentLens = CameraLensDirection.back;
+  DateTime? _recordingStartedAt;
   bool isInitialized = false;
   bool isRecording = false;
   bool isPaused = false;
+
   Future<void> init() async {
     currentLens = initialCamera;
     cameras = await availableCameras();
@@ -41,7 +42,7 @@ class RecordingController {
 
   Future<void> _initCameraController(CameraLensDirection lens) async {
     final camera = cameras.firstWhere(
-          (c) => c.lensDirection == lens,
+      (c) => c.lensDirection == lens,
       orElse: () => cameras.first,
     );
 
@@ -55,20 +56,33 @@ class RecordingController {
 
     await cameraController!.initialize();
   }
+
   Future<void> startRecording() async {
-    if (!isInitialized || isRecording) return;
+    if (isRecording) return;
+    if (cameraController == null || !cameraController!.value.isInitialized) {
+      throw Exception("Camera not initialized");
+    }
 
     await cameraController!.startVideoRecording();
+
+    _recordingStartedAt = DateTime.now().toUtc();
 
     isRecording = true;
     isPaused = false;
   }
 
   Future<String?> stopRecording(String projectId) async {
+    if (!isRecording) return null;
+    if (cameraController == null || !cameraController!.value.isInitialized) {
+      throw Exception("Camera not initialized");
+    }
+
     final file = await cameraController!.stopVideoRecording();
     isRecording = false;
     isPaused = false;
-    return await _saveVideo(file, projectId);
+    final recordingId = await _saveVideo(file, projectId);
+    _recordingStartedAt = null;
+    return recordingId;
   }
 
   Future<void> pauseRecording() async {
@@ -86,6 +100,7 @@ class RecordingController {
 
     isPaused = false;
   }
+
   Future<void> toggleCamera() async {
     if (cameras.isEmpty) return;
 
@@ -99,8 +114,9 @@ class RecordingController {
 
     isInitialized = true;
   }
+
   Future<String> _saveVideo(XFile file, String projectId) async {
-    final recordingId = const Uuid().v4();
+    final recordingId = Helpers.getRecordingId();
     final dir = _localMedia.recordingDir(projectId, recordingId);
     await dir.create(recursive: true);
 
@@ -113,20 +129,18 @@ class RecordingController {
       final decoded = img.decodeImage(thumbData);
 
       if (decoded != null) {
-        final thumbFile =
-        _localMedia.thumbnailFile(projectId, recordingId);
+        final thumbFile = _localMedia.thumbnailFile(projectId, recordingId);
 
         await thumbFile.writeAsBytes(img.encodePng(decoded));
       }
     }
 
-    // Metadata
-    final metaFile =
-    _localMedia.recordingMetaFile(projectId, recordingId);
+    final metaFile = _localMedia.recordingMetaFile(projectId, recordingId);
 
     final meta = {
-      "id": recordingId,
-      "timestamp": DateTime.now().toUtc().toIso8601String(),
+      "name": recordingId,
+      "timestamp": (_recordingStartedAt ?? DateTime.now().toUtc())
+          .toIso8601String(),
     };
 
     await metaFile.writeAsString(
@@ -144,6 +158,7 @@ class RecordingController {
       quality: 75,
     );
   }
+
   Future<void> dispose() async {
     await cameraController?.dispose();
   }

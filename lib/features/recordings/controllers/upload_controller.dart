@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:openearable/api/local_media.dart';
@@ -38,18 +37,15 @@ class UploadController {
     final timestampRaw = meta['timestamp'];
     if (name is! String || timestampRaw is! String) return false;
 
-    Directory? tempDir;
-    File? thumbFile;
+    final ts = DateTime.tryParse(timestampRaw)?.toUtc()
+        ?? await _fallbackTimestampUtc(videoFile);
+
 
     String? recordingIdForLog;
 
     try {
-      final thumbBytes = await generateThumbnail(videoFile.path);
-      if (thumbBytes != null) {
-        tempDir = await Directory.systemTemp.createTemp();
-        thumbFile = File("${tempDir.path}/${LocalMedia.thumbName}");
-        await thumbFile.writeAsBytes(thumbBytes);
-      }
+      final thumbnail = localMedia.thumbnailFile(projectId, recordingId);
+      final thumbnailExists = await thumbnail.exists();
 
       final req = UploadRecordingRequest(
         name: name,
@@ -57,11 +53,11 @@ class UploadController {
           filename: videoFile.uri.pathSegments.last,
           contentType: ContentType.mp4,
           sizeBytes: await videoFile.length(),
-          timestamp: DateTime.parse(timestampRaw).toUtc(),
+          timestamp: ts,
         ),
         sensors: const [],
         projectId: projectId == LocalMedia.defaultProjectId ? null : projectId,
-        thumbnailContent: thumbFile != null ? ContentType.jpeg : null,
+        thumbnailContent: thumbnailExists ? ContentType.png : null,
       );
 
       final uploadResp = await recordingService.startUpload(req);
@@ -78,11 +74,11 @@ class UploadController {
         },
       );
 
-      if (uploadResp.thumbnailUpload != null && thumbFile != null) {
+      if (thumbnailExists && uploadResp.thumbnailUpload != null) {
         try {
           await s3Service.uploadFile(
             putUrl: uploadResp.thumbnailUpload!.uploadUrl,
-            file: thumbFile,
+            file: thumbnail,
             headers: uploadResp.thumbnailUpload!.requiredHeaders,
           );
         } catch (e) {
@@ -111,24 +107,17 @@ class UploadController {
         debugPrint(
           "Upload failed local=$recordingId project=$projectId remote=$recordingIdForLog",
         );
+        debugPrint("Error: $e");
       }
       return false;
-    } finally {
-      try {
-        if (tempDir != null && await tempDir.exists()) {
-          await tempDir.delete(recursive: true);
-        }
-      } catch (_) {}
     }
   }
 
-  Future<Uint8List?> generateThumbnail(String videoPath) {
-    return vt.VideoThumbnail.thumbnailData(
-      video: videoPath,
-      imageFormat: vt.ImageFormat.JPEG,
-      maxWidth: 512,
-      quality: 75,
-    );
+  Future<DateTime> _fallbackTimestampUtc(File file) async {
+    final stat = await file.stat();
+    final modified = stat.modified.toUtc();
+    final changed = stat.changed.toUtc();
+    return changed.isBefore(modified) ? changed : modified;
   }
 }
 
