@@ -89,11 +89,44 @@ class RecordingService {
     await _dio.delete(RecordingEndpoints.deleteRecording(recordingId));
   }
 
+  Future<void> deleteLocalRecording(String projectId, String recordingId) async {
+    final dir = _localMedia.recordingDir(projectId, recordingId);
+    if (!await dir.exists()) return;
+
+    await dir.delete(recursive: true);
+  }
+
   Future<void> rename(String recordingId, String name) async {
     await _dio.put(
       RecordingEndpoints.rename(recordingId),
       data: {'name': name},
     );
+  }
+
+  Future<void> renameLocal({
+    required String projectId,
+    required String recordingId,
+    required String newName,
+  }) async {
+    final metaFile = _localMedia.recordingMetaFile(projectId, recordingId);
+    if (!await metaFile.exists()) {
+      throw FileSystemException("Meta file not found", metaFile.path);
+    }
+
+    final raw = await metaFile.readAsString();
+    final dynamic decoded = jsonDecode(raw);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException("Meta file is not a JSON object");
+    }
+
+    decoded['name'] = newName;
+
+    final tmp = File('${metaFile.path}.tmp');
+    await tmp.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(decoded),
+      flush: true,
+    );
+    await tmp.rename(metaFile.path);
   }
 
   Future<List<Recording>> getRecordings() async {

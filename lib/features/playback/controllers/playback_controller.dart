@@ -107,7 +107,11 @@ class PlaybackController {
     if (rec.isCloud) {
       await recordingService.rename(rec.id, newName);
     } else {
-      await recordingService.renameLocal(rec.id, newName);
+      await recordingService.renameLocal(
+        projectId: rec.projectId ?? LocalMedia.defaultProjectId,
+        recordingId: rec.id,
+        newName: newName,
+      );
     }
   }
 
