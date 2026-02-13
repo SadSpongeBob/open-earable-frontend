@@ -19,6 +19,7 @@ class _SaveConfigRowState extends ConsumerState<SaveConfigRow> {
   @override
   Widget build(BuildContext context) {
     final provider = ref.watch(sensorConfigurationProviderFamily(widget.deviceId));
+    final storage = ref.read(sensorConfigurationStorageProvider);
 
     return ListTile(
       title: TextField(
@@ -47,7 +48,7 @@ class _SaveConfigRowState extends ConsumerState<SaveConfigRow> {
           Map<String, String> config = provider.toJson();
 
           if (_configName.isNotEmpty) {
-            await SensorConfigurationStorage.saveConfiguration(
+            await storage.saveConfiguration(
               _configName.trim(),
               config,
             );

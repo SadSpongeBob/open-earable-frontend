@@ -117,7 +117,8 @@ class _SensorConfigurationDeviceRowState
       _content = [CircularProgressIndicator()];
     });
 
-    final configKeys = await SensorConfigurationStorage.listConfigurationKeys();
+    final storage = ref.read(sensorConfigurationStorageProvider);
+    final configKeys = await storage.listConfigurationKeys();
 
     if (!mounted) return;
 
@@ -135,7 +136,7 @@ class _SensorConfigurationDeviceRowState
         title: Text(key),
         onTap: () async {
           final config =
-              await SensorConfigurationStorage.loadConfiguration(key);
+              await storage.loadConfiguration(key);
           if (!mounted) return;
 
           final result = await ref.read(
@@ -165,7 +166,7 @@ class _SensorConfigurationDeviceRowState
         trailing: IconButton(
           icon: const Icon(Icons.delete),
           onPressed: () async {
-            await SensorConfigurationStorage.deleteConfiguration(key);
+            await storage.deleteConfiguration(key);
             if (mounted) _updateContent();
           },
         ),
