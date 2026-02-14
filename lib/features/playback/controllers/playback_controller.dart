@@ -6,27 +6,17 @@ import 'package:video_player/video_player.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/services/s3/s3_service.dart';
-import 'package:openearable/features/home/state/home_provider.dart';
 
-final videoPlayerControllerByKeyProvider = FutureProvider.autoDispose
-    .family<VideoPlayerController, String>((ref, key) async {
-      final parts = key.split('|');
-      final id = parts.isNotEmpty ? parts[0] : key;
-      final sourceIndex = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
-      final source = RecordingSource.values[sourceIndex];
-      final home = ref.read(homeStateProvider);
-      Recording rec = home.videos.firstWhere(
-        (r) => r.id == id && r.source == source,
-      );
-
+final videoPlayerControllerProvider = FutureProvider.autoDispose
+    .family<VideoPlayerController, Recording>((ref, recording) async {
       late final VideoPlayerController vc;
 
-      if (rec.isCloud) {
+      if (recording.isCloud) {
         final recordingService = ref.read(recordingServiceProvider);
-        final r = await recordingService.getRecording(rec.id);
+        final r = await recordingService.getRecording(recording.id);
         vc = VideoPlayerController.networkUrl(Uri.parse(r.videoUrl));
       } else {
-        final path = rec.localVideoPath;
+        final path = recording.localVideoPath;
         if (path == null) throw Exception("Missing localVideoPath");
         final file = File(path);
         if (!await file.exists()) throw Exception("Local video file missing");

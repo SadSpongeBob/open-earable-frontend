@@ -75,6 +75,15 @@ class Recording {
       uploadStatus: uploadStatus,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Recording && other.id == id && other.source == source;
+  }
+
+  @override
+  int get hashCode => Object.hash(id, source);
 }
 
 enum UploadStatus {
