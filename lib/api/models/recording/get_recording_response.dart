@@ -23,7 +23,7 @@ class GetRecordingResponse {
   });
 
   factory GetRecordingResponse.fromJson(Map<String, dynamic> json) {
-    final sensors = (json['sensorUploads'] as List)
+    final sensors = (json['sensors'] as List)
         .map((e) => GetSensorResponse.fromJson(e as Map<String, dynamic>))
         .toList();
 
