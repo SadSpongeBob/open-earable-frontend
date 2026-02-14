@@ -8,6 +8,8 @@ import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 
+
+
 import '../../../app/theme/text_styles.dart';
 import '../../../app/widgets/user_card.dart';
 import '../widgets/auth_footer_link.dart';

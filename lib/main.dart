@@ -11,6 +11,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
 
+  // Force landscape orientation before the app starts.
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
@@ -36,6 +37,7 @@ class OpenEarableApp extends ConsumerWidget {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'OpenEarable',
+
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Roboto',
@@ -45,6 +47,7 @@ class OpenEarableApp extends ConsumerWidget {
       builder: (context, child) {
         return Stack(children: [child!, const AppBootstrapper()]);
       },
+
     );
   }
 }

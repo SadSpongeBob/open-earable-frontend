@@ -15,7 +15,7 @@ class Recording {
 
   final DateTime videoTimestamp;
   final String? projectId;
-  final String userId;
+  final String? userId;
   final UploadStatus uploadStatus;
 
   const Recording({
@@ -27,7 +27,7 @@ class Recording {
     this.localVideoPath,
     required this.videoTimestamp,
     this.projectId,
-    required this.userId,
+    this.userId,
     required this.uploadStatus,
   });
 
@@ -38,7 +38,6 @@ class Recording {
     required DateTime videoTimestamp,
     String? localThumbnailPath,
     String? projectId,
-    required String userId,
     UploadStatus uploadStatus = UploadStatus.pending,
   }) {
     return Recording(
@@ -49,7 +48,6 @@ class Recording {
       localThumbnailPath: localThumbnailPath,
       videoTimestamp: videoTimestamp,
       projectId: projectId,
-      userId: userId,
       uploadStatus: uploadStatus,
     );
   }
@@ -64,17 +62,41 @@ class Recording {
     userId: json['userId'] as String,
     uploadStatus: UploadStatus.fromString(json['uploadStatus']),
   );
+
+  Recording copyWith({String? name, UploadStatus? uploadStatus}) {
+    return Recording(
+      id: id,
+      name: name ?? this.name,
+      source: source,
+      thumbnailUrl: thumbnailUrl,
+      videoTimestamp: videoTimestamp,
+      projectId: projectId,
+      userId: userId,
+      uploadStatus: uploadStatus ?? this.uploadStatus,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Recording && other.id == id && other.source == source;
+  }
+
+  @override
+  int get hashCode => Object.hash(id, source);
 }
 
 enum UploadStatus {
   completed,
   failed,
+  uploading,
   pending;
 
   factory UploadStatus.fromString(String value) {
     return switch (value) {
       'COMPLETED' => UploadStatus.completed,
       'PENDING' => UploadStatus.pending,
+      'UPLOADING' => UploadStatus.uploading,
       'FAILED' => UploadStatus.failed,
       _ => throw ArgumentError.value(value, 'value', 'Invalid UploadStatus'),
     };
@@ -89,7 +111,7 @@ extension RecordingX on Recording {
   bool get isCloud => source == RecordingSource.cloud;
 
   bool get isUploading =>
-      source == RecordingSource.local && uploadStatus == UploadStatus.pending;
+      source == RecordingSource.local && uploadStatus == UploadStatus.uploading;
 
   bool get canRetryUpload =>
       source == RecordingSource.local && uploadStatus == UploadStatus.failed;

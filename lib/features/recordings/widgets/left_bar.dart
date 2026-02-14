@@ -12,7 +12,7 @@ class RecordingLeftBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 110,
+      width: 100,
       color: AppColors.fifty,
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(

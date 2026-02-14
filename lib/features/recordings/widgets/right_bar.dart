@@ -31,7 +31,7 @@ class HomeRecordingRightBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 150,
+      width: 100,
       color: AppColors.fifty,
       padding: padding,
       child: Column(
