@@ -6,9 +6,26 @@ import 'package:video_player/video_player.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/services/s3/s3_service.dart';
+import 'package:openearable/features/home/state/home_provider.dart';
 
-final videoPlayerControllerProvider = FutureProvider.autoDispose
-    .family<VideoPlayerController, Recording>((ref, rec) async {
+final videoPlayerControllerByKeyProvider = FutureProvider.autoDispose
+    .family<VideoPlayerController, String>((ref, key) async {
+      final parts = key.split('|');
+      final id = parts.isNotEmpty ? parts[0] : key;
+      final sourceIndex = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+      final source = RecordingSource.values[sourceIndex];
+      final home = ref.read(homeStateProvider);
+      Recording rec = home.videos.firstWhere(
+        (r) => r.id == id && r.source == source,
+        orElse: () => Recording(
+          id: id,
+          name: 'Recording $id',
+          source: source,
+          videoTimestamp: DateTime.now().toUtc(),
+          uploadStatus: UploadStatus.pending,
+        ),
+      );
+
       late final VideoPlayerController vc;
 
       if (rec.isCloud) {
@@ -24,7 +41,6 @@ final videoPlayerControllerProvider = FutureProvider.autoDispose
       }
 
       await vc.initialize();
-
       await vc.play();
 
       ref.onDispose(() async {
@@ -36,6 +52,7 @@ final videoPlayerControllerProvider = FutureProvider.autoDispose
 
       return vc;
     });
+final videoPlayerControllerProvider = videoPlayerControllerByKeyProvider;
 
 final playbackControllerProvider = Provider<PlaybackController>((ref) {
   final localMedia = ref.read(localMediaProvider);

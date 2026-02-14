@@ -271,7 +271,8 @@ class TopBar extends ConsumerWidget {
                         ),
                         TextButton(
                           onPressed: () {
-                            controller.deleteRecording(current);
+                            unawaited(controller.deleteRecording(current));
+                            ref.read(homeStateProvider.notifier).removeRecording(current.id, current.source);
                             context.go(Routes.home);
                           },
                           child: Text(

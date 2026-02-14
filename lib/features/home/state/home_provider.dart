@@ -138,4 +138,15 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
       ],
     );
   }
+
+  void removeRecording(String id, RecordingSource source) {
+    final updated = state.videos.where((r) => !(r.id == id && r.source == source)).toList();
+
+    final shouldClearSelected = state.selectedVideoId != null && state.selectedVideoId == id;
+
+    state = state.copyWith(
+      videos: updated,
+      selectedVideoId: shouldClearSelected ? null : state.selectedVideoId,
+    );
+  }
 }

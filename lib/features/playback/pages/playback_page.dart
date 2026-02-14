@@ -29,9 +29,8 @@ class PlaybackPage extends ConsumerWidget {
           (r) => r.id == recordingId && r.source == source,
           orElse: () => throw Exception('Recording not found'),
         );
-
-    final videoAsync = ref.watch(videoPlayerControllerProvider(rec));
-
+    final recKey = '${rec.id}|${rec.source.index}';
+    final videoAsync = ref.watch(videoPlayerControllerByKeyProvider(recKey));
     final speedKey = GlobalKey();
 
     return Scaffold(
