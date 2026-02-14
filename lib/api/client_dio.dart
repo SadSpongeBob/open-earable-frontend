@@ -32,6 +32,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return ref.read(_networkModuleProvider).authService;
 });
 
+
 final awsDioProvider = Provider<Dio>((ref) {
   return Dio(
     BaseOptions(

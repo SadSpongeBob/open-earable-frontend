@@ -5,13 +5,14 @@ import 'package:path_provider/path_provider.dart';
 
 class LocalMedia {
   static const videoName = 'video.mp4';
-  static const thumbName = 'thumbnail.png';
+  static const thumbName = 'thumbnail.jpeg';
   static const metaName = 'meta.json';
   static const defaultProjectId = 'default';
 
   final Directory baseDir;
+  final Directory exportDir;
 
-  LocalMedia(this.baseDir);
+  LocalMedia(this.baseDir, this.exportDir);
 
   Directory defaultProjectDir() =>
       Directory(p.join(baseDir.path, defaultProjectId));
@@ -34,14 +35,31 @@ class LocalMedia {
   File recordingMetaFile(String projectId, String recordingId) =>
       File(p.join(baseDir.path, projectId, recordingId, metaName));
 
+  Directory recordingExportDir(String recordingId) =>
+      Directory(p.join(exportDir.path, recordingId));
+
+  File videoExportFile(String recordingId) =>
+      File(p.join(exportDir.path, recordingId, videoName));
+
+  File sensorExportFile(
+    String recordingId,
+    String sensorId,
+    String sensorName,
+  ) => File(p.join(exportDir.path, recordingId, sensorId, sensorName));
+
   static Future<LocalMedia> initLocalMedia() async {
     final base = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(base.path, 'openEarable', 'folder'));
-    await dir.create(recursive: true);
-    return LocalMedia(dir);
+    final baseDir = Directory(p.join(base.path, "OpenEarable"));
+    final export = Directory("/storage/emulated/0/Download");
+    final exportDir = Directory(p.join(export.path, "OpenEarable"));
+
+    await baseDir.create(recursive: true);
+    await exportDir.create(recursive: true);
+
+    return LocalMedia(baseDir, exportDir);
   }
 }
 
 final localMediaProvider = Provider<LocalMedia>((_) {
-  throw UnimplementedError('localMediaProvider not overridden');
+  throw UnimplementedError("localMediaProvider not overridden");
 });
