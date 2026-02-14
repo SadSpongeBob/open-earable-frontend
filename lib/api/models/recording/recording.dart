@@ -62,6 +62,19 @@ class Recording {
     userId: json['userId'] as String,
     uploadStatus: UploadStatus.fromString(json['uploadStatus']),
   );
+
+  Recording copyWith(String name) {
+    return Recording(
+      id: id,
+      name: name,
+      source: source,
+      thumbnailUrl: thumbnailUrl,
+      videoTimestamp: videoTimestamp,
+      projectId: projectId,
+      userId: userId,
+      uploadStatus: uploadStatus,
+    );
+  }
 }
 
 enum UploadStatus {

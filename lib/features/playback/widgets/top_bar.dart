@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/playback/controllers/playback_controller.dart';
 import 'package:openearable/features/playback/state/playback_state.dart';
 import 'package:video_player/video_player.dart';
 import '../../../app/routing/routes.dart';
 import '../../../app/theme/app_bar_styles.dart';
+import 'rename_dialog.dart';
 
 class TopBar extends ConsumerWidget {
   final VideoPlayerController vc;
@@ -23,11 +25,54 @@ class TopBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playbackState = ref.watch(playbackProvider(recording.id));
-    final playbackNotifier = ref.read(playbackProvider(recording.id).notifier);
+    final home = ref.watch(homeStateProvider);
+    final current = ref.watch(
+      homeStateProvider.select((home) {
+        for (final r in home.videos) {
+          if (r.id == recording.id && r.source == recording.source) return r;
+        }
+        return recording;
+      }),
+    );
+
+    final playbackState = ref.watch(playbackProvider(current.id));
+    final playbackNotifier = ref.read(playbackProvider(current.id).notifier);
 
     vc.setVolume(playbackState.isMuted ? 0 : 1);
     vc.setPlaybackSpeed(playbackState.speed);
+
+    final controller = ref.read(playbackControllerProvider);
+
+    bool nameExistsInSameProject(String name) {
+      return home.videos.any(
+        (r) =>
+            r.projectId == current.projectId &&
+            r.name == name &&
+            !(r.id == current.id && r.source == current.source),
+      );
+    }
+
+    Future<void> doRename() async {
+      final newName = await showRenameDialog(context, oldName: current.name);
+      if (newName == null || newName.trim().isEmpty) return;
+
+      final trimmed = newName.trim();
+
+      if (nameExistsInSameProject(trimmed)) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('video name exists')));
+        }
+        return;
+      }
+
+      await controller.renameRecording(current, trimmed);
+
+      ref
+          .read(homeStateProvider.notifier)
+          .updateRecordingName(current.id, current.source, trimmed);
+    }
 
     return SafeArea(
       child: Container(
@@ -50,6 +95,7 @@ class TopBar extends ConsumerWidget {
                       speedKey.currentContext!.findRenderObject() as RenderBox;
                   final offset = renderBox.localToGlobal(Offset.zero);
                   final size = renderBox.size;
+
                   final selected = await showMenu<double>(
                     color: Colors.white,
                     context: context,
@@ -97,6 +143,7 @@ class TopBar extends ConsumerWidget {
                       ),
                     ],
                   );
+
                   if (selected != null) playbackNotifier.setSpeed(selected);
                 },
                 child: Text(
@@ -115,15 +162,20 @@ class TopBar extends ConsumerWidget {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.arrow_back_ios),
-                          onPressed: () async {
-                            unawaited(
-                              ref
-                                  .read(playbackControllerProvider)
-                                  .stopAndUpload(recording),
-                            );
+                          onPressed: () {
+                            unawaited(controller.stopAndUpload(current));
                             context.go(Routes.home);
                           },
                           color: const Color(0xFFFF4442),
+                          splashRadius: 20,
+                        ),
+                        IconButton(
+                          icon: Image.asset(
+                            'assets/buttons/wave-sound.png',
+                            width: 26,
+                            height: 26,
+                          ),
+                          onPressed: () {},
                           splashRadius: 20,
                         ),
                         IconButton(
@@ -139,12 +191,13 @@ class TopBar extends ConsumerWidget {
                         speedBadge,
                         const SizedBox(width: 10),
                         Text(
-                          recording.name,
+                          current.name,
                           style: GlobalAppBarStyles.appBarBlackText,
                         ),
                       ],
                     ),
                   ),
+
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -154,45 +207,70 @@ class TopBar extends ConsumerWidget {
                         onPressed: () => vc.seekTo(
                           vc.value.position - const Duration(seconds: 10),
                         ),
+                        color: Colors.black87,
                         splashRadius: 20,
                       ),
+                      const SizedBox(width: 8),
                       IconButton(
                         iconSize: 40,
                         icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
                         onPressed: () => isPlaying ? vc.pause() : vc.play(),
+                        color: Colors.black87,
                         splashRadius: 20,
                       ),
+                      const SizedBox(width: 8),
                       IconButton(
                         iconSize: 40,
                         icon: const Icon(Icons.fast_forward),
                         onPressed: () => vc.seekTo(
                           vc.value.position + const Duration(seconds: 10),
                         ),
+                        color: Colors.black87,
                         splashRadius: 20,
                       ),
                     ],
                   ),
+
                   Align(
                     alignment: Alignment.centerRight,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TextButton(
-                          onPressed: () {
-                            ref
-                                .read(playbackControllerProvider)
-                                .exportVideoFolder(recording);
-                          },
+                          onPressed: () =>
+                              controller.exportVideoFolder(current),
                           child: const Text(
                             "Export",
                             style: GlobalAppBarStyles.appBarBlackText,
                           ),
                         ),
+                        PopupMenuButton<String>(
+                          color: Colors.white,
+                          onSelected: (value) async {
+                            if (value == "Rename") {
+                              await doRename();
+                            }
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: "Rename",
+                              child: Text(
+                                'Rename',
+                                style: GlobalAppBarStyles.appBarBlackText,
+                              ),
+                            ),
+                          ],
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
+                              "More",
+                              style: GlobalAppBarStyles.appBarBlackText,
+                            ),
+                          ),
+                        ),
                         TextButton(
                           onPressed: () {
-                            ref
-                                .read(playbackControllerProvider)
-                                .deleteRecording(recording);
+                            controller.deleteRecording(current);
                             context.go(Routes.home);
                           },
                           child: Text(
