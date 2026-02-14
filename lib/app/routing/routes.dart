@@ -7,6 +7,7 @@ class Routes {
   static const String settings = '/settings';
   static const String export = '/export';
   static const String sensordata = '/sensordata';
+  static const String sensordataDetails = '/sensordata-details';
   static const String resetPassword = '/reset-password';
   static const String requestResetPassword = '/request-reset-password';
 }

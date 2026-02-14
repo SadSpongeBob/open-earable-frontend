@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 import 'package:openearable/features/sensors/widgets/sensor_chart.dart';
-import 'package:openearable/features/sensors/pages/sensor_details_page.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
+import '../../../app/routing/routes.dart';
 
 class SelectableSensorCard extends ConsumerWidget {
   final Sensor sensor;
@@ -28,14 +29,13 @@ class SelectableSensorCard extends ConsumerWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => SensorDetailsPage(
-              sensor: sensor,
-              wearable: wearable,
-              sensorIndex: sensorIndex,
-            ),
-          ),
+        context.push(
+          Routes.sensordataDetails,
+          extra: {
+            'sensor': sensor,
+            'wearable': wearable,
+            'sensorIndex': sensorIndex,
+          },
         );
       },
       child: Card(

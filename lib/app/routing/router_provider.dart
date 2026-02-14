@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 import 'package:go_router/go_router.dart';
 import 'package:openearable/app/routing/refresh_stream.dart';
 import 'package:openearable/app/routing/routes.dart';
@@ -13,6 +14,8 @@ import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
 import 'package:openearable/features/sensors/pages/sensor_page.dart';
+import 'package:openearable/features/sensors/pages/sensor_details_page.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = GoRouterRefreshStream(
@@ -55,6 +58,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final isRecordingSource = state.uri.queryParameters['source'] == 'recording';
           return SensorPage(isRecordingSource: isRecordingSource);
+        },
+      ),
+      GoRoute(
+        path: Routes.sensordataDetails,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+
+          if (data == null) {
+            return const Scaffold(
+              body: Center(
+                child: Text(
+                  "Sensor data are missing. Please go back.", 
+                  style: GlobalTextStyles.subHeader,
+                )
+              ),
+            );
+          }
+
+          return SensorDetailsPage(
+            sensor: data['sensor'] as Sensor,
+            wearable: data['wearable'] as Wearable,
+            sensorIndex: data['sensorIndex'] as int,
+          );
         },
       ),
     ],
