@@ -13,7 +13,7 @@ import 'package:video_player/video_player.dart';
 import '../../../app/routing/routes.dart';
 import 'rename_dialog.dart';
 
-class TopBar extends ConsumerWidget {
+class TopBar extends ConsumerStatefulWidget {
   final VideoPlayerController vc;
   final GlobalKey speedKey;
   final Recording recording;
@@ -26,22 +26,46 @@ class TopBar extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TopBar> createState() => _TopBarState();
+}
+
+class _TopBarState extends ConsumerState<TopBar> {
+  @override
+  Widget build(BuildContext context) {
     final home = ref.watch(homeStateProvider);
     final current = ref.watch(
       homeStateProvider.select((home) {
         for (final r in home.videos) {
-          if (r.id == recording.id && r.source == recording.source) return r;
+          if (r.id == widget.recording.id &&
+              r.source == widget.recording.source) {
+            return r;
+          }
         }
-        return recording;
+        return widget.recording;
       }),
     );
 
+    ref.listen<PlaybackState>(playbackProvider(current.id), (prev, next) {
+      final prevMuted = prev?.isMuted;
+      final prevSpeed = prev?.speed;
+
+      if (prevMuted != next.isMuted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          widget.vc.setVolume(next.isMuted ? 0 : 1);
+        });
+      }
+
+      if (prevSpeed != next.speed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          widget.vc.setPlaybackSpeed(next.speed);
+        });
+      }
+    });
+
     final playbackState = ref.watch(playbackProvider(current.id));
     final playbackNotifier = ref.read(playbackProvider(current.id).notifier);
-
-    vc.setVolume(playbackState.isMuted ? 0 : 1);
-    vc.setPlaybackSpeed(playbackState.speed);
 
     final controller = ref.read(playbackControllerProvider);
 
@@ -87,9 +111,9 @@ class TopBar extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: AnimatedBuilder(
-            animation: vc,
+            animation: widget.vc,
             builder: (context, _) {
-              final isPlaying = vc.value.isPlaying;
+              final isPlaying = widget.vc.value.isPlaying;
 
               return Stack(
                 alignment: Alignment.center,
@@ -102,7 +126,7 @@ class TopBar extends ConsumerWidget {
                         IconButton(
                           icon: const Icon(Icons.arrow_back_ios),
                           onPressed: () async {
-                            await vc.pause();
+                            await widget.vc.pause();
                             unawaited(controller.stopAndUpload(current));
                             if (context.mounted) context.go(Routes.home);
                           },
@@ -144,8 +168,9 @@ class TopBar extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.fast_rewind),
                         iconSize: 40,
-                        onPressed: () => vc.seekTo(
-                          vc.value.position - const Duration(seconds: 10),
+                        onPressed: () => widget.vc.seekTo(
+                          widget.vc.value.position -
+                              const Duration(seconds: 10),
                         ),
                         color: AppColors.nineHundred,
                         splashRadius: 20,
@@ -154,7 +179,8 @@ class TopBar extends ConsumerWidget {
                       IconButton(
                         iconSize: 40,
                         icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                        onPressed: () => isPlaying ? vc.pause() : vc.play(),
+                        onPressed: () =>
+                            isPlaying ? widget.vc.pause() : widget.vc.play(),
                         color: AppColors.nineHundred,
                         splashRadius: 20,
                       ),
@@ -162,8 +188,9 @@ class TopBar extends ConsumerWidget {
                       IconButton(
                         iconSize: 40,
                         icon: const Icon(Icons.fast_forward),
-                        onPressed: () => vc.seekTo(
-                          vc.value.position + const Duration(seconds: 10),
+                        onPressed: () => widget.vc.seekTo(
+                          widget.vc.value.position +
+                              const Duration(seconds: 10),
                         ),
                         color: AppColors.nineHundred,
                         splashRadius: 20,

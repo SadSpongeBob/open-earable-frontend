@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/app/widgets/pill_menu.dart';
 
 class PlaybackSpeedBadge extends StatelessWidget {
@@ -23,14 +24,27 @@ class PlaybackSpeedBadge extends StatelessWidget {
       },
       child: AbsorbPointer(
         absorbing: false,
-        child: PillMenu<double>(
+        child: PillMenuAnchor<double>(
+          menuWidth: 100,
           value: speed,
           options: _speeds,
           labelOf: _label,
           onChanged: onSpeedChanged,
-          borderRadius: 36,
           openOnTap: false,
           openOnLongPress: true,
+          childBuilder: (context, isOpen) {
+            return InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: () => onSpeedChanged(speed == 1.0 ? 0.5 : 1.0),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                child: Text(_label(speed), style: AppTextStyles.footerRegular),
+              ),
+            );
+          },
         ),
       ),
     );

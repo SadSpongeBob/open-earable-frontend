@@ -14,6 +14,8 @@ class PillMenu<T> extends StatelessWidget {
   final bool openOnTap;
   final bool openOnLongPress;
 
+  final double? menuWidth;
+
   const PillMenu({
     super.key,
     required this.value,
@@ -24,54 +26,114 @@ class PillMenu<T> extends StatelessWidget {
     this.borderRadius = 36,
     this.openOnTap = true,
     this.openOnLongPress = false,
+    this.menuWidth,
   });
 
   @override
   Widget build(BuildContext context) {
-    return _PillMenuAnchor<T>(
+    return PillMenuAnchor<T>(
       value: value,
       options: options,
       labelOf: labelOf,
       onChanged: onChanged,
       itemColor: itemColor,
-      borderRadius: borderRadius,
       openOnTap: openOnTap,
       openOnLongPress: openOnLongPress,
+      menuWidth: menuWidth,
+
+      childBuilder: (context, isOpen) {
+        final isLoading = value == null;
+
+        final shape = RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+          side: BorderSide(color: AppColors.nineHundred, width: 3),
+        );
+
+        return Material(
+          color: AppColors.fifty,
+          shape: shape,
+          child: InkWell(
+            customBorder: shape,
+            onTap: null,
+            onLongPress: null,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: Text(
+                      isLoading ? 'Loading' : labelOf(value as T),
+                      style: AppTextStyles.footerRegular,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  SizedBox(
+                    height: 20,
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Transform.translate(
+                        offset: const Offset(-3, -10),
+                        child: Icon(
+                          isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                          size: 40,
+                          color: AppColors.sevenHundred,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
-class _PillMenuAnchor<T> extends StatefulWidget {
+class PillMenuAnchor<T> extends StatefulWidget {
   final T? value;
   final List<T> options;
   final String Function(T) labelOf;
   final ValueChanged<T> onChanged;
   final Color? Function(T option)? itemColor;
-  final double borderRadius;
 
   final bool openOnTap;
   final bool openOnLongPress;
 
-  const _PillMenuAnchor({
+  final double? menuWidth;
+
+  final Widget Function(BuildContext context, bool isOpen) childBuilder;
+
+  const PillMenuAnchor({
+    super.key,
     required this.value,
     required this.options,
     required this.labelOf,
     required this.onChanged,
-    required this.itemColor,
-    required this.borderRadius,
-    required this.openOnTap,
-    required this.openOnLongPress,
+    required this.childBuilder,
+    this.itemColor,
+    this.openOnTap = true,
+    this.openOnLongPress = false,
+    this.menuWidth,
   });
 
   @override
-  State<_PillMenuAnchor<T>> createState() => _PillMenuAnchorState<T>();
+  State<PillMenuAnchor<T>> createState() => _PillMenuAnchorState<T>();
 }
 
-class _PillMenuAnchorState<T> extends State<_PillMenuAnchor<T>> {
+class _PillMenuAnchorState<T> extends State<PillMenuAnchor<T>> {
   final _key = GlobalKey();
   bool _isOpen = false;
 
   Future<void> _openMenu() async {
+    if (widget.value == null) return;
+
     setState(() => _isOpen = true);
 
     final overlay =
@@ -93,7 +155,9 @@ class _PillMenuAnchorState<T> extends State<_PillMenuAnchor<T>> {
       position: rect,
       color: AppColors.zero,
       elevation: 10,
-      constraints: BoxConstraints.tightFor(width: box.size.width),
+      constraints: BoxConstraints.tightFor(
+        width: widget.menuWidth ?? box.size.width,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       items: widget.options.map((opt) {
         final c = widget.itemColor?.call(opt);
@@ -120,52 +184,15 @@ class _PillMenuAnchorState<T> extends State<_PillMenuAnchor<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = widget.value == null;
+    final enabled = widget.value != null;
 
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(widget.borderRadius),
-      side: BorderSide(color: AppColors.nineHundred, width: 3),
-    );
-
-    return Material(
+    return KeyedSubtree(
       key: _key,
-      color: AppColors.fifty,
-      shape: shape,
-      child: InkWell(
-        customBorder: shape,
-        onTap: (!isLoading && widget.openOnTap) ? _openMenu : null,
-        onLongPress: (!isLoading && widget.openOnLongPress) ? _openMenu : null,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  isLoading ? 'Loading' : widget.labelOf(widget.value as T),
-                  style: AppTextStyles.footerRegular,
-                  softWrap: true,
-                ),
-              ),
-              const SizedBox(width: 6),
-
-              SizedBox(
-                height: 20,
-                child: Align(
-                  alignment: Alignment.center,
-                  child: Transform.translate(
-                    offset: const Offset(-3, -10),
-                    child: Icon(
-                      _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                      size: 40,
-                      color: AppColors.sevenHundred,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: (enabled && widget.openOnTap) ? _openMenu : null,
+        onLongPress: (enabled && widget.openOnLongPress) ? _openMenu : null,
+        child: widget.childBuilder(context, _isOpen),
       ),
     );
   }
