@@ -45,7 +45,6 @@ final videoPlayerControllerByKeyProvider = FutureProvider.autoDispose
 
       return vc;
     });
-final videoPlayerControllerProvider = videoPlayerControllerByKeyProvider;
 
 final playbackControllerProvider = Provider<PlaybackController>((ref) {
   final localMedia = ref.read(localMediaProvider);
