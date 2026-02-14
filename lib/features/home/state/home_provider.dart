@@ -118,4 +118,12 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
       usersErrorMessage: null,
     );
   }
+
+  // ----------------
+  // Recordings
+  // ----------------
+
+  void addRecording(Recording recording) {
+    state = state.copyWith(videos: [recording, ...state.videos]);
+  }
 }

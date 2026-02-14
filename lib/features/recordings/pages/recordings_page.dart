@@ -41,11 +41,15 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
     _busy = true;
     try {
       if (_controller.isRecording) {
-        final id = await _controller.stopRecording(
+        final recording = await _controller.stopRecording(
           ref.read(homeStateProvider).openProjectId,
         );
-        if (id != null && mounted) {
-          context.go('${Routes.playback}/local/$id');
+        if (recording != null && mounted) {
+          ref.read(homeStateProvider.notifier).addRecording(recording);
+          context.go(
+            '${Routes.playback}/local/${recording.id}',
+            extra: recording,
+          );
         }
       } else {
         await _controller.startRecording();

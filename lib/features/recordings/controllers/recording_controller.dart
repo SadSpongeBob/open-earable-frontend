@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/app/utils/helpers.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import '../../../api/local_media.dart';
@@ -79,7 +80,7 @@ class RecordingController {
     isPaused = false;
   }
 
-  Future<String?> stopRecording(String projectId) async {
+  Future<Recording?> stopRecording(String projectId) async {
     if (!isRecording) return null;
     if (cameraController == null || !cameraController!.value.isInitialized) {
       throw Exception("Camera not initialized");
@@ -123,7 +124,7 @@ class RecordingController {
     isInitialized = true;
   }
 
-  Future<String> _saveVideo(XFile file, String projectId) async {
+  Future<Recording> _saveVideo(XFile file, String projectId) async {
     final recordingId = Helpers.getRecordingId();
     final dir = _localMedia.recordingDir(projectId, recordingId);
     await dir.create(recursive: true);
@@ -139,17 +140,26 @@ class RecordingController {
 
     final metaFile = _localMedia.recordingMetaFile(projectId, recordingId);
 
+    final timestamp = _recordingStartedAt ?? DateTime.now().toUtc();
     final meta = {
       "name": recordingId,
-      "timestamp": (_recordingStartedAt ?? DateTime.now().toUtc())
-          .toIso8601String(),
+      "timestamp": (timestamp).toIso8601String(),
     };
 
     await metaFile.writeAsString(
       const JsonEncoder.withIndent("  ").convert(meta),
     );
 
-    return recordingId;
+    return Recording.local(
+      id: recordingId,
+      name: recordingId,
+      localThumbnailPath: _localMedia
+          .thumbnailFile(projectId, recordingId)
+          .path,
+      localVideoPath: _localMedia.videoFile(projectId, recordingId).path,
+      videoTimestamp: timestamp,
+      projectId: projectId == LocalMedia.defaultProjectId ? null : projectId,
+    );
   }
 
   Future<Uint8List?> _generateThumbnail(String videoPath) {
