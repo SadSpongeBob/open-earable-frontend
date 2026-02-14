@@ -17,13 +17,6 @@ final videoPlayerControllerByKeyProvider = FutureProvider.autoDispose
       final home = ref.read(homeStateProvider);
       Recording rec = home.videos.firstWhere(
         (r) => r.id == id && r.source == source,
-        orElse: () => Recording(
-          id: id,
-          name: 'Recording $id',
-          source: source,
-          videoTimestamp: DateTime.now().toUtc(),
-          uploadStatus: UploadStatus.pending,
-        ),
       );
 
       late final VideoPlayerController vc;
