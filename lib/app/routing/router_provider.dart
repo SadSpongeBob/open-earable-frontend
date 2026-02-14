@@ -52,7 +52,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const RequestResetPage(),
       ),
       GoRoute(
-        path: '${Routes.playback}/:source/:id',
+        path: '${Routes.playbackBase}/:source/:id',
         builder: (context, state) {
           final sourceStr = state.pathParameters['source']!;
           final id = state.pathParameters['id']!;

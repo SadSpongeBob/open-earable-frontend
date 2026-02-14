@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import '../../../app/routing/routes.dart';
 import '../../home/state/home_provider.dart';
@@ -47,7 +48,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
         if (recording != null && mounted) {
           ref.read(homeStateProvider.notifier).addRecording(recording);
           context.go(
-            '${Routes.playback}/local/${recording.id}',
+            Routes.playback(recording.isCloud, recording.id),
             extra: recording,
           );
         }

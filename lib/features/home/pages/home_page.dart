@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
@@ -99,13 +100,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                         },
                         onDuplicate: () {
                           if (selectedCount == 0) return;
-                          controller.duplicateProjects(state.selectedProjectIds);
+                          controller.duplicateProjects(
+                            state.selectedProjectIds,
+                          );
                         },
                         onRename: () {
                           if (selectedCount != 1) return;
                           final projectId = state.selectedProjectIds.first;
-                          final project =
-                          state.projects.firstWhere((p) => p.id == projectId);
+                          final project = state.projects.firstWhere(
+                            (p) => p.id == projectId,
+                          );
 
                           showDialog<String>(
                             context: context,
@@ -140,8 +144,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       isSelectionMode: false,
                       selectedRecordingIds: const <String>{},
                       onTapRecording: (item) async {
-                        context.go(
-                            '${Routes.playback}/local/${item.id}', extra: item);
+                        context.go(Routes.playback(item.isCloud, item.id));
                       },
                       onLongPressRecording: (item) {},
                     ),
