@@ -140,8 +140,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                       isSelectionMode: false,
                       selectedRecordingIds: const <String>{},
                       onTapRecording: (item) async {
-                        context.go('${Routes.playback}/${item.id}');
-                     },
+                        context.go(
+                            '${Routes.playback}/local/${item.id}', extra: item);
+                      },
                       onLongPressRecording: (item) {},
                     ),
                   ),
