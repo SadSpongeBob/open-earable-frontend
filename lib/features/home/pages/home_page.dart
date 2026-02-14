@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
@@ -228,7 +229,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                             _exitMoveMode();
                             return;
                           }
-                          controller.handleRecordingTap(item.id);
+                          if (item.isUploading) return;
+                          context.go(Routes.playback(item.isCloud, item.id));
                         },
                         onLongPressRecording: (item) {
                           if (_isChoosingMoveTarget) return;
@@ -308,7 +310,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
 
-            // RIGHT BAR (disabled/grey in move mode)
+            // RIGHT BAR
             AbsorbPointer(
               absorbing: _isChoosingMoveTarget,
               child: AnimatedOpacity(

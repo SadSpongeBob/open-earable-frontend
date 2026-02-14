@@ -5,8 +5,9 @@ import 'package:openearable/api/models/recording/recording.dart';
 import '../../../api/models/project/project_user.dart';
 import '../state/home_state.dart';
 
-final homeStateProvider =
-StateNotifierProvider<HomeStateNotifier, HomeState>((ref) {
+final homeStateProvider = StateNotifierProvider<HomeStateNotifier, HomeState>((
+  ref,
+) {
   return HomeStateNotifier();
 });
 
@@ -81,7 +82,10 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
   // ----------------
 
   void addProject(ProjectMetadata project) {
-    state = state.copyWith(projects: [...state.projects, project], clearError: true);
+    state = state.copyWith(
+      projects: [...state.projects, project],
+      clearError: true,
+    );
   }
 
   void renameProjectInList(String projectId, String newName) {
@@ -124,10 +128,7 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
   }
 
   void setUsersError(String message) {
-    state = state.copyWith(
-      isUsersLoading: false,
-      usersErrorMessage: message,
-    );
+    state = state.copyWith(isUsersLoading: false, usersErrorMessage: message);
   }
 
   void clearUsersPopupState() {
@@ -136,6 +137,42 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
       clearUsersError: true,
       clearProjectUsers: true,
       usersErrorMessage: null,
+    );
+  }
+
+  // ----------------
+  // Recordings
+  // ----------------
+
+  void addRecording(Recording recording) {
+    state = state.copyWith(videos: [recording, ...state.videos]);
+  }
+
+  void updateRecording({
+    required String id,
+    String? newName,
+    UploadStatus? uploadStatus,
+  }) {
+    state = state.copyWith(
+      videos: [
+        for (final recording in state.videos)
+          if (recording.id == id)
+            recording.copyWith(name: newName, uploadStatus: uploadStatus)
+          else
+            recording,
+      ],
+    );
+  }
+
+  void removeRecording(String id) {
+    final updated = state.videos.where((r) => !(r.id == id)).toList();
+
+    final shouldClearSelected =
+        state.selectedVideoId != null && state.selectedVideoId == id;
+
+    state = state.copyWith(
+      videos: updated,
+      selectedVideoId: shouldClearSelected ? null : state.selectedVideoId,
     );
   }
 }
