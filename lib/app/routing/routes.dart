@@ -3,7 +3,13 @@ class Routes {
   static const String signup = '/signup';
   static const String home = '/home';
   static const String recording = '/recording';
-  static const String playback = '/playback';
+  static const String playbackBase = '/playback';
+
+  static String playback(bool isCloud, String recordingId) {
+    final source = isCloud ? 'cloud' : 'local';
+    return '$playbackBase/$source/$recordingId';
+  }
+
   static const String settings = '/settings';
   static const String export = '/export';
   static const String sensordata = '/sensordata';
