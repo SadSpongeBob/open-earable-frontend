@@ -7,8 +7,8 @@ import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/services/s3/s3_service.dart';
 
-final videoPlayerControllerProvider =
-    FutureProvider.family<VideoPlayerController, Recording>((ref, rec) async {
+final videoPlayerControllerProvider = FutureProvider.autoDispose
+    .family<VideoPlayerController, Recording>((ref, rec) async {
       late final VideoPlayerController vc;
 
       if (rec.isCloud) {
@@ -27,7 +27,13 @@ final videoPlayerControllerProvider =
 
       await vc.play();
 
-      ref.onDispose(() => vc.dispose());
+      ref.onDispose(() async {
+        try {
+          await vc.pause();
+        } catch (_) {}
+        await vc.dispose();
+      });
+
       return vc;
     });
 

@@ -162,9 +162,10 @@ class TopBar extends ConsumerWidget {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.arrow_back_ios),
-                          onPressed: () {
+                          onPressed: () async {
+                            await vc.pause();
                             unawaited(controller.stopAndUpload(current));
-                            context.go(Routes.home);
+                            if (context.mounted) context.go(Routes.home);
                           },
                           color: const Color(0xFFFF4442),
                           splashRadius: 20,
