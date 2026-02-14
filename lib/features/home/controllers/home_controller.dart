@@ -159,6 +159,7 @@ class HomeController {
   Future<bool> _canManageRecordingsAsync() async {
     final project = _findById(state.openProjectId);
     if (project == null) return false;
+    if (project.id == LocalMedia.defaultProjectId) return true;
 
     if (project.projectSource == ProjectSource.local) return true;
     if (!_authState.isAuthenticated) return true;
