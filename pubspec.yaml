@@ -53,7 +53,7 @@ dependencies:
   # Camera and storage helper packages
   camera: 0.11.3
   path_provider: ^2.0.15
-  shared_preferences: ^2.2.3
+  shared_preferences: ^2.5.4
   flutter_riverpod: ^3.2.0
   # Optional: Uncomment if you want centralized runtime permission handling
   # permission_handler: ^11.4.0
@@ -86,7 +86,6 @@ flutter:
   assets:
     - assets/images/
     - assets/.env
-    - assets/icons/
     - assets/buttons/
     - assets/buttons/home/
 
