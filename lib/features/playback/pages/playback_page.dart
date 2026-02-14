@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 
 import '../controllers/playback_controller.dart';
@@ -33,7 +34,7 @@ class PlaybackPage extends ConsumerWidget {
     final speedKey = GlobalKey();
 
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: AppColors.hundred,
       body: SafeArea(
         child: Column(
           children: [
