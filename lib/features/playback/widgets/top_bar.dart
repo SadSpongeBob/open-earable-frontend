@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/recording.dart';
@@ -13,7 +14,7 @@ import 'package:video_player/video_player.dart';
 import '../../../app/routing/routes.dart';
 import 'rename_dialog.dart';
 
-class TopBar extends ConsumerStatefulWidget {
+class TopBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   final VideoPlayerController vc;
   final GlobalKey speedKey;
   final Recording recording;
@@ -27,6 +28,9 @@ class TopBar extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<TopBar> createState() => _TopBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(70);
 }
 
 class _TopBarState extends ConsumerState<TopBar> {
@@ -96,9 +100,14 @@ class _TopBarState extends ConsumerState<TopBar> {
       await controller.renameRecording(current, trimmed);
     }
 
-    return SafeArea(
-      child: Container(
-        height: 88,
+    return AppBar(
+      systemOverlayStyle: SystemUiOverlayStyle.dark,
+      automaticallyImplyLeading: false,
+      toolbarHeight: 88,
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      titleSpacing: 0,
+      flexibleSpace: Container(
         decoration: BoxDecoration(
           color: AppColors.fifty,
           boxShadow: [
@@ -108,138 +117,136 @@ class _TopBarState extends ConsumerState<TopBar> {
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: AnimatedBuilder(
-            animation: widget.vc,
-            builder: (context, _) {
-              final isPlaying = widget.vc.value.isPlaying;
+      ),
+      title: AnimatedBuilder(
+        animation: widget.vc,
+        builder: (context, _) {
+          final isPlaying = widget.vc.value.isPlaying;
 
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_ios),
-                          onPressed: () async {
-                            await widget.vc.pause();
-                            unawaited(controller.stopAndUpload(current));
-                            if (context.mounted) context.go(Routes.home);
-                          },
-                          color: AppColors.primary,
-                          splashRadius: 20,
-                        ),
-                        IconButton(
-                          icon: Image.asset(
-                            'assets/buttons/wave-sound.png',
-                            width: 26,
-                            height: 26,
-                          ),
-                          onPressed: () {},
-                          splashRadius: 20,
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            playbackState.isMuted
-                                ? Icons.volume_off
-                                : Icons.volume_up,
-                          ),
-                          onPressed: () => playbackNotifier.toggleMute(),
-                          color: AppColors.nineHundred,
-                          splashRadius: 20,
-                        ),
-                        PlaybackSpeedBadge(
-                          speed: playbackState.speed,
-                          onSpeedChanged: playbackNotifier.setSpeed,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(current.name, style: AppTextStyles.footerRegular),
-                      ],
-                    ),
-                  ),
-
-                  Row(
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // LEFT SIDE
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.fast_rewind),
-                        iconSize: 40,
-                        onPressed: () => widget.vc.seekTo(
-                          widget.vc.value.position -
-                              const Duration(seconds: 10),
+                        icon: const Icon(Icons.arrow_back_ios),
+                        onPressed: () async {
+                          await widget.vc.pause();
+                          unawaited(controller.stopAndUpload(current));
+                          if (context.mounted) context.go(Routes.home);
+                        },
+                        color: AppColors.primary,
+                        splashRadius: 20,
+                      ),
+                      IconButton(
+                        icon: Image.asset(
+                          'assets/buttons/wave-sound.png',
+                          width: 26,
+                          height: 26,
                         ),
+                        onPressed: () {},
+                        splashRadius: 20,
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          playbackState.isMuted
+                              ? Icons.volume_off
+                              : Icons.volume_up,
+                        ),
+                        onPressed: () => playbackNotifier.toggleMute(),
                         color: AppColors.nineHundred,
                         splashRadius: 20,
                       ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        iconSize: 40,
-                        icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                        onPressed: () =>
-                            isPlaying ? widget.vc.pause() : widget.vc.play(),
-                        color: AppColors.nineHundred,
-                        splashRadius: 20,
+                      PlaybackSpeedBadge(
+                        speed: playbackState.speed,
+                        onSpeedChanged: playbackNotifier.setSpeed,
                       ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        iconSize: 40,
-                        icon: const Icon(Icons.fast_forward),
-                        onPressed: () => widget.vc.seekTo(
-                          widget.vc.value.position +
-                              const Duration(seconds: 10),
+                      const SizedBox(width: 10),
+                      Text(current.name, style: AppTextStyles.footerRegular),
+                    ],
+                  ),
+                ),
+
+                // CENTER CONTROLS
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.fast_rewind),
+                      iconSize: 40,
+                      onPressed: () => widget.vc.seekTo(
+                        widget.vc.value.position - const Duration(seconds: 10),
+                      ),
+                      color: AppColors.nineHundred,
+                      splashRadius: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      iconSize: 40,
+                      icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+                      onPressed: () =>
+                          isPlaying ? widget.vc.pause() : widget.vc.play(),
+                      color: AppColors.nineHundred,
+                      splashRadius: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      iconSize: 40,
+                      icon: const Icon(Icons.fast_forward),
+                      onPressed: () => widget.vc.seekTo(
+                        widget.vc.value.position + const Duration(seconds: 10),
+                      ),
+                      color: AppColors.nineHundred,
+                      splashRadius: 20,
+                    ),
+                  ],
+                ),
+
+                // RIGHT SIDE
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(
+                        onPressed: () => controller.exportVideoFolder(current),
+                        child: const Text(
+                          "Export",
+                          style: AppTextStyles.footerRegular,
                         ),
-                        color: AppColors.nineHundred,
-                        splashRadius: 20,
+                      ),
+                      TextButton(
+                        onPressed: doRename,
+                        child: const Text(
+                          "Rename",
+                          style: AppTextStyles.footerRegular,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          unawaited(controller.deleteRecording(current));
+                          context.go(Routes.home);
+                        },
+                        child: Text(
+                          "Delete",
+                          style: AppTextStyles.footerBold.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextButton(
-                          onPressed: () =>
-                              controller.exportVideoFolder(current),
-                          child: const Text(
-                            "Export",
-                            style: AppTextStyles.footerRegular,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            await doRename();
-                          },
-                          child: const Text(
-                            "Rename",
-                            style: AppTextStyles.footerRegular,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            unawaited(controller.deleteRecording(current));
-                            context.go(Routes.home);
-                          },
-                          child: Text(
-                            "Delete",
-                            style: AppTextStyles.footerBold.copyWith(
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

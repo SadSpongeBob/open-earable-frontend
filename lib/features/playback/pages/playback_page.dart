@@ -34,31 +34,19 @@ class PlaybackPage extends ConsumerWidget {
     final speedKey = GlobalKey();
 
     return Scaffold(
-      backgroundColor: AppColors.hundred,
-      body: SafeArea(
-        child: Column(
-          children: [
-            PreferredSize(
-              preferredSize: const Size.fromHeight(88),
-              child: videoAsync.when(
-                loading: () => const SizedBox(height: 88),
-                error: (_, _) => const SizedBox(height: 88),
-                data: (vc) => TopBar(
-                  vc: vc,
-                  speedKey: speedKey,
-                  recording: rec,
-                ),
-              ),
-            ),
-            Expanded(
-              child: videoAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) =>
-                    Center(child: Text("Failed to load video: $e")),
-                data: (vc) => VideoCard(controller: vc),
-              ),
-            ),
-          ],
+      backgroundColor: AppColors.twoHundred,
+      appBar: videoAsync.when(
+        loading: () => null,
+        error: (_, _) => null,
+        data: (vc) => TopBar(vc: vc, speedKey: speedKey, recording: rec),
+      ),
+      body: videoAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text("Failed to load video: $e")),
+        data: (vc) => SafeArea(
+          child: Center(
+            child: VideoCard(controller: vc),
+          ),
         ),
       ),
     );
