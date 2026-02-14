@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/recordings/controllers/upload_controller.dart';
 import 'package:video_player/video_player.dart';
 import 'package:openearable/api/local_media.dart';
@@ -41,12 +43,14 @@ final playbackControllerProvider = Provider<PlaybackController>((ref) {
   final recordingService = ref.read(recordingServiceProvider);
   final s3Service = ref.read(s3ServiceProvider);
   final uploadController = ref.read(uploadControllerProvider);
+  final homeStateNotifier = ref.read(homeStateProvider.notifier);
 
   return PlaybackController(
     localMedia,
     recordingService,
     s3Service,
     uploadController,
+    homeStateNotifier,
   );
 });
 
@@ -55,12 +59,14 @@ class PlaybackController {
   final RecordingService recordingService;
   final S3Service s3Service;
   final UploadController uploadController;
+  final HomeStateNotifier homeStateNotifier;
 
   PlaybackController(
     this.localMedia,
     this.recordingService,
     this.s3Service,
     this.uploadController,
+    this.homeStateNotifier,
   );
 
   void togglePlay(VideoPlayerController vc) {
@@ -88,6 +94,7 @@ class PlaybackController {
         rec.id,
       );
     }
+    homeStateNotifier.removeRecording(rec.id);
   }
 
   Future<void> stopAndUpload(Recording rec) async {
@@ -95,16 +102,39 @@ class PlaybackController {
 
     final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
 
+    homeStateNotifier.updateRecording(
+      id: rec.id,
+      uploadStatus: UploadStatus.pending,
+    );
+
     final ok = await uploadController.uploadRecording(
       recordingId: rec.id,
       projectId: projectId,
     );
 
     if (ok) {
-      final dir = localMedia.recordingDir(projectId, rec.id);
-      if (await dir.exists()) {
-        await dir.delete(recursive: true);
+      homeStateNotifier.updateRecording(
+        id: rec.id,
+        uploadStatus: UploadStatus.completed,
+      );
+
+      try {
+        final dir = localMedia.recordingDir(projectId, rec.id);
+        if (await dir.exists()) {
+          await dir.delete(recursive: true);
+        }
+      } catch (_) {
+        if (kDebugMode) {
+          debugPrint(
+            "CLEANUP FAILED: recording with recordingId: ${rec.id}, (upload completed)",
+          );
+        }
       }
+    } else {
+      homeStateNotifier.updateRecording(
+        id: rec.id,
+        uploadStatus: UploadStatus.failed,
+      );
     }
   }
 
@@ -118,6 +148,7 @@ class PlaybackController {
         newName: newName,
       );
     }
+    homeStateNotifier.updateRecording(id: rec.id, newName: newName);
   }
 
   Future<void> exportVideoFolder(Recording rec) async {

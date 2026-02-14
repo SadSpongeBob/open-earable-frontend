@@ -127,22 +127,27 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
     state = state.copyWith(videos: [recording, ...state.videos]);
   }
 
-  void updateRecordingName(String id, RecordingSource source, String newName) {
+  void updateRecording({
+    required String id,
+    String? newName,
+    UploadStatus? uploadStatus,
+  }) {
     state = state.copyWith(
       videos: [
         for (final recording in state.videos)
-          if (recording.id == id && recording.source == source)
-            recording.copyWith(newName)
+          if (recording.id == id)
+            recording.copyWith(name: newName, uploadStatus: uploadStatus)
           else
             recording,
       ],
     );
   }
 
-  void removeRecording(String id, RecordingSource source) {
-    final updated = state.videos.where((r) => !(r.id == id && r.source == source)).toList();
+  void removeRecording(String id) {
+    final updated = state.videos.where((r) => !(r.id == id)).toList();
 
-    final shouldClearSelected = state.selectedVideoId != null && state.selectedVideoId == id;
+    final shouldClearSelected =
+        state.selectedVideoId != null && state.selectedVideoId == id;
 
     state = state.copyWith(
       videos: updated,

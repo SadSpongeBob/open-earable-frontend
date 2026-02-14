@@ -68,10 +68,6 @@ class TopBar extends ConsumerWidget {
       }
 
       await controller.renameRecording(current, trimmed);
-
-      ref
-          .read(homeStateProvider.notifier)
-          .updateRecordingName(current.id, current.source, trimmed);
     }
 
     return SafeArea(
@@ -272,7 +268,6 @@ class TopBar extends ConsumerWidget {
                         TextButton(
                           onPressed: () {
                             unawaited(controller.deleteRecording(current));
-                            ref.read(homeStateProvider.notifier).removeRecording(current.id, current.source);
                             context.go(Routes.home);
                           },
                           child: Text(

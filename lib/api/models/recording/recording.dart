@@ -63,16 +63,16 @@ class Recording {
     uploadStatus: UploadStatus.fromString(json['uploadStatus']),
   );
 
-  Recording copyWith(String name) {
+  Recording copyWith({String? name, UploadStatus? uploadStatus}) {
     return Recording(
       id: id,
-      name: name,
+      name: name ?? this.name,
       source: source,
       thumbnailUrl: thumbnailUrl,
       videoTimestamp: videoTimestamp,
       projectId: projectId,
       userId: userId,
-      uploadStatus: uploadStatus,
+      uploadStatus: uploadStatus ?? this.uploadStatus,
     );
   }
 
@@ -89,12 +89,14 @@ class Recording {
 enum UploadStatus {
   completed,
   failed,
+  updating,
   pending;
 
   factory UploadStatus.fromString(String value) {
     return switch (value) {
       'COMPLETED' => UploadStatus.completed,
       'PENDING' => UploadStatus.pending,
+      'UPDATING' => UploadStatus.updating,
       'FAILED' => UploadStatus.failed,
       _ => throw ArgumentError.value(value, 'value', 'Invalid UploadStatus'),
     };
