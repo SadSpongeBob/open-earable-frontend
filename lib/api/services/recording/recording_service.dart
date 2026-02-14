@@ -66,7 +66,6 @@ class RecordingService {
       );
     }
     final name = meta['name'] as String? ?? 'Recording - $recordingId';
-    final userId = meta['userId'] as String? ?? 'local';
     final timestampRaw = meta['timestamp'] as String?;
     final timestamp = timestampRaw != null
         ? DateTime.parse(timestampRaw).toUtc()
@@ -81,7 +80,6 @@ class RecordingService {
       localThumbnailPath: thumbFile.existsSync() ? thumbFile.path : null,
       videoTimestamp: timestamp,
       projectId: projectId == LocalMedia.defaultProjectId ? null : projectId,
-      userId: userId,
     );
   }
 

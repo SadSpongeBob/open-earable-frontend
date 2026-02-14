@@ -15,7 +15,7 @@ class Recording {
 
   final DateTime videoTimestamp;
   final String? projectId;
-  final String userId;
+  final String? userId;
   final UploadStatus uploadStatus;
 
   const Recording({
@@ -27,7 +27,7 @@ class Recording {
     this.localVideoPath,
     required this.videoTimestamp,
     this.projectId,
-    required this.userId,
+    this.userId,
     required this.uploadStatus,
   });
 
@@ -38,7 +38,6 @@ class Recording {
     required DateTime videoTimestamp,
     String? localThumbnailPath,
     String? projectId,
-    required String userId,
     UploadStatus uploadStatus = UploadStatus.pending,
   }) {
     return Recording(
@@ -49,7 +48,6 @@ class Recording {
       localThumbnailPath: localThumbnailPath,
       videoTimestamp: videoTimestamp,
       projectId: projectId,
-      userId: userId,
       uploadStatus: uploadStatus,
     );
   }
