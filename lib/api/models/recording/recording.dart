@@ -89,14 +89,14 @@ class Recording {
 enum UploadStatus {
   completed,
   failed,
-  updating,
+  uploading,
   pending;
 
   factory UploadStatus.fromString(String value) {
     return switch (value) {
       'COMPLETED' => UploadStatus.completed,
       'PENDING' => UploadStatus.pending,
-      'UPDATING' => UploadStatus.updating,
+      'UPLOADING' => UploadStatus.uploading,
       'FAILED' => UploadStatus.failed,
       _ => throw ArgumentError.value(value, 'value', 'Invalid UploadStatus'),
     };
@@ -111,7 +111,7 @@ extension RecordingX on Recording {
   bool get isCloud => source == RecordingSource.cloud;
 
   bool get isUploading =>
-      source == RecordingSource.local && uploadStatus == UploadStatus.pending;
+      source == RecordingSource.local && uploadStatus == UploadStatus.uploading;
 
   bool get canRetryUpload =>
       source == RecordingSource.local && uploadStatus == UploadStatus.failed;
