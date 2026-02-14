@@ -51,7 +51,6 @@ class LocalMedia {
     final base = await getApplicationDocumentsDirectory();
     final baseDir = Directory(p.join(base.path, "OpenEarable"));
     final export =
-        await getDownloadsDirectory() ??
         Directory("/storage/emulated/0/Download");
     final exportDir = Directory(p.join(export.path, "OpenEarable"));
 

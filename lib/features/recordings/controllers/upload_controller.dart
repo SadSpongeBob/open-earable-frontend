@@ -75,40 +75,19 @@ class UploadController {
       );
 
       if (thumbnailExists && uploadResp.thumbnailUpload != null) {
-        try {
-          await s3Service.uploadFile(
-            putUrl: uploadResp.thumbnailUpload!.uploadUrl,
-            file: thumbnail,
-            headers: uploadResp.thumbnailUpload!.requiredHeaders,
-          );
-        } catch (e) {
-          if (kDebugMode) {
-            debugPrint(
-              "Thumbnail upload failed for local=$recordingId project=$projectId remote=$recordingIdForLog: $e",
-            );
-          }
-        }
-      }
+        await s3Service.uploadFile(
+          putUrl: uploadResp.thumbnailUpload!.uploadUrl,
+          file: thumbnail,
+          headers: uploadResp.thumbnailUpload!.requiredHeaders,
+        );
 
+      }
       await recordingService.completeUpload(uploadResp.recordingId);
       return true;
     } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint(
-          "Upload failed local=$recordingId project=$projectId remote=$recordingIdForLog",
-        );
-        debugPrint("Status: ${e.response?.statusCode}");
-        debugPrint("Body: ${e.response?.data}");
-        debugPrint("Error: $e");
-      }
       return false;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint(
-          "Upload failed local=$recordingId project=$projectId remote=$recordingIdForLog",
-        );
-        debugPrint("Error: $e");
-      }
+
       return false;
     }
   }
