@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/playback/controllers/playback_controller.dart';
 import 'package:openearable/features/playback/state/playback_state.dart';
+import 'package:openearable/features/playback/widgets/speed_badge.dart';
 import 'package:video_player/video_player.dart';
 import '../../../app/routing/routes.dart';
-import '../../../app/theme/app_bar_styles.dart';
 import 'rename_dialog.dart';
 
 class TopBar extends ConsumerWidget {
@@ -73,80 +75,21 @@ class TopBar extends ConsumerWidget {
     return SafeArea(
       child: Container(
         height: 88,
-        decoration: GlobalAppBarStyles.appBarDecoration,
+        decoration: BoxDecoration(
+          color: AppColors.fifty,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha((0.15 * 255).round()),
+              blurRadius: 12,
+            ),
+          ],
+        ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: AnimatedBuilder(
             animation: vc,
             builder: (context, _) {
               final isPlaying = vc.value.isPlaying;
-
-              final speedBadge = InkWell(
-                key: speedKey,
-                onTap: () => playbackNotifier.setSpeed(
-                  playbackState.speed == 1.0 ? 0.5 : 1.0,
-                ),
-                onLongPress: () async {
-                  final renderBox =
-                      speedKey.currentContext!.findRenderObject() as RenderBox;
-                  final offset = renderBox.localToGlobal(Offset.zero);
-                  final size = renderBox.size;
-
-                  final selected = await showMenu<double>(
-                    color: Colors.white,
-                    context: context,
-                    position: RelativeRect.fromLTRB(
-                      offset.dx,
-                      offset.dy + size.height,
-                      offset.dx + size.width,
-                      offset.dy,
-                    ),
-                    items: const [
-                      PopupMenuItem(
-                        value: 0.25,
-                        child: Text(
-                          "0.25x",
-                          style: GlobalAppBarStyles.appBarBlackText,
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 0.5,
-                        child: Text(
-                          "0.5x",
-                          style: GlobalAppBarStyles.appBarBlackText,
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 1.0,
-                        child: Text(
-                          "1x",
-                          style: GlobalAppBarStyles.appBarBlackText,
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 1.5,
-                        child: Text(
-                          "1.5x",
-                          style: GlobalAppBarStyles.appBarBlackText,
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 2.0,
-                        child: Text(
-                          "2x",
-                          style: GlobalAppBarStyles.appBarBlackText,
-                        ),
-                      ),
-                    ],
-                  );
-
-                  if (selected != null) playbackNotifier.setSpeed(selected);
-                },
-                child: Text(
-                  playbackState.speedString,
-                  style: GlobalAppBarStyles.appBarBlackText,
-                ),
-              );
 
               return Stack(
                 alignment: Alignment.center,
@@ -163,7 +106,7 @@ class TopBar extends ConsumerWidget {
                             unawaited(controller.stopAndUpload(current));
                             if (context.mounted) context.go(Routes.home);
                           },
-                          color: const Color(0xFFFF4442),
+                          color: AppColors.primary,
                           splashRadius: 20,
                         ),
                         IconButton(
@@ -182,15 +125,15 @@ class TopBar extends ConsumerWidget {
                                 : Icons.volume_up,
                           ),
                           onPressed: () => playbackNotifier.toggleMute(),
-                          color: Colors.black87,
+                          color: AppColors.nineHundred,
                           splashRadius: 20,
                         ),
-                        speedBadge,
-                        const SizedBox(width: 10),
-                        Text(
-                          current.name,
-                          style: GlobalAppBarStyles.appBarBlackText,
+                        PlaybackSpeedBadge(
+                          speed: playbackState.speed,
+                          onSpeedChanged: playbackNotifier.setSpeed,
                         ),
+                        const SizedBox(width: 10),
+                        Text(current.name, style: AppTextStyles.footerRegular),
                       ],
                     ),
                   ),
@@ -204,7 +147,7 @@ class TopBar extends ConsumerWidget {
                         onPressed: () => vc.seekTo(
                           vc.value.position - const Duration(seconds: 10),
                         ),
-                        color: Colors.black87,
+                        color: AppColors.nineHundred,
                         splashRadius: 20,
                       ),
                       const SizedBox(width: 8),
@@ -212,7 +155,7 @@ class TopBar extends ConsumerWidget {
                         iconSize: 40,
                         icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
                         onPressed: () => isPlaying ? vc.pause() : vc.play(),
-                        color: Colors.black87,
+                        color: AppColors.nineHundred,
                         splashRadius: 20,
                       ),
                       const SizedBox(width: 8),
@@ -222,7 +165,7 @@ class TopBar extends ConsumerWidget {
                         onPressed: () => vc.seekTo(
                           vc.value.position + const Duration(seconds: 10),
                         ),
-                        color: Colors.black87,
+                        color: AppColors.nineHundred,
                         splashRadius: 20,
                       ),
                     ],
@@ -238,31 +181,16 @@ class TopBar extends ConsumerWidget {
                               controller.exportVideoFolder(current),
                           child: const Text(
                             "Export",
-                            style: GlobalAppBarStyles.appBarBlackText,
+                            style: AppTextStyles.footerRegular,
                           ),
                         ),
-                        PopupMenuButton<String>(
-                          color: Colors.white,
-                          onSelected: (value) async {
-                            if (value == "Rename") {
-                              await doRename();
-                            }
+                        TextButton(
+                          onPressed: () async {
+                            await doRename();
                           },
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(
-                              value: "Rename",
-                              child: Text(
-                                'Rename',
-                                style: GlobalAppBarStyles.appBarBlackText,
-                              ),
-                            ),
-                          ],
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              "More",
-                              style: GlobalAppBarStyles.appBarBlackText,
-                            ),
+                          child: const Text(
+                            "Rename",
+                            style: AppTextStyles.footerRegular,
                           ),
                         ),
                         TextButton(
@@ -272,7 +200,9 @@ class TopBar extends ConsumerWidget {
                           },
                           child: Text(
                             "Delete",
-                            style: GlobalAppBarStyles.appBarSecondaryText,
+                            style: AppTextStyles.footerBold.copyWith(
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
                       ],

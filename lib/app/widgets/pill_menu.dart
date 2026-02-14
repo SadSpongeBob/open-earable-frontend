@@ -11,6 +11,9 @@ class PillMenu<T> extends StatelessWidget {
   final Color? Function(T option)? itemColor;
   final double borderRadius;
 
+  final bool openOnTap;
+  final bool openOnLongPress;
+
   const PillMenu({
     super.key,
     required this.value,
@@ -19,6 +22,8 @@ class PillMenu<T> extends StatelessWidget {
     required this.onChanged,
     this.itemColor,
     this.borderRadius = 36,
+    this.openOnTap = true,
+    this.openOnLongPress = false,
   });
 
   @override
@@ -30,6 +35,8 @@ class PillMenu<T> extends StatelessWidget {
       onChanged: onChanged,
       itemColor: itemColor,
       borderRadius: borderRadius,
+      openOnTap: openOnTap,
+      openOnLongPress: openOnLongPress,
     );
   }
 }
@@ -42,6 +49,9 @@ class _PillMenuAnchor<T> extends StatefulWidget {
   final Color? Function(T option)? itemColor;
   final double borderRadius;
 
+  final bool openOnTap;
+  final bool openOnLongPress;
+
   const _PillMenuAnchor({
     required this.value,
     required this.options,
@@ -49,6 +59,8 @@ class _PillMenuAnchor<T> extends StatefulWidget {
     required this.onChanged,
     required this.itemColor,
     required this.borderRadius,
+    required this.openOnTap,
+    required this.openOnLongPress,
   });
 
   @override
@@ -121,7 +133,8 @@ class _PillMenuAnchorState<T> extends State<_PillMenuAnchor<T>> {
       shape: shape,
       child: InkWell(
         customBorder: shape,
-        onTap: isLoading ? null : _openMenu,
+        onTap: (!isLoading && widget.openOnTap) ? _openMenu : null,
+        onLongPress: (!isLoading && widget.openOnLongPress) ? _openMenu : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Row(
