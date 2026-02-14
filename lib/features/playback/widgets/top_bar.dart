@@ -55,7 +55,7 @@ class TopBar extends ConsumerWidget {
     }
 
     Future<void> doRename() async {
-      final newName = await showRenameDialog(context, oldName: current.name);
+      final newName = await RenameDialog.show(context, oldName: current.name);
       if (newName == null || newName.trim().isEmpty) return;
 
       final trimmed = newName.trim();

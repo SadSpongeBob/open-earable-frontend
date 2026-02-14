@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/widgets/app_button.dart';
+import 'package:openearable/app/widgets/dialog.dart';
 import 'package:openearable/app/widgets/input_box.dart';
-import '../../../app/theme/text_styles.dart';
 
 class AddProjectDialog extends StatefulWidget {
   const AddProjectDialog({super.key, this.initialName = ''});
@@ -10,10 +9,9 @@ class AddProjectDialog extends StatefulWidget {
   final String initialName;
 
   static Future<String?> show(BuildContext context, {String initialName = ''}) {
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => Center(child: AddProjectDialog(initialName: initialName)),
+    return showAppDialog(
+      context,
+      dialog: AddProjectDialog(initialName: initialName),
     );
   }
 
@@ -44,10 +42,13 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   }
 
   Future<void> _handleAdd() async {
+    if (_working) return;
+
     final name = _controller.text.trim();
     if (name.isEmpty) return;
 
     setState(() => _working = true);
+
     try {
       Navigator.of(context).pop(name);
     } finally {
@@ -57,94 +58,38 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: Center(
-        child: Container(
-          width: 400,
-          height: 248,
-          decoration: BoxDecoration(
-            color: AppColors.fifty,
-            borderRadius: BorderRadius.circular(36),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.fiveHundred,
-                blurRadius: 12,
-                offset: Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 20, left: 16, right: 16),
-                child: Center(
-                  child: Text(
-                    'Add Project',
-                    style: AppTextStyles.subheaderBold,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              SizedBox(
-                width: 345,
-                height: 55,
-                child: InputBox(
-                  controller: _controller,
-                  hint: 'Project Name',
-                  focusNode: _focus,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) {
-                    _focus.unfocus();
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              Container(
-                width: 400,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.fifty,
-                  border: Border.symmetric(
-                    horizontal: BorderSide(
-                      color: AppColors.sixHundred,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                child: Align(
-                  alignment: Alignment.center,
-                  child: AppButton.dangerGhost(
-                    text: 'Add',
-                    onPressed: _working ? null : _handleAdd,
-                    borderRadius: 0,
-                  ),
-                ),
-              ),
-              Container(
-                width: 400,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.fifty,
-                  borderRadius: BorderRadius.circular(36),
-                ),
-                child: Align(
-                  alignment: Alignment.center,
-                  child: AppButton.ghost(
-                    text: 'Close',
-                    onPressed: () => Navigator.of(context).pop(),
-                    borderRadius: 0,
-                  ),
-                ),
-              ),
-            ],
-          ),
+    return BaseDialog(
+      title: 'Add Project',
+      width: 400,
+      body: SizedBox(
+        width: 345,
+        height: 55,
+        child: InputBox(
+          controller: _controller,
+          hint: 'Project Name',
+          focusNode: _focus,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _focus.unfocus(),
         ),
       ),
+      actions: [
+        BaseDialogActionRow(
+          child: AppButton.dangerGhost(
+            text: 'Add',
+            onPressed: _working ? null : _handleAdd,
+            borderRadius: 0,
+          ),
+        ),
+        BaseDialogActionRow(
+          topBorder: false,
+          bottomRounded: true,
+          child: AppButton.ghost(
+            text: 'Close',
+            onPressed: () => Navigator.of(context).pop(),
+            borderRadius: 0,
+          ),
+        ),
+      ],
     );
   }
 }
