@@ -145,7 +145,7 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
   // ----------------
 
   void addRecording(Recording recording) {
-    state = state.copyWith(videos: [recording, ...state.videos]);
+    state = state.copyWith(recordings: [recording, ...state.recordings]);
   }
 
   void updateRecording({
@@ -154,8 +154,8 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
     UploadStatus? uploadStatus,
   }) {
     state = state.copyWith(
-      videos: [
-        for (final recording in state.videos)
+      recordings: [
+        for (final recording in state.recordings)
           if (recording.id == id)
             recording.copyWith(name: newName, uploadStatus: uploadStatus)
           else
@@ -165,14 +165,14 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
   }
 
   void removeRecording(String id) {
-    final updated = state.videos.where((r) => !(r.id == id)).toList();
+    final updated = state.recordings.where((r) => !(r.id == id)).toList();
 
     final shouldClearSelected =
-        state.selectedVideoId != null && state.selectedVideoId == id;
+        state.selectedRecordingId != null && state.selectedRecordingId == id;
 
     state = state.copyWith(
-      videos: updated,
-      selectedVideoId: shouldClearSelected ? null : state.selectedVideoId,
+      recordings: updated,
+      selectedRecordingId: shouldClearSelected ? null : state.selectedRecordingId,
     );
   }
 }

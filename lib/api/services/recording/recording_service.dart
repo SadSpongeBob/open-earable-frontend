@@ -170,7 +170,7 @@ class RecordingService {
   }
 
   Future<void> deleteCloudRecording(String recordingId) async {
-    await _dio.delete('${RecordingEndpoints.baseUrl}/$recordingId/delete');
+    await _dio.delete(RecordingEndpoints.deleteRecording(recordingId));
   }
 
   Future<List<Recording>> duplicateCloudRecordings({
@@ -178,7 +178,7 @@ class RecordingService {
     String? projectId,
   }) async {
     final res = await _dio.post<dynamic>(
-      '${RecordingEndpoints.baseUrl}/duplicate',
+      '${RecordingEndpoints.base}/duplicate',
       data: {
         'recordingIds': recordingIds,
         if (projectId != null) 'projectId': projectId,
@@ -192,7 +192,7 @@ class RecordingService {
   }
 }
 
-final recordingServiceProvider = Provider<RecordingService>((ref) {
+  final recordingServiceProvider = Provider<RecordingService>((ref) {
   final dio = ref.read(apiDioProvider);
   final localMedia = ref.read(localMediaProvider);
   return RecordingService(dio: dio, localMedia: localMedia);
