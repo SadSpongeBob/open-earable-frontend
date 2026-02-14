@@ -63,7 +63,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       ref.read(toastProvider.notifier).state = null;
     });
 
-    // ✅ watch only what this widget needs (reduces rebuilds / lag)
     final projects = ref.watch(homeStateProvider.select((s) => s.projects));
     final openProjectId =
     ref.watch(homeStateProvider.select((s) => s.openProjectId));
@@ -94,13 +93,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final isLocalOpenProject = _isLocalProject(openMeta, openProjectId);
 
-    // ✅ disable users button while choosing move target
     final showUsersButton = session.isAuthenticated &&
         !isLocalOpenProject &&
         openProjectId != LocalMedia.defaultProjectId &&
         !_isChoosingMoveTarget;
-
-    final canManageRecordings = controller.canManageRecordings;
 
     Future<void> handlePickMoveTarget(ProjectMetadata target) async {
       final targetIsLocal = _isLocalProject(target, target.id);
@@ -129,8 +125,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       controller.exitRecordingSelectionMode();
     }
 
-    final selectionEnabled =
-        canManageRecordings && isRecordingSelectionMode && !_isChoosingMoveTarget;
+    final selectionEnabled = isRecordingSelectionMode && !_isChoosingMoveTarget;
 
     return Scaffold(
       body: SafeArea(
@@ -235,12 +230,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                           }
                           controller.handleRecordingTap(item.id);
                         },
-                        onLongPressRecording: canManageRecordings
-                            ? (item) {
+                        onLongPressRecording: (item) {
                           if (_isChoosingMoveTarget) return;
                           controller.handleRecordingLongPress(item.id);
                         }
-                            : null,
                       ),
                     ),
                   ),

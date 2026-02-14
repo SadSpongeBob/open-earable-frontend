@@ -156,13 +156,25 @@ class HomeController {
     return candidate;
   }
 
-  bool get canManageRecordings {
+  Future<bool> _canManageRecordingsAsync() async {
     final project = _findById(state.openProjectId);
     if (project == null) return false;
+
     if (project.projectSource == ProjectSource.local) return true;
     if (!_authState.isAuthenticated) return true;
+
     final myUserId = _authState.user?.userId;
     if (myUserId == null) return false;
+
+    if (state.projectUsers.isEmpty) {
+      try {
+        final users = await _projectService.getProjectUsers(state.openProjectId);
+        _state.setProjectUsers(users);
+      } catch (_) {
+        return false;
+      }
+    }
+
     final me = state.projectUsers
         .where((u) => u.userId == myUserId)
         .toList()
@@ -529,8 +541,8 @@ class HomeController {
     // TODO: navigate to playback page
   }
 
-  void handleRecordingLongPress(String recordingId) {
-    if (!canManageRecordings) {
+  Future<void> handleRecordingLongPress(String recordingId) async {
+    if (!await _canManageRecordingsAsync()) {
       _toast(const ToastEvent.error('No permission to manage recordings'));
       return;
     }
