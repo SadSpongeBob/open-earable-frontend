@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/recording.dart';
-
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/home/widgets/project_bar.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
 import 'package:openearable/features/home/widgets/delete_project_dialog.dart';
-
+import 'package:openearable/app/ui/device/devices_popup_controller.dart';
+import 'package:openearable/app/widgets/devices_popup.dart';
 import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
-import '../../auth/state/session_provider.dart';
 import '../controllers/home_controller.dart';
-import '../widgets/project_action_bar.dart';
 import '../widgets/rename_project_dialog.dart';
+import '../../auth/state/session_provider.dart';
+import '../widgets/project_action_bar.dart';
 import '../widgets/users_button.dart';
 import '../widgets/users_popup.dart';
 
@@ -29,10 +29,19 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  final DevicesPopupController _popupController = DevicesPopupController();
+  final GlobalKey bluetoothKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(homeControllerProvider).loadProjects());
+  }
+
+  @override
+  void dispose() {
+    _popupController.hide();
+    super.dispose();
   }
 
   @override
@@ -171,13 +180,23 @@ class _HomePageState extends ConsumerState<HomePage> {
 
             HomeRecordingRightBar(
               onSettings: () => context.go(Routes.settings),
-              onWaveSound: () {},
+              onWaveSound: () => context.go('${Routes.sensordata}?source=home'),
               onShutter: () => context.go(Routes.recording),
-              onBluetooth: () {},
+              onBluetooth: () {
+                _popupController.toggle(
+                  context: context,
+                  positionedPopup: const Positioned(
+                    bottom: 30,
+                    right: 165,
+                    child: DevicesPopup(),
+                  ),
+                );
+              },
               padding: const EdgeInsets.symmetric(vertical: 24),
               isRecording: false,
               isPaused: false,
               showFlipButton: false,
+              bluetoothKey: bluetoothKey,
             ),
           ],
         ),
