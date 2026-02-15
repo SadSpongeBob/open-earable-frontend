@@ -13,21 +13,9 @@ class VideoSensorOverlay extends ConsumerWidget {
     final recordingProvider = ref.watch(recordingChartProvider);
     final chartId = recordingProvider.activeChartId;
 
-    //if (chartId == null || !recordingProvider.isOverlayVisible) {
-      //return const SizedBox.shrink();
-    //}
-
-    if (chartId == null || !recordingProvider.shouldShowOverlay) {
-      return Align(
-        alignment: Alignment.topCenter,
-        child: Container(
-          color: Colors.red,
-          padding: const EdgeInsets.all(4),
-          child: Text("DEBUG: ID=$chartId, Visible=${recordingProvider.shouldShowOverlay}", 
-            style: const TextStyle(color: Colors.white, fontSize: 10)),
-        ),
-      );
-    } 
+    if (chartId == null || !recordingProvider.isOverlayVisible) {
+      return const SizedBox.shrink();
+    }
 
     final wearablesNotifier = ref.watch(wearablesProvider);
     final String selectedId = chartId.toLowerCase().split('_').last.trim();
@@ -52,20 +40,8 @@ class VideoSensorOverlay extends ConsumerWidget {
       if (matchedDeviceId != null) break;
     }
 
-    //if (matchedDeviceId == null || matchedSensorIndex == null) {
-      //return const SizedBox.shrink();
-    //}
     if (matchedDeviceId == null || matchedSensorIndex == null) {
-      return Align(
-        alignment: Alignment.topCenter,
-        child: Container(
-          color: Colors.blue,
-          margin: const EdgeInsets.only(top: 20),
-          padding: const EdgeInsets.all(8),
-          child: Text("DEBUG: Searching '$selectedId' but no sensor matched!", 
-            style: const TextStyle(color: Colors.white)),
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     // CHART
@@ -81,8 +57,8 @@ class VideoSensorOverlay extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              matchedSensorName ?? "Unknown Sensor",
-              style: GlobalTextStyles.textMedium,
+              matchedSensorName ?? "Sensor",
+              style: GlobalTextStyles.footnoteMedium,
             ),
 
             const SizedBox(height: 10),
@@ -92,7 +68,7 @@ class VideoSensorOverlay extends ConsumerWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: SizedBox(
-                  height: 200,
+                  height: 220,
                   child: SensorChart(
                   allowToggleAxes: false,
                   deviceId: matchedDeviceId,

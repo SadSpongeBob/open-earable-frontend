@@ -27,75 +27,77 @@ class SensorConfigurationValueRow extends ConsumerWidget {
 
     return ListenableBuilder(
       listenable: sensorConfigNotifier,
-    builder: (context, _) {
-    return ListTile(
-      tileColor: Color(0xFFF2F2F2),
-      onTap: () {
-        showModalBottomSheet(
-          context: context,
-          builder: (modalContext) {
-            return Scaffold(
-              appBar: AppBar(
-                title: Text(sensorConfiguration.name, style: GlobalTextStyles.subHeaderMedium,),
-                leading: IconButton(
-                  icon: Icon(Icons.close),
-                  onPressed: () => Navigator.of(modalContext).pop(),
-                ),
-              ),
-              body: SensorConfigurationDetailView(
-                sensorConfiguration: sensorConfiguration,
-                deviceId: deviceId,
-              ),
+      builder: (context, _) {
+        return ListTile(
+          tileColor: Color(0xFFF2F2F2),
+          onTap: () {
+            showModalBottomSheet(
+              context: context,
+              builder: (modalContext) {
+                return Scaffold(
+                  appBar: AppBar(
+                    title: Text(
+                      sensorConfiguration.name, 
+                      style: GlobalTextStyles.subHeaderMedium,
+                    ),
+                    leading: IconButton(
+                      icon: Icon(Icons.close),
+                      onPressed: () => Navigator.of(modalContext).pop(),
+                    ),
+                  ),
+                  body: SensorConfigurationDetailView(
+                    sensorConfiguration: sensorConfiguration,
+                    deviceId: deviceId,
+                  ),
+                );
+              },
             );
           },
+          title: Text(sensorConfiguration.name),
+          trailing: _isOn(sensorConfigNotifier, sensorConfiguration)
+              ? () {
+                  if (sensorConfigNotifier
+                          .getSelectedConfigurationValue(sensorConfiguration) == null) {
+                    return Text(
+                      "Internal Error",
+                      style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
+                    );
+                  }
+                  SensorConfigurationValue value = sensorConfigNotifier
+                      .getSelectedConfigurationValue(sensorConfiguration)!;
+                  if (value is SensorFrequencyConfigurationValue) {
+                    SensorFrequencyConfigurationValue freqValue = value;
+
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (sensorConfiguration is ConfigurableSensorConfiguration)
+                          ...(sensorConfigNotifier.getSelectedConfigurationOptions(
+                            sensorConfiguration,
+                          )).map(
+                            (option) {
+                              return Icon(Icons.bluetooth, color: Color(0xFF6F6F6F));
+                            },
+                          ),
+                        Text(
+                          "${freqValue.frequencyHz} Hz",
+                          style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Text(
+                    value.toString(),
+                    style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
+                  );
+                }()
+              : Text(
+                  "Off",
+                  style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
+                ),
         );
       },
-      title: Text(sensorConfiguration.name),
-      trailing: _isOn(sensorConfigNotifier, sensorConfiguration)
-          ? () {
-              if (sensorConfigNotifier
-                      .getSelectedConfigurationValue(sensorConfiguration) ==
-                  null) {
-                return Text(
-                  "Internal Error",
-                  style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
-                );
-              }
-              SensorConfigurationValue value = sensorConfigNotifier
-                  .getSelectedConfigurationValue(sensorConfiguration)!;
-              if (value is SensorFrequencyConfigurationValue) {
-                SensorFrequencyConfigurationValue freqValue = value;
-
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (sensorConfiguration is ConfigurableSensorConfiguration)
-                      ...(sensorConfigNotifier.getSelectedConfigurationOptions(
-                        sensorConfiguration,
-                      )).map(
-                        (option) {
-                          return Icon(Icons.bluetooth, color: Color(0xFF6F6F6F));
-                        },
-                      ),
-                    Text(
-                      "${freqValue.frequencyHz} Hz",
-                      style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
-                    ),
-                  ],
-                );
-              }
-
-              return Text(
-                value.toString(),
-                style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
-              );
-            }()
-          : Text(
-              "Off",
-              style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
-            ),
-    );
-    },
     );
   }
 

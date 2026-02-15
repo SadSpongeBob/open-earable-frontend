@@ -43,86 +43,87 @@ class _SensorChartState extends ConsumerState<SensorChart> {
     final sensorData = ref.watch(
       sensorDataProviderFamily((widget.deviceId, widget.sensorIndex)),
     );
+
     return ListenableBuilder(
       listenable: sensorData,
-    builder: (context, _) {
-    final sensor = sensorData.sensor;
-    final enabledAxes = sensor.axisNames
-        .where((axis) => _axisEnabled[axis] ?? false)
-        .toList();
-    final axisData = _buildAxisData(sensorData.sensor, sensorData.sensorValues);
+      builder: (context, _) {
+        final sensor = sensorData.sensor;
+        final enabledAxes = sensor.axisNames
+            .where((axis) => _axisEnabled[axis] ?? false)
+            .toList();
+        final axisData = _buildAxisData(sensorData.sensor, sensorData.sensorValues);
     
-    return Column(
-      children: [
-        if (widget.allowToggleAxes)
-          Wrap(
-            spacing: 8,
-            children: sensor.axisNames.map((axisName) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Checkbox(
-                    value: _axisEnabled[axisName],
-                    checkColor: Colors.white,
-                    activeColor: _axisColor(axisName, sensor),
-                    onChanged: (value) =>
-                        _toggleAxis(axisName, value ?? false),
-                  ),
-                  Text(axisName),
-                ],
-              );
-            }).toList(),
-          ),
-        Expanded(
-          child: LineChart(
-            LineChartData(
-              lineTouchData: LineTouchData(enabled: true),
-              gridData: FlGridData(show: true),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                  axisNameWidget: Text(sensor.axisUnits.first),
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 45,
-                  ),
-                ),
-                rightTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: false,
-                  ),
-                ),
-                topTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: false,
-                  ),
-                ),
-                bottomTitles: AxisTitles(
-                  axisNameWidget: Text('Time (s)'),
-                  axisNameSize: 30,
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 30,
-                  ),
-                ),
+        return Column(
+          children: [
+            if (widget.allowToggleAxes)
+              Wrap(
+                spacing: 8,
+                children: sensor.axisNames.map((axisName) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Checkbox(
+                        value: _axisEnabled[axisName],
+                        checkColor: Colors.white,
+                        activeColor: _axisColor(axisName, sensor),
+                        onChanged: (value) =>
+                            _toggleAxis(axisName, value ?? false),
+                      ),
+                      Text(axisName),
+                    ],
+                  );
+                }).toList(),
               ),
-              borderData: FlBorderData(show: false),
-              lineBarsData: enabledAxes.map((axisName) {
-                return LineChartBarData(
-                  spots: axisData[axisName] ?? [],
-                  isCurved: false,
-                  barWidth: 2,
-                  color: _axisColor(axisName, sensor),
-                  isStrokeCapRound: true,
-                  dotData: FlDotData(show: false),
-                );
-              }).toList(),
+            Expanded(
+              child: LineChart(
+                LineChartData(
+                  lineTouchData: LineTouchData(enabled: true),
+                  gridData: FlGridData(show: true),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      axisNameWidget: Text(sensor.axisUnits.first),
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 45,
+                      ),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: false,
+                      ),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: false,
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      axisNameWidget: Text('Time (s)'),
+                      axisNameSize: 30,
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: enabledAxes.map((axisName) {
+                    return LineChartBarData(
+                      spots: axisData[axisName] ?? [],
+                      isCurved: false,
+                      barWidth: 2,
+                      color: _axisColor(axisName, sensor),
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(show: false),
+                    );
+                  }).toList(),
+                ),
+                duration: const Duration(milliseconds: 0),
+              ),
             ),
-            duration: const Duration(milliseconds: 0),
-          ),
-        ),
-      ],
-    );
-    },
+          ],
+        );
+      },
     );
   }
 
