@@ -46,6 +46,9 @@ class RecordingGrid extends StatelessWidget {
                   onTap: () => onTapRecording?.call(recording),
                   onLongPress: () => onLongPressRecording?.call(recording),
                   thumbnail: recording.thumbnailProvider,
+                  isUploading: recording.isUploading,
+                  isUploaded: recording.isUploaded,
+                  isUploadFailed: recording.isUploadFailed,
                 );
               },
             ),
@@ -64,6 +67,9 @@ class _RecordingTile extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     required this.thumbnail,
+    required this.isUploading,
+    required this.isUploaded,
+    required this.isUploadFailed,
   });
 
   final String name;
@@ -72,6 +78,9 @@ class _RecordingTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final ImageProvider thumbnail;
+  final bool isUploading;
+  final bool isUploaded;
+  final bool isUploadFailed;
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +125,16 @@ class _RecordingTile extends StatelessWidget {
                 ],
               ),
             ),
+            if (isUploading || isUploaded || isUploadFailed)
+              Positioned(
+                top: 16,
+                left: 24,
+                child: _UploadStatusIndicator(
+                  isUploading: isUploading,
+                  isUploaded: isUploaded,
+                  isUploadFailed: isUploadFailed,
+                ),
+              ),
 
             if (showSelectionCircle)
               Positioned(
@@ -150,6 +169,46 @@ class _SelectionCircle extends StatelessWidget {
               child: Icon(Icons.check, size: 30, color: Colors.white),
             )
           : null,
+    );
+  }
+}
+
+class _UploadStatusIndicator extends StatelessWidget {
+  const _UploadStatusIndicator({
+    required this.isUploading,
+    required this.isUploaded,
+    required this.isUploadFailed,
+  });
+
+  final bool isUploading;
+  final bool isUploaded;
+  final bool isUploadFailed;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget icon;
+
+    if (isUploading) {
+      icon = const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
+      );
+    } else if (isUploaded) {
+      icon = const Icon(Icons.check_circle, color: Colors.green, size: 22);
+    } else if (isUploadFailed) {
+      icon = const Icon(Icons.error, color: Colors.red, size: 22);
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(1),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.2),
+        shape: BoxShape.circle,
+      ),
+      child: icon,
     );
   }
 }
