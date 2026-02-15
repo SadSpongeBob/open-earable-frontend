@@ -52,24 +52,48 @@ class SensorsRecordingController extends ChangeNotifier {
     isRecording = false;
     isPaused = false;
 
-    final samples = _bucket.entries
-      .map((e) => {
-            "timestampMs": e.key,
-            "values": e.value,
-          })
-      .toList()
-    ..sort((a, b) => (a["timestampMs"] as int).compareTo(b["timestampMs"] as int));
+    final Map<String, List<Map<String, dynamic>>> sensorsMap = {};
+
+    for (var entry in _bucket.entries) {
+      final timestamp = entry.key;
+      final sensorValues = entry.value;
+
+      for (var sensorId in sensorValues.keys) {
+        final values = sensorValues[sensorId];
+        sensorsMap.putIfAbsent(sensorId, () => []);
+
+        final valueMap = <String, dynamic>{"timestamp": timestamp};
+        final axisNames = ['x', 'y', 'z', 'w', 'v', 'u', 't']; 
+
+        // map values to x, y, z
+        if (values != null) {
+          for (int i = 0; i < values.length; i++) {
+            final axis = i < axisNames.length ? axisNames[i] : 'axis$i';
+            valueMap[axis] = values[i];
+          }
+        }
+
+        sensorsMap[sensorId]!.add(valueMap);
+      }
+    }
+
+    final sensorsList = sensorsMap.entries.map((e) {
+      return {
+        "name": e.key,
+        "values": e.value,
+      };
+    }).toList();
 
     final json = {
       "version": 1,
       "recording": {
         "startTimeEpochMs": _recordingStartEpochMs,
-        if (samplingRateHz != null) "samplingRateHz": samplingRateHz,
+        ...?samplingRateHz != null ? {"samplingRateHz": samplingRateHz} : null,
       },
       "video": {
         "startTimeEpochMs": videoStartEpochMs,
       },
-      "samples": samples,
+      "sensors": sensorsList,
     };
 
     final dir = Directory('/storage/emulated/0/OpenEarable/sensors');

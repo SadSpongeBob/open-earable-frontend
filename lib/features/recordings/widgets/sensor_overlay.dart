@@ -48,7 +48,7 @@ class VideoSensorOverlay extends ConsumerWidget {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
-        height: 250,
+        height: 270,
         width: double.infinity,
         margin: const EdgeInsets.only(bottom: 50),
         decoration: BoxDecoration(color: Colors.white.withOpacity(0.55)),
@@ -68,7 +68,7 @@ class VideoSensorOverlay extends ConsumerWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: SizedBox(
-                  height: 220,
+                  height: 250,
                   child: SensorChart(
                   allowToggleAxes: false,
                   deviceId: matchedDeviceId,

@@ -8,6 +8,7 @@ import 'package:openearable/features/recordings/widgets/sensor_overlay.dart';
 import 'package:openearable/app/ui/device/devices_popup_controller.dart';
 import 'package:openearable/features/home/state/wearables_state.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:openearable/app/widgets/devices_popup.dart';
 import '../../../app/routing/routes.dart';
 import '../../home/state/home_provider.dart';
@@ -29,7 +30,11 @@ class RecordingPage extends ConsumerStatefulWidget {
   ConsumerState<RecordingPage> createState() => _RecordingPageState();
 }
 
-final sensorsRecordingProvider = Provider((ref) => SensorsRecordingController());
+final sensorsRecordingProvider = ChangeNotifierProvider<SensorsRecordingController>((ref) {
+  final controller = SensorsRecordingController();
+  ref.keepAlive(); // prevents automatic disposal
+  return controller;
+});
 
 class _RecordingPageState extends ConsumerState<RecordingPage> {
   late final RecordingController _controller;
@@ -60,12 +65,13 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   }
 
   Future<void> _onShutterPressed() async {
-    final wearablesNotifier = ref.read(wearablesProvider);
-    final hasSensors = wearablesNotifier.isConnected;
-
     if (_busy) return;
     _busy = true;
+
     try {
+      final wearablesNotifier = ref.read(wearablesProvider);
+      final hasSensors = wearablesNotifier.isConnected;
+
       if (_controller.isRecording) {
         final recording = await _controller.stopRecording(
           ref.read(homeStateProvider).openProjectId,
@@ -84,8 +90,8 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
           );
         }
       } else {
-        await _controller.startRecording();
         _videoStartEpochMs = DateTime.now().millisecondsSinceEpoch;
+        await _controller.startRecording();
         if (hasSensors) {
           _sensorsController.startRecording();
           wearablesNotifier.attachSensorsRecordingController(_sensorsController);

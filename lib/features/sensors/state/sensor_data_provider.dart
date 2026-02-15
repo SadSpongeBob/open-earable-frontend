@@ -52,10 +52,9 @@ class SensorDataProvider with ChangeNotifier {
 
     if (_throttleTimer?.isActive ?? false) return;
 
-    _throttleTimer = Timer(_throttleDuration, notifyListeners);
-    if (hasListeners) {
-      notifyListeners();
-    }
+    _throttleTimer = Timer(_throttleDuration, () {
+      if (hasListeners) notifyListeners();
+    });
   }
 
   @override
