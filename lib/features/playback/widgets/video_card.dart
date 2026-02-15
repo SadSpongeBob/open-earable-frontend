@@ -39,14 +39,13 @@ class VideoCard extends StatelessWidget {
                       error: (e, _) => Container(),
                       data: (samples) => SensorChartWidget(
                         controller: controller,
-                        samples: samples, // semi-transparent
+                        samples: samples,
                       ),
                     );
                   }),
                 ),
               ),
 
-              // Fortschrittsleiste unten
               Positioned(
                 bottom: 0,
                 left: 0,

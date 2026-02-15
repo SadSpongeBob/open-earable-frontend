@@ -1,18 +1,12 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 
 import '../controllers/playback_controller.dart';
-import '../widgets/sensorchart.dart';
 import '../widgets/top_bar.dart';
 import '../widgets/video_card.dart';
-import '../models/sensor_sample.dart';
-import '../providers/sensor_providers.dart';
 
-// --- Playback page UI -----------------------------------------------------
 class PlaybackPage extends ConsumerWidget {
   final String recordingId;
   final RecordingSource source;

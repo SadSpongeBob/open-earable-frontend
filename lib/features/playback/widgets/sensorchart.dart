@@ -43,7 +43,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
   @override
   Widget build(BuildContext context) {
     final end = _currentMs;
-    final start = (end - 6000).clamp(0, end); // 1-Sekunden Fenster
+    final start = (end - 4000).clamp(0, end);
 
     final window = widget.samples
         .where((s) => s.timestampMs >= start && s.timestampMs <= end)
@@ -56,7 +56,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
 
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3), // mehr transparent als vorher (0.7 → 0.3)
+              color: Colors.white.withOpacity(0.3),
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -82,12 +82,10 @@ class _ChartPainter extends CustomPainter {
     final paintGrid = Paint()
       ..color = Colors.grey.withOpacity(0.3)
       ..strokeWidth = 1;
-
     for (int i = 0; i < 5; i++) {
       final y = size.height * i / 4;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paintGrid);
     }
-
     if (samples.isEmpty || endMs <= startMs) return;
 
     double minV = double.infinity, maxV = -double.infinity;
@@ -115,10 +113,11 @@ class _ChartPainter extends CustomPainter {
         final x = t * size.width;
         final y = size.height - ((selector(s) - minV) / (maxV - minV)) * size.height;
 
-        if (i == 0)
+        if (i == 0) {
           path.moveTo(x, y);
-        else
+        } else {
           path.lineTo(x, y);
+        }
       }
       canvas.drawPath(path, p);
     }
