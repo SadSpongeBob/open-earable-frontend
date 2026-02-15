@@ -29,11 +29,12 @@ class RecordingPage extends ConsumerStatefulWidget {
   ConsumerState<RecordingPage> createState() => _RecordingPageState();
 }
 
+final sensorsRecordingProvider = Provider((ref) => SensorsRecordingController());
+
 class _RecordingPageState extends ConsumerState<RecordingPage> {
   late final RecordingController _controller;
   late final SensorsRecordingController _sensorsController;
   final DevicesPopupController _popupController = DevicesPopupController();
-  final sensorsRecordingProvider = Provider((ref) => SensorsRecordingController());
 
   bool _busy = false;
 

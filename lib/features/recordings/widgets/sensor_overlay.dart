@@ -13,8 +13,20 @@ class VideoSensorOverlay extends ConsumerWidget {
     final recordingProvider = ref.watch(recordingChartProvider);
     final chartId = recordingProvider.activeChartId;
 
+    //if (chartId == null || !recordingProvider.isOverlayVisible) {
+      //return const SizedBox.shrink();
+    //}
+
     if (chartId == null || !recordingProvider.isOverlayVisible) {
-      return const SizedBox.shrink();
+      return Align(
+        alignment: Alignment.topCenter,
+        child: Container(
+          color: Colors.red,
+          padding: const EdgeInsets.all(4),
+          child: Text("DEBUG: ID=$chartId, Visible=${recordingProvider.isOverlayVisible}", 
+            style: const TextStyle(color: Colors.white, fontSize: 10)),
+        ),
+      );
     } 
 
     final wearablesNotifier = ref.watch(wearablesProvider);
@@ -40,8 +52,20 @@ class VideoSensorOverlay extends ConsumerWidget {
       if (matchedDeviceId != null) break;
     }
 
+    //if (matchedDeviceId == null || matchedSensorIndex == null) {
+      //return const SizedBox.shrink();
+    //}
     if (matchedDeviceId == null || matchedSensorIndex == null) {
-      return const SizedBox.shrink();
+      return Align(
+        alignment: Alignment.topCenter,
+        child: Container(
+          color: Colors.blue,
+          margin: const EdgeInsets.only(top: 20),
+          padding: const EdgeInsets.all(8),
+          child: Text("DEBUG: Searching '$selectedId' but no sensor matched!", 
+            style: const TextStyle(color: Colors.white)),
+        ),
+      );
     }
 
     // CHART
