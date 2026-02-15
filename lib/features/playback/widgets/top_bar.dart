@@ -266,9 +266,9 @@ class TopBar extends ConsumerWidget {
                           ),
                         ),
                         TextButton(
-                          onPressed: () {
-                            unawaited(controller.deleteRecording(current));
-                            context.go(Routes.home);
+                          onPressed: () async {
+                            await controller.deleteRecording(current);
+                            if (context.mounted) context.go(Routes.home);
                           },
                           child: Text(
                             "Delete",

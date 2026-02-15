@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -227,6 +229,30 @@ class HomeController {
       return false;
     } catch (_) {
       _toast(const ToastEvent.error('Failed to check permissions'));
+      return false;
+    }
+  }
+  Future<bool> canAddRecordingToOpenProject() async {
+    final project = _findById(state.openProjectId);
+    if (project == null) return false;
+
+    if (project.id == LocalMedia.defaultProjectId) return true;
+    if (project.projectSource == ProjectSource.local) return true;
+
+    if (_authState.isGuest) return true;
+
+    final myUserId = _authState.user?.userId;
+    if (myUserId == null) return false;
+
+    try {
+      final users = await _projectService.getProjectUsers(state.openProjectId);
+      _state.setProjectUsers(users);
+
+      final me = users.where((u) => u.userId == myUserId).toList().firstOrNull;
+      if (me == null) return false;
+
+      return me.role is Owner || me.role is Editor;
+    } catch (_) {
       return false;
     }
   }
@@ -1019,6 +1045,17 @@ class HomeController {
       _state.setUsersLoading(false);
       _toast(const ToastEvent.error('Failed to remove user'));
     }
+  }
+
+  Future<void> handleGoToRecordingTap({
+    required VoidCallback goToRecording,
+  }) async {
+    final can = await canAddRecordingToOpenProject();
+    if (!can) {
+      _toast(const ToastEvent.error('No permission to add a recording in this project'));
+      return;
+    }
+    goToRecording();
   }
 
   void clearUsersPopupState() => _state.clearUsersPopupState();
