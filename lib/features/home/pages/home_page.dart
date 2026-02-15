@@ -328,7 +328,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: HomeRecordingRightBar(
                   onSettings: () => context.go(Routes.settings),
                   onWaveSound: () => context.go('${Routes.sensordata}?source=home'),
-                  onShutter: () => context.go(Routes.recording),
+                  onShutter: () => ref.read(homeControllerProvider).handleGoToRecordingTap(
+                    goToRecording: () => context.go(Routes.recording),
+                  ),
                   onBluetooth: () {
                     _popupController.toggle(
                       context: context,
