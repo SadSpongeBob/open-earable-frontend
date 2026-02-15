@@ -239,6 +239,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                             return;
                           }
                           if (item.isUploading) return;
+
+                          if (selectionEnabled) {
+                            controller.handleRecordingTap(item.id);
+                            return;
+                          }
+
                           context.go(Routes.playback(item.isCloud, item.id));
                         },
                         onLongPressRecording: (item) {
