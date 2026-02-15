@@ -125,15 +125,22 @@ class PlaybackController {
     homeStateNotifier.addRecording(uploaded);
 
     try {
-      final dir = localMedia.recordingDir(projectId, rec.id);
-      if (await dir.exists()) {
-        await dir.delete(recursive: true);
-      }
+      recordingService.deleteLocalRecording(projectId, rec.id);
     } catch (e) {
       if (kDebugMode) {
-        debugPrint("CLEANUP FAILED: ${rec.id}: $e");
+        debugPrint("CLEANUP FAILED: recordingId: ${rec.id}, error: $e");
       }
-      // TODO: mark for later cleanup
+      try {
+        recordingService.updateLocalUploadStatus(
+          projectId,
+          rec.id,
+          UploadStatus.failed,
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint("UPDATE STATUS FAILED: recordingId: ${rec.id}, error: $e");
+        }
+      }
     }
   }
 

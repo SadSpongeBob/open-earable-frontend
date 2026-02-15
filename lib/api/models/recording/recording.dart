@@ -101,6 +101,13 @@ enum UploadStatus {
       _ => throw ArgumentError.value(value, 'value', 'Invalid UploadStatus'),
     };
   }
+
+  String get json => switch (this) {
+    completed => 'COMPLETED',
+    failed => 'FAILED',
+    uploading => 'UPLOADING',
+    pending => 'PENDING',
+  };
 }
 
 enum RecordingSource { local, cloud }

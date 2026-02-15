@@ -127,6 +127,32 @@ class RecordingService {
     await tmp.rename(metaFile.path);
   }
 
+  Future<void> updateLocalUploadStatus(
+    String projectId,
+    String recordingId,
+    UploadStatus uploadStatus,
+  ) async {
+    final metaFile = _localMedia.recordingMetaFile(projectId, recordingId);
+    if (!await metaFile.exists()) {
+      throw FileSystemException("Meta file not found", metaFile.path);
+    }
+
+    final raw = await metaFile.readAsString();
+    final dynamic decoded = jsonDecode(raw);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException("Meta file is not a JSON object");
+    }
+
+    decoded['uploadStatus'] = uploadStatus.json;
+
+    final tmp = File('${metaFile.path}.tmp');
+    await tmp.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(decoded),
+      flush: true,
+    );
+    await tmp.rename(metaFile.path);
+  }
+
   Future<List<Recording>> getRecordings() async {
     final res = await _dio.get(RecordingEndpoints.base);
     final data = res.asList();
