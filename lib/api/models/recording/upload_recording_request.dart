@@ -66,7 +66,7 @@ class SensorUpload {
 
 enum SensorType {
   heartRate,
-  thermometer;
+  thermometer, accelerometer;
 
   factory SensorType.fromString(String value) {
     return switch (value) {
@@ -80,6 +80,8 @@ enum SensorType {
     return switch (this) {
       SensorType.heartRate => 'HEART_RATE',
       SensorType.thermometer => 'THERMOMETER',
+      // TODO: Handle this case.
+      SensorType.accelerometer => throw UnimplementedError(),
     };
   }
 }
