@@ -21,6 +21,9 @@ class _SaveConfigRowState extends ConsumerState<SaveConfigRow> {
     final provider = ref.watch(sensorConfigurationProviderFamily(widget.deviceId));
     final storage = ref.read(sensorConfigurationStorageProvider);
 
+    return ListenableBuilder(
+      listenable: provider,
+    builder: (context, _) {
     return ListTile(
       title: TextField(
         onChanged: (value) {
@@ -84,6 +87,8 @@ class _SaveConfigRowState extends ConsumerState<SaveConfigRow> {
           style: GlobalTextStyles.footnote,
         ),
       ),
+    );
+    }
     );
   }
 }

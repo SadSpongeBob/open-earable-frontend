@@ -25,6 +25,9 @@ class SensorConfigurationValueRow extends ConsumerWidget {
       sensorConfigurationProviderFamily(deviceId),
     );
 
+    return ListenableBuilder(
+      listenable: sensorConfigNotifier,
+    builder: (context, _) {
     return ListTile(
       tileColor: Color(0xFFF2F2F2),
       onTap: () {
@@ -91,6 +94,8 @@ class SensorConfigurationValueRow extends ConsumerWidget {
               "Off",
               style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
             ),
+    );
+    },
     );
   }
 

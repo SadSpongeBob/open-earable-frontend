@@ -18,6 +18,9 @@ class SensorConfigurationDetailView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sensorConfigNotifier = ref.watch(sensorConfigurationProviderFamily(deviceId));
 
+    return ListenableBuilder(
+      listenable: sensorConfigNotifier,
+    builder: (context, _) {
     return ListView(
       children: [
         if (sensorConfiguration is ConfigurableSensorConfiguration)
@@ -79,6 +82,8 @@ class SensorConfigurationDetailView extends ConsumerWidget {
           ),
         ),
       ],
+    );
+    }
     );
   }
 }

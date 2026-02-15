@@ -43,6 +43,9 @@ class _SensorChartState extends ConsumerState<SensorChart> {
     final sensorData = ref.watch(
       sensorDataProviderFamily((widget.deviceId, widget.sensorIndex)),
     );
+    return ListenableBuilder(
+      listenable: sensorData,
+    builder: (context, _) {
     final sensor = sensorData.sensor;
     final enabledAxes = sensor.axisNames
         .where((axis) => _axisEnabled[axis] ?? false)
@@ -118,6 +121,8 @@ class _SensorChartState extends ConsumerState<SensorChart> {
           ),
         ),
       ],
+    );
+    },
     );
   }
 
