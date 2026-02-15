@@ -49,8 +49,7 @@ class VideoSensorOverlay extends ConsumerWidget {
           break;
         }
       }
-      return Text('ID=$matchedSensorName');
-      //if (matchedDeviceId != null) break;
+      if (matchedDeviceId != null) break;
     }
 
     //if (matchedDeviceId == null || matchedSensorIndex == null) {
