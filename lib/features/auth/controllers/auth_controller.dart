@@ -6,6 +6,7 @@ import 'package:openearable/api/services/auth/guest_storage.dart';
 import 'package:openearable/api/services/user/user_service.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
+import 'package:openearable/features/home/state/network_status.dart';
 
 class AuthController {
   final AuthService _authService;
@@ -13,6 +14,7 @@ class AuthController {
   final SessionNotifier _session;
   final UserService _userService;
   final HomeStateNotifier _homeState;
+  final NetworkStatus? _networkStatus;
 
   AuthController(
     this._authService,
@@ -20,12 +22,15 @@ class AuthController {
     this._guestStorage,
     this._session,
     this._homeState,
+    this._networkStatus,
   );
 
   Future<void> bootstrap() async {
     _session.setLoading();
     try {
-      if (await _guestStorage.isGuest()) {
+      if (await _guestStorage.isGuest() ||
+          _networkStatus == null ||
+          _networkStatus == NetworkStatus.offline) {
         _session.setGuest();
         return;
       }
@@ -91,6 +96,7 @@ final authControllerProvider = Provider<AuthController>((ref) {
   final session = ref.read(sessionProvider.notifier);
   final guestStorage = ref.read(guestStorageProvider);
   final homeState = ref.read(homeStateProvider.notifier);
+  final networkStatus = ref.read(networkStatusProvider).value;
 
   return AuthController(
     authService,
@@ -98,5 +104,6 @@ final authControllerProvider = Provider<AuthController>((ref) {
     guestStorage,
     session,
     homeState,
+    networkStatus,
   );
 });
