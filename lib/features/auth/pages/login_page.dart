@@ -7,9 +7,10 @@ import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 
-
-
 import '../../../app/theme/text_styles.dart';
+import '../../../app/ui/popup_toast.dart';
+import '../../../app/ui/toast_controller.dart';
+import '../../../app/ui/toast_event.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/auth_card.dart';
 import '../widgets/auth_footer_link.dart';
@@ -56,12 +57,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final session = ref.watch(sessionProvider);
     final loading = session.isLoading;
 
+    ref.listen<ToastEvent?>(toastProvider, (prev, next) {
+      if (next == null) return;
+      PopupToast.show(context, message: next.message);
+      ref.read(toastProvider.notifier).state = null;
+    });
+
     ref.listen<AuthState>(sessionProvider, (prev, next) {
       final msg = next.error;
       if (msg != null && msg.isNotEmpty && msg != prev?.error) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
+        ref.read(toastProvider.notifier).state = ToastEvent.error(msg);
       }
     });
 

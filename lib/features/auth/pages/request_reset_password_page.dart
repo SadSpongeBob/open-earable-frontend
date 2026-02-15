@@ -5,7 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
+
 import '../../../app/theme/text_styles.dart';
+import '../../../app/ui/popup_toast.dart';
+import '../../../app/ui/toast_controller.dart';
+import '../../../app/ui/toast_event.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/auth_card.dart';
 import '../widgets/auth_footer_link.dart';
@@ -41,6 +45,12 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<ToastEvent?>(toastProvider, (prev, next) {
+      if (next == null) return;
+      PopupToast.show(context, message: next.message);
+      ref.read(toastProvider.notifier).state = null;
+    });
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -132,13 +142,11 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
         ),
       );
 
-      if (!mounted) return;
       context.go(Routes.login);
     } on DioException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Request failed')));
+      ref.read(toastProvider.notifier).state =
+          ToastEvent.error(e.message ?? 'Request failed');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

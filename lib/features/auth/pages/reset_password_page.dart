@@ -7,6 +7,9 @@ import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
 
 import '../../../app/theme/text_styles.dart';
+import '../../../app/ui/popup_toast.dart';
+import '../../../app/ui/toast_controller.dart';
+import '../../../app/ui/toast_event.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/auth_card.dart';
 import '../widgets/text_field.dart';
@@ -44,6 +47,12 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<ToastEvent?>(toastProvider, (prev, next) {
+      if (next == null) return;
+      PopupToast.show(context, message: next.message);
+      ref.read(toastProvider.notifier).state = null;
+    });
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -88,7 +97,8 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
                       icon: Icon(
                         _showPassword ? Icons.visibility_off : Icons.visibility,
                       ),
-                      onPressed: () => setState(() => _showPassword = !_showPassword),
+                      onPressed: () =>
+                          setState(() => _showPassword = !_showPassword),
                     ),
                   ),
                 ),
@@ -124,31 +134,14 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
       if (!mounted) return;
 
-      setState(() => _loading = false);
+      ref.read(toastProvider.notifier).state =
+      const ToastEvent.success('Password reset successfully');
 
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Password Reset'),
-          content: const Text('Your password has been reset successfully.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-
-      if (!mounted) return;
       context.go(Routes.login);
     } on DioException catch (exception) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(exception.message ?? 'Request failed')),
-      );
+      ref.read(toastProvider.notifier).state =
+          ToastEvent.error(exception.message ?? 'Request failed');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

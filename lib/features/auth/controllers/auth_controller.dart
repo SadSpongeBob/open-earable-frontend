@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
 import 'package:openearable/api/services/auth/guest_storage.dart';
 import 'package:openearable/api/services/user/user_service.dart';
+import 'package:openearable/app/ui/toast_controller.dart';
+import 'package:openearable/app/ui/toast_event.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 
@@ -13,14 +16,16 @@ class AuthController {
   final SessionNotifier _session;
   final UserService _userService;
   final HomeStateNotifier _homeState;
+  final StateController<ToastEvent?> _toast;
 
   AuthController(
-    this._authService,
-    this._userService,
-    this._guestStorage,
-    this._session,
-    this._homeState,
-  );
+      this._authService,
+      this._userService,
+      this._guestStorage,
+      this._session,
+      this._homeState,
+      this._toast,
+      );
 
   Future<void> bootstrap() async {
     _session.setLoading();
@@ -52,8 +57,10 @@ class AuthController {
       _session.setAuthenticated(user);
     } on DioException catch (e) {
       _session.setLoggedOut(e.message ?? 'Sign up failed');
+      _toast.state = ToastEvent.error(e.message ?? 'Sign up failed');
     } catch (_) {
       _session.setLoggedOut('Sign up failed');
+      _toast.state = const ToastEvent.error('Sign up failed');
     }
   }
 
@@ -66,8 +73,10 @@ class AuthController {
       _session.setAuthenticated(user);
     } on DioException catch (exception) {
       _session.setLoggedOut(exception.message);
+      _toast.state = ToastEvent.error(exception.message ?? 'Login failed');
     } catch (_) {
       _session.setLoggedOut('Login failed');
+      _toast.state = const ToastEvent.error('Login failed');
     }
   }
 
@@ -91,6 +100,7 @@ final authControllerProvider = Provider<AuthController>((ref) {
   final session = ref.read(sessionProvider.notifier);
   final guestStorage = ref.read(guestStorageProvider);
   final homeState = ref.read(homeStateProvider.notifier);
+  final toast = ref.read(toastProvider.notifier);
 
   return AuthController(
     authService,
@@ -98,5 +108,6 @@ final authControllerProvider = Provider<AuthController>((ref) {
     guestStorage,
     session,
     homeState,
+    toast,
   );
 });
