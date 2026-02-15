@@ -114,7 +114,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                       ),
                       const SizedBox(width: 12),
                       SizedBox(
-                        width: 140,
+                        width: 150,
                         height: 55,
                         child: PillMenu<RoleChoice>(
                           value: _role,
