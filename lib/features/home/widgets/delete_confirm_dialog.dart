@@ -3,23 +3,32 @@ import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/app/widgets/dialog.dart';
 import '../../../app/theme/text_styles.dart';
 
-class DeleteProjectDialog extends StatefulWidget {
-  const DeleteProjectDialog({super.key, this.onDelete});
+class DeleteConfirmDialog extends StatefulWidget {
+  const DeleteConfirmDialog({
+    super.key,
+    required this.onDelete,
+    required this.title,
+  });
 
-  final VoidCallback? onDelete;
+  final VoidCallback onDelete;
+  final String title;
 
-  static Future<void> show(BuildContext context, {VoidCallback? onDelete}) {
+  static Future<void> show(
+    BuildContext context, {
+    required VoidCallback onDelete,
+    required String title,
+  }) {
     return showAppDialog(
       context,
-      dialog: DeleteProjectDialog(onDelete: onDelete),
+      dialog: DeleteConfirmDialog(onDelete: onDelete, title: title),
     );
   }
 
   @override
-  State<DeleteProjectDialog> createState() => _DeleteFolderDialogState();
+  State<DeleteConfirmDialog> createState() => _DeleteConfirmDialogState();
 }
 
-class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
+class _DeleteConfirmDialogState extends State<DeleteConfirmDialog> {
   bool _working = false;
 
   Future<void> _handleDelete() async {
@@ -28,7 +37,7 @@ class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
     setState(() => _working = true);
 
     try {
-      widget.onDelete?.call();
+      widget.onDelete();
       Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _working = false);
@@ -38,7 +47,7 @@ class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
   @override
   Widget build(BuildContext context) {
     return BaseDialog(
-      title: 'Do you really want to \ndelete these projects?',
+      title: widget.title,
       body: Text(
         'This action cannot be undone',
         textAlign: TextAlign.center,

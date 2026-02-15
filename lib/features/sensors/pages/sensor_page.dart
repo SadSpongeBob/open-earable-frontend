@@ -11,10 +11,7 @@ import '../../../app/routing/routes.dart';
 class SensorPage extends StatefulWidget {
   final bool isRecordingSource;
 
-  const SensorPage({
-    super.key,
-    this.isRecordingSource = false,
-  });
+  const SensorPage({super.key, this.isRecordingSource = false});
 
   @override
   State<SensorPage> createState() => _SensorPageState();
@@ -59,7 +56,7 @@ class _SensorPageState extends State<SensorPage> {
                     color: Color(0xFF8F8F8F),
                     blurRadius: 30,
                     offset: Offset(-3, 0),
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -67,14 +64,12 @@ class _SensorPageState extends State<SensorPage> {
                 children: [
                   SizedBox(
                     child: BluetoothButton(
-                      buttonKey: _sensorBluetoothKey, 
+                      buttonKey: _sensorBluetoothKey,
                       onPressed: _onBluetoothPressed,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Expanded(
-                    child: SensorConfigurationView(),
-                  ),
+                  Expanded(child: SensorConfigurationView()),
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
@@ -107,12 +102,18 @@ class _SensorPageState extends State<SensorPage> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.arrow_back_ios_new_rounded, size: 17),
-                                  const Text(" Go Back", style: GlobalTextStyles.footnoteMedium),
+                                  Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    size: 17,
+                                  ),
+                                  const Text(
+                                    " Go Back",
+                                    style: AppTextStyles.footerMedium,
+                                  ),
                                 ],
                               ),
                             ],
-                          )
+                          ),
                         ),
                       ),
                     ),
@@ -124,18 +125,16 @@ class _SensorPageState extends State<SensorPage> {
             // RIGHT SIDE CONTENT (Charts)
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 40),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 40,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text(
-                      "Sensors",
-                      style: GlobalTextStyles.titleBold,
-                    ),
+                    const Text("Sensors", style: AppTextStyles.titleBold),
                     const SizedBox(height: 10),
-                    Expanded(
-                      child: SensorValues(),
-                    ),
+                    Expanded(child: SensorValues()),
                   ],
                 ),
               ),

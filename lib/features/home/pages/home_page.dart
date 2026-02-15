@@ -52,6 +52,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     _popupController.hide();
     super.dispose();
   }
+
   void _exitMoveMode() {
     if (!_isChoosingMoveTarget) return;
     setState(() {
@@ -75,13 +76,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
 
     final projects = ref.watch(homeStateProvider.select((s) => s.projects));
-    final openProjectId =
-    ref.watch(homeStateProvider.select((s) => s.openProjectId));
+    final openProjectId = ref.watch(
+      homeStateProvider.select((s) => s.openProjectId),
+    );
 
-    final isProjectSelectionMode =
-    ref.watch(homeStateProvider.select((s) => s.isProjectSelectionMode));
-    final selectedProjectIds =
-    ref.watch(homeStateProvider.select((s) => s.selectedProjectIds));
+    final isProjectSelectionMode = ref.watch(
+      homeStateProvider.select((s) => s.isProjectSelectionMode),
+    );
+    final selectedProjectIds = ref.watch(
+      homeStateProvider.select((s) => s.selectedProjectIds),
+    );
 
     final recordings = ref.watch(homeStateProvider.select((s) => s.recordings));
     final isRecordingSelectionMode = ref.watch(
@@ -104,7 +108,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final isLocalOpenProject = _isLocalProject(openMeta, openProjectId);
 
-    final showUsersButton = session.isAuthenticated &&
+    final showUsersButton =
+        session.isAuthenticated &&
         !isLocalOpenProject &&
         openProjectId != LocalMedia.defaultProjectId &&
         !_isChoosingMoveTarget;
@@ -114,16 +119,16 @@ class _HomePageState extends ConsumerState<HomePage> {
       final sourceIsLocal = _isLocalProject(openMeta, openProjectId);
 
       if (sourceIsLocal != targetIsLocal) {
-        ref.read(toastProvider.notifier).state =
-        const ToastEvent.error(
+        ref.read(toastProvider.notifier).state = const ToastEvent.error(
           'You can only move local→local or cloud→cloud',
         );
         return;
       }
 
       if (target.id == openProjectId) {
-        ref.read(toastProvider.notifier).state =
-        const ToastEvent.error('Choose a different project');
+        ref.read(toastProvider.notifier).state = const ToastEvent.error(
+          'Choose a different project',
+        );
         return;
       }
 
@@ -188,6 +193,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                               if (!mounted) return;
                               controller.exitProjectSelectionMode();
                             },
+                            title:
+                                'Do you really want to \ndelete these projects?',
                           );
                         },
                         onDuplicate: () {
@@ -197,8 +204,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         onRename: () {
                           if (selectedProjectCount != 1) return;
                           final projectId = selectedProjectIds.first;
-                          final project =
-                          projects.firstWhere((p) => p.id == projectId);
+                          final project = projects.firstWhere(
+                            (p) => p.id == projectId,
+                          );
 
                           showDialog<String>(
                             context: context,
@@ -228,7 +236,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         fit: BoxFit.cover,
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.sixHundred, width: 2)
+                      border: Border.all(color: AppColors.sixHundred, width: 2),
                     ),
                     child: RepaintBoundary(
                       child: RecordingGrid(
@@ -246,7 +254,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         onLongPressRecording: (item) {
                           if (_isChoosingMoveTarget) return;
                           controller.handleRecordingLongPress(item.id);
-                        }
+                        },
                       ),
                     ),
                   ),
@@ -261,14 +269,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                         onDelete: () {
                           DeleteConfirmDialog.show(
                             context,
-                            title:
-                            'Do you really want to\ndelete these recordings?',
                             onDelete: () async {
-                              await controller
-                                  .deleteRecordings(selectedRecordingIds);
+                              await controller.deleteRecordings(
+                                selectedRecordingIds,
+                              );
                               if (!mounted) return;
                               controller.exitRecordingSelectionMode();
                             },
+                            title:
+                                'Do you really want to\ndelete these recordings?',
                           );
                         },
                         onDuplicate: () {
@@ -277,8 +286,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         onMove: () {
                           setState(() {
                             _isChoosingMoveTarget = true;
-                            _recordingIdsToMove =
-                            Set<String>.from(selectedRecordingIds);
+                            _recordingIdsToMove = Set<String>.from(
+                              selectedRecordingIds,
+                            );
                           });
                         },
                         onDone: controller.exitRecordingSelectionMode,
@@ -292,7 +302,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         behavior: HitTestBehavior.opaque,
                         onTap: _exitMoveMode,
                         child: Container(
-                          color: Colors.black.withOpacity(0.35),
+                          color: AppColors.nineHundred.withValues(alpha: 0.35),
                           child: Center(
                             child: GestureDetector(
                               onTap: () {},
@@ -329,10 +339,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                 opacity: _isChoosingMoveTarget ? 0.4 : 1.0,
                 child: HomeRecordingRightBar(
                   onSettings: () => context.go(Routes.settings),
-                  onWaveSound: () => context.go('${Routes.sensordata}?source=home'),
-                  onShutter: () => ref.read(homeControllerProvider).handleGoToRecordingTap(
-                    goToRecording: () => context.go(Routes.recording),
-                  ),
+                  onWaveSound: () =>
+                      context.go('${Routes.sensordata}?source=home'),
+                  onShutter: () => ref
+                      .read(homeControllerProvider)
+                      .handleGoToRecordingTap(
+                        goToRecording: () => context.go(Routes.recording),
+                      ),
                   onBluetooth: () {
                     _popupController.toggle(
                       context: context,
@@ -358,6 +371,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 }
+
 extension _FirstOrNullX<T> on List<T> {
   T? get firstOrNull => isEmpty ? null : first;
 }

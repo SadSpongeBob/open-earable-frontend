@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/sensors/widgets/sensor_chart.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
@@ -39,11 +40,9 @@ class SelectableSensorCard extends ConsumerWidget {
         );
       },
       child: Card(
-        color: const Color(0xFFF2F2F2),
+        color: AppColors.fifty,
         elevation: 3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -55,7 +54,7 @@ class SelectableSensorCard extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       sensor.sensorName,
-                      style: GlobalTextStyles.footnoteMedium,
+                      style: AppTextStyles.footerMedium,
                     ),
                   ),
                   Checkbox(

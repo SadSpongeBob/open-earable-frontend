@@ -142,7 +142,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                             await controller.addUserToOpenProject(
                               myUserId: myUserId,
                               emailAddress: _emailController.text,
-                              role: _role.toProjectRole(),
+                              role: _role.toRoleType(),
                             );
 
                             _emailController.clear();

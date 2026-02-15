@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/sensors/state/sensor_configurations_provider.dart';
 import 'package:openearable/features/sensors/widgets/sensor_configuration_detail_view.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
@@ -26,14 +27,14 @@ class SensorConfigurationValueRow extends ConsumerWidget {
     );
 
     return ListTile(
-      tileColor: Color(0xFFF2F2F2),
+      tileColor: AppColors.fifty,
       onTap: () {
         showModalBottomSheet(
           context: context,
           builder: (modalContext) {
             return Scaffold(
               appBar: AppBar(
-                title: Text(sensorConfiguration.name, style: GlobalTextStyles.subHeaderMedium,),
+                title: Text(sensorConfiguration.name, style: AppTextStyles.subheaderMedium,),
                 leading: IconButton(
                   icon: Icon(Icons.close),
                   onPressed: () => Navigator.of(modalContext).pop(),
@@ -55,7 +56,7 @@ class SensorConfigurationValueRow extends ConsumerWidget {
                   null) {
                 return Text(
                   "Internal Error",
-                  style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
+                  style: AppTextStyles.footerRegular.copyWith(color: AppColors.sixHundred),
                 );
               }
               SensorConfigurationValue value = sensorConfigNotifier
@@ -71,12 +72,12 @@ class SensorConfigurationValueRow extends ConsumerWidget {
                         sensorConfiguration,
                       )).map(
                         (option) {
-                          return Icon(Icons.bluetooth, color: Color(0xFF6F6F6F));
+                          return Icon(Icons.bluetooth, color: AppColors.sixHundred);
                         },
                       ),
                     Text(
                       "${freqValue.frequencyHz} Hz",
-                      style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
+                      style: AppTextStyles.footerRegular.copyWith(color: AppColors.sixHundred),
                     ),
                   ],
                 );
@@ -84,12 +85,12 @@ class SensorConfigurationValueRow extends ConsumerWidget {
 
               return Text(
                 value.toString(),
-                style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
+                style: AppTextStyles.footerRegular.copyWith(color: AppColors.sixHundred),
               );
             }()
           : Text(
               "Off",
-              style: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
+              style: AppTextStyles.footerRegular.copyWith(color: AppColors.sixHundred),
             ),
     );
   }

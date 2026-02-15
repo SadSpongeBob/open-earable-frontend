@@ -32,7 +32,7 @@ extension ProjectRoleTypeApi on ProjectRoleType {
       case 'VIEWER':
         return ProjectRoleType.viewer;
       default:
-        throw ArgumentError.value(role, 'role', 'Invalid role')
+        throw ArgumentError.value(role, 'role', 'Invalid role');
     }
   }
 }
