@@ -83,16 +83,17 @@ class _RecordingTile extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(10),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Container(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: AppColors.sixHundred),
@@ -102,27 +103,23 @@ class _RecordingTile extends StatelessWidget {
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.footerBold
-                  ),
-                ],
-              ),
-            ),
 
-            if (showSelectionCircle)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: _SelectionCircle(isChecked: isChecked),
+                      if (showSelectionCircle)
+                        _SelectionCircle(isChecked: isChecked),
+                    ],
+                  ),
+                ),
               ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.footerBold,
+              ),
+            ],
+          ),
         ),
       ),
     );

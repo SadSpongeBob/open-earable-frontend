@@ -6,6 +6,8 @@ import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
+import 'package:openearable/app/ui/device/devices_popup_controller.dart';
+import 'package:openearable/app/widgets/devices_popup.dart';
 import '../../../app/routing/routes.dart';
 import '../../home/state/home_provider.dart';
 import '../controllers/recording_controller.dart';
@@ -27,6 +29,9 @@ class RecordingPage extends ConsumerStatefulWidget {
 
 class _RecordingPageState extends ConsumerState<RecordingPage> {
   late final RecordingController _controller;
+  final DevicesPopupController _popupController = DevicesPopupController();
+  final GlobalKey bluetoothKey = GlobalKey();
+
   bool _busy = false;
 
   @override
@@ -37,6 +42,12 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
       if (!mounted) return;
       setState(() {});
     });
+  }
+
+  @override
+  void dispose() {
+    _popupController.hide();
+    super.dispose();
   }
 
   Future<void> _onShutterPressed() async {
@@ -114,17 +125,23 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
                 context.go(Routes.settings);
               }
             },
-            onWaveSound: () {
-              // TODO sensors page
-            },
+            onWaveSound: () => context.go('${Routes.sensordata}?source=recording'),
             onShutter: _onShutterPressed,
             onFlipCamera: _onFlipOrPausePressed,
             onBluetooth: () {
-              // TODO bluetooth popup
+              _popupController.toggle(
+                context: context,
+                positionedPopup: const Positioned(
+                  bottom: 30,
+                  right: 165,
+                  child: DevicesPopup(),
+                ),
+              );
             },
             padding: const EdgeInsets.symmetric(vertical: 24),
             isRecording: _controller.isRecording,
             isPaused: _controller.isPaused,
+            bluetoothKey: bluetoothKey,
           ),
         ],
       ),

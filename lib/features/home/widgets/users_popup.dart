@@ -13,13 +13,13 @@ import '../controllers/home_controller.dart';
 import '../state/home_state.dart';
 import '../state/home_provider.dart';
 
-enum RoleChoice { viewer, editor }
+enum RoleChoice { editor, viewer }
 
 extension _RoleChoiceX on RoleChoice {
   String get label => this == RoleChoice.editor ? 'Editor' : 'Viewer';
 
-  ProjectRole toProjectRole() =>
-      this == RoleChoice.editor ? Editor(userId: '') : Viewer(userId: '');
+  ProjectRoleType toRoleType() =>
+      this == RoleChoice.editor ? ProjectRoleType.editor : ProjectRoleType.viewer;
 }
 
 class UsersPopup extends ConsumerStatefulWidget {
@@ -76,10 +76,8 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
 
     final users = state.projectUsers;
     final canAdd = _canAdd(state.isUsersLoading);
-
-    // You can decide policy here:
-    final canManage =
-        myUserId != null && controller.canManageUsers(myUserId: myUserId);
+    final canManage = myUserId != null &&
+        users.any((u) => u.userId == myUserId && u.role is Owner);
 
     return Dialog(
       insetPadding: const EdgeInsets.all(18),
@@ -100,63 +98,63 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                 const Text('Users', style: AppTextStyles.headerBold),
                 const SizedBox(height: 18),
 
-                // input row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 330,
-                      height: 55,
-                      child: InputBox(
-                        controller: _emailController,
-                        hint: 'User Email',
-                        keyboardType: TextInputType.emailAddress,
+                if (canManage) ...[
+                  // input row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 330,
+                        height: 55,
+                        child: InputBox(
+                          controller: _emailController,
+                          hint: 'User Email',
+                          keyboardType: TextInputType.emailAddress,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      width: 140,
-                      height: 55,
-                      child: PillMenu<RoleChoice>(
-                        value: _role,
-                        options: RoleChoice.values,
-                        labelOf: (r) => r.label,
-                        onChanged: (v) => setState(() => _role = v),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 140,
+                        height: 55,
+                        child: PillMenu<RoleChoice>(
+                          value: _role,
+                          options: RoleChoice.values,
+                          labelOf: (r) => r.label,
+                          onChanged: (v) => setState(() => _role = v),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
 
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
 
-                // add button
-                SizedBox(
-                  width: 490,
-                  height: 55,
-                  child: Opacity(
-                    opacity: canAdd ? 1.0 : 0.45,
-                    child: IgnorePointer(
-                      ignoring: !canAdd,
-                      child: AppButton.primary(
-                        text: 'Add',
-                        onPressed: () async {
-                          if (myUserId == null) return;
+                  // add button
+                  SizedBox(
+                    width: 490,
+                    height: 55,
+                    child: Opacity(
+                      opacity: canAdd ? 1.0 : 0.45,
+                      child: IgnorePointer(
+                        ignoring: !canAdd,
+                        child: AppButton.primary(
+                          text: 'Add',
+                          onPressed: () async {
+                            await controller.addUserToOpenProject(
+                              myUserId: myUserId,
+                              emailAddress: _emailController.text,
+                              role: _role.toProjectRole(),
+                            );
 
-                          await controller.addUserToOpenProject(
-                            myUserId: myUserId,
-                            emailAddress: _emailController.text,
-                            role: _role.toProjectRole(),
-                          );
-
-                          _emailController.clear();
-                          setState(() => _role = RoleChoice.viewer);
-                        },
+                            _emailController.clear();
+                            setState(() => _role = RoleChoice.viewer);
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
+                ],
 
                 // list
                 Expanded(
@@ -260,7 +258,6 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Adjust this field name if your model uses a different one:
     final isMe = myUserId != null && user.userId == myUserId;
 
     final showRemove = canManage && !isMe;
@@ -326,7 +323,7 @@ class _UserCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _roleLabel(user.role),
+                    user.role.label,
                     style: AppTextStyles.footerMedium,
                   ),
                 ],
@@ -341,11 +338,5 @@ class _UserCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _roleLabel(ProjectRole role) {
-    if (role is Owner) return 'Owner';
-    if (role is Editor) return 'Editor';
-    return 'Viewer';
   }
 }
