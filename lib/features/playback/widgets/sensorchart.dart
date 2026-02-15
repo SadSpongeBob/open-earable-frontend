@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../models/sensor_sample.dart';
+import '../controllers/sensor_repository.dart';
+
 
 class SensorChartWidget extends StatefulWidget {
   final dynamic controller;

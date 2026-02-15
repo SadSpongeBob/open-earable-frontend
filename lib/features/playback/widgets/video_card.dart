@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/playback/widgets/sensorchart.dart';
 import 'package:video_player/video_player.dart';
 
-import '../providers/sensor_providers.dart';
+import '../state/sensor_providers.dart';
 
 class VideoCard extends StatelessWidget {
   final VideoPlayerController controller;
