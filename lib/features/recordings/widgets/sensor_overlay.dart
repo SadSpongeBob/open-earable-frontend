@@ -30,7 +30,7 @@ class VideoSensorOverlay extends ConsumerWidget {
     } 
 
     final wearablesNotifier = ref.watch(wearablesProvider);
-    final String selectedId = chartId.toLowerCase();
+    final String selectedId = chartId.toLowerCase().split('_').last.trim();
 
     int? matchedSensorIndex;
     String? matchedDeviceId;
@@ -40,9 +40,9 @@ class VideoSensorOverlay extends ConsumerWidget {
       final providers = wearablesNotifier.getSensorDataProviders(wearable);
       
       for (int i = 0; i < providers.length; i++) {
-        String sensorName = providers[i].sensor.sensorName.toLowerCase();
+        String sensorName = providers[i].sensor.sensorName.toLowerCase().trim();
 
-        if (selectedId.contains(sensorName)) {
+        if (selectedId.contains(sensorName) || sensorName.contains(selectedId)) {
           matchedSensorName = sensorName;
           matchedDeviceId = wearable.deviceId;
           matchedSensorIndex = i;
@@ -72,7 +72,7 @@ class VideoSensorOverlay extends ConsumerWidget {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
-        height: 200,
+        height: 250,
         width: double.infinity,
         margin: const EdgeInsets.only(bottom: 50),
         decoration: BoxDecoration(color: Colors.white.withOpacity(0.55)),
