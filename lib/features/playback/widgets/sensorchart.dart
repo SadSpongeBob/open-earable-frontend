@@ -22,7 +22,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
   void initState() {
     super.initState();
     _updatePosition();
-    _timer = Timer.periodic(const Duration(milliseconds: 100), (_) => _updatePosition());
+    _timer = Timer.periodic(const Duration(milliseconds: 10), (_) => _updatePosition());
   }
 
   void _updatePosition() {
@@ -40,21 +40,17 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
     _timer.cancel();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     final end = _currentMs;
-    final start = (end - 4000).clamp(0, end);
-
+    final start = (end - 8000).clamp(0, end);
     final window = widget.samples
         .where((s) => s.timestampMs >= start && s.timestampMs <= end)
         .toList();
-
     return SizedBox(
       height: 200,
       child: Stack(
         children: [
-
           Container(
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.3),
@@ -75,9 +71,7 @@ class _ChartPainter extends CustomPainter {
   final List<SensorSample> samples;
   final int startMs;
   final int endMs;
-
   _ChartPainter({required this.samples, required this.startMs, required this.endMs});
-
   @override
   void paint(Canvas canvas, Size size) {
     final paintGrid = Paint()
@@ -88,46 +82,52 @@ class _ChartPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paintGrid);
     }
     if (samples.isEmpty || endMs <= startMs) return;
-
     double minV = double.infinity, maxV = -double.infinity;
     for (final s in samples) {
       minV = mathMin(minV, mathMin(s.x, mathMin(s.y, s.z)));
       maxV = mathMax(maxV, mathMax(s.x, mathMax(s.y, s.z)));
     }
-
     if ((maxV - minV).abs() < 1e-6) {
       maxV += 1;
       minV -= 1;
     }
-
+    double paddingFactor = 0.1;
+    double paddedMinV = minV - (maxV - minV) * paddingFactor;
+    double paddedMaxV = maxV + (maxV - minV) * paddingFactor;
     void drawLine(Color color, double Function(SensorSample) selector) {
       final p = Paint()
         ..color = color.withOpacity(0.9)
         ..strokeWidth = 2.5
         ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-
+        ..strokeCap = StrokeCap.round
+        ..isAntiAlias = true;
       final path = Path();
+      double? prevX, prevY;
       for (int i = 0; i < samples.length; i++) {
         final s = samples[i];
         final t = (s.timestampMs - startMs) / (endMs - startMs);
         final x = t * size.width;
-        final y = size.height - ((selector(s) - minV) / (maxV - minV)) * size.height;
-
+        final y = size.height - ((selector(s) - paddedMinV) / (paddedMaxV - paddedMinV)) * size.height;
         if (i == 0) {
           path.moveTo(x, y);
         } else {
-          path.lineTo(x, y);
+          final midX = (prevX! + x) / 2;
+          final midY = (prevY! + y) / 2;
+          path.quadraticBezierTo(prevX, prevY, midX, midY);
         }
+        prevX = x;
+        prevY = y;
       }
-      canvas.drawPath(path, p);
-    }
 
+      if (prevX != null && prevY != null) path.lineTo(prevX, prevY);
+
+      canvas.drawPath(path, p);
+
+    }
     drawLine(Colors.red, (s) => s.x);
     drawLine(Colors.green, (s) => s.y);
     drawLine(Colors.blue, (s) => s.z);
   }
-
   @override
   bool shouldRepaint(covariant _ChartPainter old) =>
       old.samples != samples || old.startMs != startMs || old.endMs != endMs;

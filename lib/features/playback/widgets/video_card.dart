@@ -29,17 +29,17 @@ class VideoCard extends StatelessWidget {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 20, // Abstand über Fortschrittsleiste
-                height: 100,
+                bottom: 20,
+                height: 150,
                 child: ProviderScope(
                   child: Consumer(builder: (context, ref2, _) {
-                    final sensorAsync = ref2.watch(sensorDataProvider("Accelerometer"));
+                    final sensorAsync = ref2.watch(sensorDataProvider("Gyroscope"));
                     return sensorAsync.when(
                       loading: () => Container(),
                       error: (e, _) => Container(),
                       data: (samples) => SensorChartWidget(
                         controller: controller,
-                        samples: samples,
+                        samples: samples
                       ),
                     );
                   }),

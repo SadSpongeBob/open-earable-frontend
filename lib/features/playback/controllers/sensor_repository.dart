@@ -39,7 +39,6 @@ class SensorRepository {
 
           accel.add(SensorSample(timestampMs: ts, x: dx, y: dy, z: dz));
         } catch (_) {
-          continue;
         }
       }
 
