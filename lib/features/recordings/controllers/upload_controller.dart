@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:openearable/api/local_media.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/services/s3/s3_service.dart';
@@ -15,27 +16,27 @@ class UploadController {
 
   UploadController(this.localMedia, this.recordingService, this.s3Service);
 
-  Future<bool> uploadRecording({
+  Future<Recording?> uploadRecording({
     required String recordingId,
     required String projectId,
     void Function(double progress)? onVideoProgress,
   }) async {
     final videoFile = localMedia.videoFile(projectId, recordingId);
-    if (!await videoFile.exists()) return false;
+    if (!await videoFile.exists()) return null;
 
     final metaFile = localMedia.recordingMetaFile(projectId, recordingId);
-    if (!await metaFile.exists()) return false;
+    if (!await metaFile.exists()) return null;
 
     late final Map<String, dynamic> meta;
     try {
       meta = jsonDecode(await metaFile.readAsString()) as Map<String, dynamic>;
     } catch (_) {
-      return false;
+      return null;
     }
 
     final name = meta['name'];
     final timestampRaw = meta['timestamp'];
-    if (name is! String || timestampRaw is! String) return false;
+    if (name is! String || timestampRaw is! String) return null;
 
     final ts = DateTime.tryParse(timestampRaw)?.toUtc()
         ?? await _fallbackTimestampUtc(videoFile);
@@ -90,8 +91,7 @@ class UploadController {
         }
       }
 
-      await recordingService.completeUpload(uploadResp.recordingId);
-      return true;
+      return await recordingService.completeUpload(uploadResp.recordingId);
     } on DioException catch (e) {
       if (kDebugMode) {
         debugPrint(
@@ -101,7 +101,7 @@ class UploadController {
         debugPrint("Body: ${e.response?.data}");
         debugPrint("Error: $e");
       }
-      return false;
+      return null;
     } catch (e) {
       if (kDebugMode) {
         debugPrint(
@@ -109,7 +109,7 @@ class UploadController {
         );
         debugPrint("Error: $e");
       }
-      return false;
+      return null;
     }
   }
 

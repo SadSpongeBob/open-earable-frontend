@@ -116,7 +116,7 @@ extension RecordingX on Recording {
   bool get isUploaded =>
       source == RecordingSource.local && uploadStatus == UploadStatus.completed;
 
-  bool get canRetryUpload =>
+  bool get isUploadFailed =>
       source == RecordingSource.local && uploadStatus == UploadStatus.failed;
 
   ImageProvider get thumbnailProvider {

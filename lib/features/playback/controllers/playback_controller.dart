@@ -107,35 +107,33 @@ class PlaybackController {
       uploadStatus: UploadStatus.uploading,
     );
 
-    final ok = await uploadController.uploadRecording(
+    final uploaded = await uploadController.uploadRecording(
       recordingId: rec.id,
       projectId: projectId,
     );
 
-    if (ok) {
-      homeStateNotifier.updateRecording(
-        id: rec.id,
-        uploadStatus: UploadStatus.completed,
-      );
-
-      try {
-        final dir = localMedia.recordingDir(projectId, rec.id);
-        if (await dir.exists()) {
-          await dir.delete(recursive: true);
-        }
-      } catch (_) {
-        if (kDebugMode) {
-          debugPrint(
-            "CLEANUP FAILED: recording with recordingId: ${rec.id}, (upload completed)",
-          );
-        }
-        // TODO: Add meta.json status for late cleanup
-      }
-    } else {
+    if (uploaded == null) {
       homeStateNotifier.updateRecording(
         id: rec.id,
         uploadStatus: UploadStatus.failed,
       );
+      return;
+    }
+
+    homeStateNotifier.removeRecording(rec.id);
+
+    homeStateNotifier.addRecording(uploaded);
+
+    try {
+      final dir = localMedia.recordingDir(projectId, rec.id);
+      if (await dir.exists()) {
+        await dir.delete(recursive: true);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint("CLEANUP FAILED: ${rec.id}: $e");
+      }
+      // TODO: mark for later cleanup
     }
   }
 
