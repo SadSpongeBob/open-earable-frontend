@@ -149,78 +149,80 @@ class _HomePageState extends ConsumerState<HomePage> {
           // PROJECTS BAR
           SizedBox(
             width: 500,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: ProjectBar(
-                    projects: projects,
-                    openProjectId: openProjectId,
-                    isSelectionMode: isProjectSelectionMode,
-                    selectedProjectIds: selectedProjectIds,
-                    onAddProject: () async {
-                      final name = await AddProjectDialog.show(context);
-                      if (name == null) return;
-                      await controller.createProject(name);
-                    },
-                    onTapProject: (item) {
-                      if (_isChoosingMoveTarget) {
-                        handlePickMoveTarget(item);
-                      } else {
-                        controller.handleProjectTap(item.id);
-                      }
-                    },
-                    onLongPressProject: (item) =>
-                        controller.handleProjectLongPress(item.id),
-                  ),
-                ),
-
-                if (isProjectSelectionMode)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: ProjectSelectionActionBar(
-                      selectedCount: selectedProjectCount,
-                      onDelete: () {
-                        if (selectedProjectCount == 0) return;
-
-                        final projectIds = selectedProjectIds;
-                        DeleteConfirmDialog.show(
-                          context,
-                          onDelete: () async {
-                            await controller.deleteProjects(projectIds);
-                            if (!mounted) return;
-                            controller.exitProjectSelectionMode();
-                          },
-                          title:
-                              'Do you really want to \ndelete these projects?',
-                        );
+            child: SafeArea(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: ProjectBar(
+                      projects: projects,
+                      openProjectId: openProjectId,
+                      isSelectionMode: isProjectSelectionMode,
+                      selectedProjectIds: selectedProjectIds,
+                      onAddProject: () async {
+                        final name = await AddProjectDialog.show(context);
+                        if (name == null) return;
+                        await controller.createProject(name);
                       },
-                      onDuplicate: () {
-                        if (selectedProjectCount == 0) return;
-                        controller.duplicateProjects(selectedProjectIds);
+                      onTapProject: (item) {
+                        if (_isChoosingMoveTarget) {
+                          handlePickMoveTarget(item);
+                        } else {
+                          controller.handleProjectTap(item.id);
+                        }
                       },
-                      onRename: () {
-                        if (selectedProjectCount != 1) return;
-                        final projectId = selectedProjectIds.first;
-                        final project = projects.firstWhere(
-                          (p) => p.id == projectId,
-                        );
-
-                        showDialog<String>(
-                          context: context,
-                          builder: (_) =>
-                              RenameProjectDialog(initialName: project.name),
-                        ).then((newName) {
-                          if (newName != null && newName.trim().isNotEmpty) {
-                            controller.renameProject(projectId, newName);
-                          }
-                        });
-                      },
-                      onDone: controller.exitProjectSelectionMode,
+                      onLongPressProject: (item) =>
+                          controller.handleProjectLongPress(item.id),
                     ),
                   ),
-              ],
+
+                  if (isProjectSelectionMode)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: ProjectSelectionActionBar(
+                        selectedCount: selectedProjectCount,
+                        onDelete: () {
+                          if (selectedProjectCount == 0) return;
+
+                          final projectIds = selectedProjectIds;
+                          DeleteConfirmDialog.show(
+                            context,
+                            onDelete: () async {
+                              await controller.deleteProjects(projectIds);
+                              if (!mounted) return;
+                              controller.exitProjectSelectionMode();
+                            },
+                            title:
+                                'Do you really want to \ndelete these projects?',
+                          );
+                        },
+                        onDuplicate: () {
+                          if (selectedProjectCount == 0) return;
+                          controller.duplicateProjects(selectedProjectIds);
+                        },
+                        onRename: () {
+                          if (selectedProjectCount != 1) return;
+                          final projectId = selectedProjectIds.first;
+                          final project = projects.firstWhere(
+                            (p) => p.id == projectId,
+                          );
+
+                          showDialog<String>(
+                            context: context,
+                            builder: (_) =>
+                                RenameProjectDialog(initialName: project.name),
+                          ).then((newName) {
+                            if (newName != null && newName.trim().isNotEmpty) {
+                              controller.renameProject(projectId, newName);
+                            }
+                          });
+                        },
+                        onDone: controller.exitProjectSelectionMode,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
 
@@ -350,7 +352,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     _popupController.toggle(
                       context: context,
                       positionedPopup: const Positioned(
-                        bottom: 30,
+                        bottom: 40,
                         right: 165,
                         child: DevicesPopup(),
                       ),
