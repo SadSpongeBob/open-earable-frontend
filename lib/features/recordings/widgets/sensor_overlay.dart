@@ -48,9 +48,8 @@ class VideoSensorOverlay extends ConsumerWidget {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
-        height: 270,
+        height: 250,
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 50),
         decoration: BoxDecoration(color: Colors.white.withOpacity(0.55)),
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -58,22 +57,23 @@ class VideoSensorOverlay extends ConsumerWidget {
           children: [
             Text(
               matchedSensorName ?? "Sensor",
-              style: GlobalTextStyles.footnoteMedium,
+              style: GlobalTextStyles.text,
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
-            Material(
-              color: Colors.transparent,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  height: 250,
-                  child: SensorChart(
-                  allowToggleAxes: false,
-                  deviceId: matchedDeviceId,
-                  sensorIndex: matchedSensorIndex,
-                ),
+            Expanded(
+              child: Material(
+                color: Colors.transparent,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    child: SensorChart(
+                      allowToggleAxes: false,
+                      deviceId: matchedDeviceId,
+                      sensorIndex: matchedSensorIndex,
+                    ),
+                  ),
                 ),
               ),
             ),
