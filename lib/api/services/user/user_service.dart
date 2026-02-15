@@ -24,15 +24,4 @@ class UserService {
   Future<void> deleteUser() async {
     await _dio.delete(UserEndpoints.baseUrl);
   }
-
-  Future<User?> getUserByEmail(String email) async {
-    try {
-      final res = await _dio.get<dynamic>(UserEndpoints.byEmail(email));
-      final data = res.asMap();
-      return User.fromJson(data);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) return null;
-      rethrow;
-    }
-  }
 }

@@ -33,7 +33,7 @@ class VideoCard extends StatelessWidget {
                 height: 100,
                 child: ProviderScope(
                   child: Consumer(builder: (context, ref2, _) {
-                    final sensorAsync = ref2.watch(sensorDataProvider("Gyroscope"));
+                    final sensorAsync = ref2.watch(sensorDataProvider("Accelerometer"));
                     return sensorAsync.when(
                       loading: () => Container(),
                       error: (e, _) => Container(),

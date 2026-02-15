@@ -1,29 +1,35 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:openearable/api/local_media.dart';
-import 'package:openearable/api/models/recording/get_recording_response.dart';
-import 'package:path/path.dart' as p;
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
+import 'package:openearable/api/local_media.dart';
+import 'package:openearable/api/models/recording/get_recording_response.dart';
 import 'package:openearable/api/models/recording/recording.dart';
-import 'package:openearable/api/services/recording//recording_endpoints.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
 import 'package:openearable/api/models/recording/upload_recording_response.dart';
+import 'package:openearable/api/services/recording/recording_endpoints.dart';
 
 class RecordingService {
+  RecordingService({
+    required Dio dio,
+    required LocalMedia localMedia,
+  })  : _dio = dio,
+        _localMedia = localMedia;
+
   final Dio _dio;
   final LocalMedia _localMedia;
 
-  RecordingService({required Dio dio, required LocalMedia localMedia})
-    : _dio = dio,
-      _localMedia = localMedia;
+  // =========================
+  // Cloud
+  // =========================
 
-  Future<UploadRecordingResponse> startUpload(
-    UploadRecordingRequest req,
-  ) async {
+  Future<UploadRecordingResponse> startUpload(UploadRecordingRequest req) async {
     final res = await _dio.post(RecordingEndpoints.base, data: req.toJson());
     return UploadRecordingResponse.fromJson(res.asMap());
   }
@@ -38,67 +44,140 @@ class RecordingService {
     return GetRecordingResponse.fromJson(res.asMap());
   }
 
+  Future<List<Recording>> getRecordings() async {
+    final res = await _dio.get(RecordingEndpoints.base);
+    final data = res.asList();
+    return data.map((r) => Recording.fromJson(r)).toList();
+  }
+
+  Future<void> renameCloud({
+    required String recordingId,
+    required String name,
+  }) async {
+    await _dio.put(
+      RecordingEndpoints.rename(recordingId),
+      data: {'name': name},
+    );
+  }
+
+  Future<void> deleteCloudRecording(String recordingId) async {
+    await _dio.delete(RecordingEndpoints.deleteRecording(recordingId));
+  }
+
+  Future<List<Recording>> duplicateCloudRecordings({
+    required List<String> recordingIds,
+    String? projectId,
+  }) async {
+    final res = await _dio.post<dynamic>(
+      '${RecordingEndpoints.base}/duplicate',
+      data: {
+        'recordingIds': recordingIds,
+        'projectId': ?projectId,
+      },
+    );
+    final list = res.asList();
+    return list
+        .map((e) => Recording.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  // =========================
+  // Local - Read
+  // =========================
+
   Future<Recording> getLocalRecording(
-    String projectId,
-    String recordingId,
-  ) async {
+      String projectId,
+      String recordingId,
+      ) async {
     final videoFile = _localMedia.videoFile(projectId, recordingId);
     if (!await videoFile.exists()) {
       throw FileSystemException(
-        "Video file for recording with recordingId: $recordingId not found",
+        'Video file not found for recordingId=$recordingId',
+        videoFile.path,
       );
     }
 
     final metaFile = _localMedia.recordingMetaFile(projectId, recordingId);
     if (!await metaFile.exists()) {
       throw FileSystemException(
-        "Meta file for recording with recordingId: $recordingId not found",
+        'Meta file not found for recordingId=$recordingId',
+        metaFile.path,
       );
     }
 
-    Map<String, dynamic> meta;
-    try {
-      meta = jsonDecode(await metaFile.readAsString()) as Map<String, dynamic>;
-    } catch (_) {
-      // corrupted metadata
-      throw FileSystemException(
-        "Recording with recordingId: $recordingId not found",
-      );
-    }
-    final name = meta['name'] as String? ?? 'Recording - $recordingId';
-    final timestampRaw = meta['timestamp'] as String?;
-    final timestamp = timestampRaw != null
-        ? DateTime.parse(timestampRaw).toUtc()
-        : (await videoFile.lastModified()).toUtc();
+    final meta = await _readMeta(metaFile, recordingId);
+
+    final name = (meta['name'] as String?)?.trim();
+    final resolvedName = (name == null || name.isEmpty)
+        ? 'Recording - $recordingId'
+        : name;
+
+    final timestamp = _readTimestampOrFallback(
+      meta: meta,
+      fallback: await videoFile.lastModified(),
+    );
 
     final thumbFile = _localMedia.thumbnailFile(projectId, recordingId);
 
     return Recording.local(
       id: recordingId,
-      name: name,
+      name: resolvedName,
       localVideoPath: videoFile.path,
-      localThumbnailPath: thumbFile.existsSync() ? thumbFile.path : null,
+      localThumbnailPath: await thumbFile.exists() ? thumbFile.path : null,
       videoTimestamp: timestamp,
       projectId: projectId == LocalMedia.defaultProjectId ? null : projectId,
     );
   }
 
-  Future<void> deleteRecording(String recordingId) async {
-    await _dio.delete(RecordingEndpoints.deleteRecording(recordingId));
+  Future<List<Recording>> getLocalProjectRecordings(String projectId) async {
+    final projectDir = _localMedia.projectDir(projectId);
+    if (!await projectDir.exists()) return [];
+
+    final entities = await projectDir.list(followLinks: false).toList();
+    final recordingDirs = entities.whereType<Directory>();
+
+    final recordings = <Recording>[];
+
+    for (final dir in recordingDirs) {
+      final recordingId = p.basename(dir.path);
+      try {
+        final rec = await getLocalRecording(projectId, recordingId);
+        recordings.add(rec);
+      } on FileSystemException catch (e) {
+        if (kDebugMode) {
+          debugPrint(
+            'Failed to load local recording id=$recordingId: $e',
+          );
+        }
+      } on FormatException catch (e) {
+        if (kDebugMode) {
+          debugPrint(
+            'Corrupted meta for local recording id=$recordingId: $e',
+          );
+        }
+      }
+    }
+
+    recordings.sort((a, b) => b.videoTimestamp.compareTo(a.videoTimestamp));
+    return recordings;
   }
 
-  Future<void> deleteLocalRecording(String projectId, String recordingId) async {
+  Future<List<Recording>> getLocalRecordings() async {
+    return getLocalProjectRecordings(LocalMedia.defaultProjectId);
+  }
+
+  // =========================
+  // Local - Write
+  // =========================
+
+  Future<bool> deleteLocalRecording({
+    required String projectId,
+    required String recordingId,
+  }) async {
     final dir = _localMedia.recordingDir(projectId, recordingId);
-    if (!await dir.exists()) return;
-
+    if (!await dir.exists()) return false;
     await dir.delete(recursive: true);
-  }
-
-  Future<void> rename(String recordingId, String name) async {
-    await _dio.put(
-      RecordingEndpoints.rename(recordingId),
-      data: {'name': name},
-    );
+    return true;
   }
 
   Future<void> renameLocal({
@@ -108,61 +187,88 @@ class RecordingService {
   }) async {
     final metaFile = _localMedia.recordingMetaFile(projectId, recordingId);
     if (!await metaFile.exists()) {
-      throw FileSystemException("Meta file not found", metaFile.path);
+      throw FileSystemException('Meta file not found', metaFile.path);
     }
 
+    final meta = await _readMeta(metaFile, recordingId);
+    meta['name'] = newName;
+
+    await _atomicWriteJson(metaFile, meta);
+  }
+
+  Future<bool> duplicateLocalRecording({
+    required String projectId,
+    required String sourceRecordingId,
+    required String newRecordingId,
+    required String newName,
+  }) async {
+    final srcDir = _localMedia.recordingDir(projectId, sourceRecordingId);
+    if (!await srcDir.exists()) return false;
+
+    final dstDir = _localMedia.recordingDir(projectId, newRecordingId);
+    await dstDir.create(recursive: true);
+
+    await _copyIfExists(
+      _localMedia.videoFile(projectId, sourceRecordingId),
+      _localMedia.videoFile(projectId, newRecordingId),
+    );
+
+    await _copyIfExists(
+      _localMedia.thumbnailFile(projectId, sourceRecordingId),
+      _localMedia.thumbnailFile(projectId, newRecordingId),
+    );
+
+    final srcMeta = _localMedia.recordingMetaFile(projectId, sourceRecordingId);
+    final dstMeta = _localMedia.recordingMetaFile(projectId, newRecordingId);
+
+    if (await srcMeta.exists()) {
+      final meta = await _readMeta(srcMeta, sourceRecordingId);
+      meta['name'] = newName;
+      await _atomicWriteJson(dstMeta, meta);
+    }
+
+    return true;
+  }
+
+  // =========================
+  // Helpers
+  // =========================
+
+  Future<Map<String, dynamic>> _readMeta(File metaFile, String recordingId) async {
     final raw = await metaFile.readAsString();
-    final dynamic decoded = jsonDecode(raw);
+    final decoded = jsonDecode(raw);
     if (decoded is! Map<String, dynamic>) {
-      throw const FormatException("Meta file is not a JSON object");
+      throw FormatException('Meta is not a JSON object for recordingId=$recordingId');
     }
+    return decoded;
+  }
 
-    decoded['name'] = newName;
+  DateTime _readTimestampOrFallback({
+    required Map<String, dynamic> meta,
+    required DateTime fallback,
+  }) {
+    final raw = meta['timestamp'];
+    if (raw is String) {
+      try {
+        return DateTime.parse(raw).toUtc();
+      } catch (_) {}
+    }
+    return fallback.toUtc();
+  }
 
-    final tmp = File('${metaFile.path}.tmp');
+  Future<void> _copyIfExists(File src, File dst) async {
+    if (await src.exists()) {
+      await src.copy(dst.path);
+    }
+  }
+
+  Future<void> _atomicWriteJson(File file, Map<String, dynamic> json) async {
+    final tmp = File('${file.path}.tmp');
     await tmp.writeAsString(
-      const JsonEncoder.withIndent('  ').convert(decoded),
+      const JsonEncoder.withIndent('  ').convert(json),
       flush: true,
     );
-    await tmp.rename(metaFile.path);
-  }
-
-  Future<List<Recording>> getRecordings() async {
-    final res = await _dio.get(RecordingEndpoints.base);
-    final data = res.asList();
-
-    return data.map((r) => Recording.fromJson(r)).toList();
-  }
-
-  Future<List<Recording>> getLocalProjectRecordings(String projectId) async {
-    final projectDir = _localMedia.projectDir(projectId);
-
-    if (!await projectDir.exists()) return [];
-
-    final recordings = <Recording>[];
-
-    final entities = await projectDir.list(followLinks: false).toList();
-    final recordingDirs = entities.whereType<Directory>();
-
-    for (final recDir in recordingDirs) {
-      final recordingId = p.basename(recDir.path);
-
-      final Recording recording;
-      try {
-        recording = await getLocalRecording(projectId, recordingId);
-      } on FileSystemException catch (e) {
-        if (kDebugMode) {
-          debugPrint(
-            "Exception occurred while loading recording with id $recordingId: $e",
-          );
-        }
-        continue;
-      }
-
-      recordings.add(recording);
-    }
-    recordings.sort((a, b) => b.videoTimestamp.compareTo(a.videoTimestamp));
-    return recordings;
+    await tmp.rename(file.path);
   }
 }
 

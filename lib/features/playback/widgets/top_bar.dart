@@ -28,7 +28,7 @@ class TopBar extends ConsumerWidget {
     final home = ref.watch(homeStateProvider);
     final current = ref.watch(
       homeStateProvider.select((home) {
-        for (final r in home.videos) {
+        for (final r in home.recordings) {
           if (r.id == recording.id && r.source == recording.source) return r;
         }
         return recording;
@@ -44,7 +44,7 @@ class TopBar extends ConsumerWidget {
     final controller = ref.read(playbackControllerProvider);
 
     bool nameExistsInSameProject(String name) {
-      return home.videos.any(
+      return home.recordings.any(
         (r) =>
             r.projectId == current.projectId &&
             r.name == name &&
@@ -266,9 +266,9 @@ class TopBar extends ConsumerWidget {
                           ),
                         ),
                         TextButton(
-                          onPressed: () {
-                            unawaited(controller.deleteRecording(current));
-                            context.go(Routes.home);
+                          onPressed: () async {
+                            await controller.deleteRecording(current);
+                            if (context.mounted) context.go(Routes.home);
                           },
                           child: Text(
                             "Delete",

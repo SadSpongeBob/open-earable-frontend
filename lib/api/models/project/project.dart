@@ -31,14 +31,11 @@ class Project {
   factory Project.fromJson(Map<String, dynamic> json) {
     final id = json['projectId'] as String;
     final name = json['name'] as String;
-
     final ownerId = json['ownerId'] as String;
-
     final users = json['users'] as List;
     final projectUsers = users
         .map((user) => ProjectRole.fromJson(user))
         .toList();
-
     final recordings = (json['recordings'] as List)
         .map((r) => Recording.fromJson(r))
         .toList();
