@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/widgets/bluetooth_button.dart';
 
 class HomeRecordingRightBar extends StatelessWidget {
   const HomeRecordingRightBar({
@@ -12,6 +13,7 @@ class HomeRecordingRightBar extends StatelessWidget {
     this.isRecording = false,
     this.isPaused = false,
     this.showFlipButton = true,
+    required this.bluetoothKey,
   })  : assert(!showFlipButton || onFlipCamera != null,
             'onFlipCamera must be provided when showFlipButton is true');
 
@@ -26,6 +28,8 @@ class HomeRecordingRightBar extends StatelessWidget {
   final bool isRecording;
   final bool isPaused;
   final bool showFlipButton;
+
+  final GlobalKey bluetoothKey;
 
   @override
   Widget build(BuildContext context) {
@@ -79,12 +83,8 @@ class HomeRecordingRightBar extends StatelessWidget {
           ),
 
           const Spacer(),
-          Btn(
-            asset: 'assets/buttons/bluetooth.png',
-            size: 70,
-            onTap: onBluetooth,
-            semanticLabel: 'Bluetooth',
-          ),
+
+          BluetoothButton(buttonKey: bluetoothKey, onPressed: onBluetooth),
         ],
       ),
     );

@@ -9,6 +9,8 @@ import 'package:openearable/features/home/widgets/recording_grid.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/home/widgets/project_grid.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
+import 'package:openearable/app/ui/device/devices_popup_controller.dart';
+import 'package:openearable/app/widgets/devices_popup.dart';
 import 'package:openearable/features/home/widgets/delete_confirm_dialog.dart';
 
 import '../../../api/models/project/project_metadata.dart';
@@ -16,11 +18,11 @@ import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
-import '../../auth/state/session_provider.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/project_action_bar.dart';
 import '../widgets/recording_action_bar.dart';
 import '../widgets/rename_project_dialog.dart';
+import '../../auth/state/session_provider.dart';
 import '../widgets/users_button.dart';
 import '../widgets/users_popup.dart';
 import '../widgets/move_recordings_modal.dart';
@@ -33,6 +35,8 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  final DevicesPopupController _popupController = DevicesPopupController();
+  final GlobalKey bluetoothKey = GlobalKey();
   bool _isChoosingMoveTarget = false;
   Set<String> _recordingIdsToMove = const <String>{};
 
@@ -42,6 +46,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     Future.microtask(() => ref.read(homeControllerProvider).loadProjects());
   }
 
+  @override
+  void dispose() {
+    _popupController.hide();
+    super.dispose();
+  }
   void _exitMoveMode() {
     if (!_isChoosingMoveTarget) return;
     setState(() {
@@ -318,13 +327,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                 opacity: _isChoosingMoveTarget ? 0.4 : 1.0,
                 child: HomeRecordingRightBar(
                   onSettings: () => context.go(Routes.settings),
-                  onWaveSound: () {},
+                  onWaveSound: () => context.go('${Routes.sensordata}?source=home'),
                   onShutter: () => context.go(Routes.recording),
-                  onBluetooth: () {},
+                  onBluetooth: () {
+                    _popupController.toggle(
+                      context: context,
+                      positionedPopup: const Positioned(
+                        bottom: 30,
+                        right: 165,
+                        child: DevicesPopup(),
+                      ),
+                    );
+                  },
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   isRecording: false,
                   isPaused: false,
                   showFlipButton: false,
+                  bluetoothKey: bluetoothKey,
                 ),
               ),
             ),
