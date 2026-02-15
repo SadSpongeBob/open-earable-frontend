@@ -7,7 +7,7 @@ import '../models/sensor_sample.dart';
 
 class SensorRepository {
 
-  static Future<List<SensorSample>> loadFromFixedPath() async {
+  static Future<List<SensorSample>> loadFromFixedPath(String sensortype) async {
     try {
       final dir = await getApplicationDocumentsDirectory();
       final filePath = "${dir.path}/sensor.json";
@@ -27,7 +27,7 @@ class SensorRepository {
         final tsRaw = item['timestampMs'];
         final values = item['values'];
         if (tsRaw == null || values is! Map) continue;
-        final acc = values['Gyroscope'];
+        final acc = values[sensortype];
         if (acc is! List || acc.length < 3) continue;
 
         final ts = tsRaw is int ? tsRaw : (tsRaw is num ? tsRaw.toInt() : null);
