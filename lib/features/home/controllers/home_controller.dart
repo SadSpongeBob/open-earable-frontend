@@ -1047,6 +1047,16 @@ class HomeController {
     }
   }
 
+  void handleRecordingTap(String recordingId) {
+    if (!state.isRecordingSelectionMode) return;
+
+    toggleRecordingSelection(recordingId);
+
+    if (state.selectedRecordingIds.isEmpty) {
+      exitRecordingSelectionMode();
+    }
+  }
+
   Future<void> handleGoToRecordingTap({
     required VoidCallback goToRecording,
   }) async {
