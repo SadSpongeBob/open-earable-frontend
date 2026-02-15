@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/sensors/state/sensor_configuration_storage.dart';
-import 'package:openearable/features/sensors/state/sensor_configurations_provider.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/features/sensors/widgets/save_config_row.dart';
 import 'package:openearable/features/sensors/widgets/sensor_configuration_value_row.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
 /// A widget that displays a list of sensor configurations for a device.
-class SensorConfigurationDeviceRow extends StatefulWidget {
+class SensorConfigurationDeviceRow extends ConsumerStatefulWidget {
   final Wearable device;
 
   const SensorConfigurationDeviceRow({super.key, required this.device});
 
   @override
-  State<SensorConfigurationDeviceRow> createState() =>
+  ConsumerState<SensorConfigurationDeviceRow> createState() =>
       _SensorConfigurationDeviceRowState();
 }
 
 class _SensorConfigurationDeviceRowState
-    extends State<SensorConfigurationDeviceRow>
+    extends ConsumerState<SensorConfigurationDeviceRow>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<Widget> _content = [];
@@ -80,13 +80,10 @@ class _SensorConfigurationDeviceRowState
       return;
     }
 
-    final SensorConfigurationManager sensorManager =
-        device.requireCapability<SensorConfigurationManager>();
-
     if (_tabController.index == 0) {
       _buildNewTabContent(device);
     } else {
-      await _buildLoadTabContent(sensorManager);
+      await _buildLoadTabContent();
     }
   }
 
@@ -95,14 +92,17 @@ class _SensorConfigurationDeviceRowState
         device.requireCapability<SensorConfigurationManager>();
     final List<Widget> content = sensorManager.sensorConfigurations
         .map(
-          (config) => SensorConfigurationValueRow(sensorConfiguration: config),
+          (config) => SensorConfigurationValueRow(
+            sensorConfiguration: config,
+            deviceId: widget.device.deviceId,
+          ),
         )
         .cast<Widget>()
         .toList();
 
     content.addAll([
       const Divider(),
-      const SaveConfigRow(),
+      SaveConfigRow(deviceId: widget.device.deviceId),
     ]);
 
     if (!mounted) return;
@@ -111,13 +111,14 @@ class _SensorConfigurationDeviceRowState
     });
   }
 
-  Future<void> _buildLoadTabContent(SensorConfigurationManager device) async {
+  Future<void> _buildLoadTabContent() async {
     if (!mounted) return;
     setState(() {
       _content = [CircularProgressIndicator()];
     });
 
-    final configKeys = await SensorConfigurationStorage.listConfigurationKeys();
+    final storage = ref.read(sensorConfigurationStorageProvider);
+    final configKeys = await storage.listConfigurationKeys();
 
     if (!mounted) return;
 
@@ -134,13 +135,11 @@ class _SensorConfigurationDeviceRowState
       return ListTile(
         title: Text(key),
         onTap: () async {
-          final config =
-              await SensorConfigurationStorage.loadConfiguration(key);
+          final config = await storage.loadConfiguration(key);
           if (!mounted) return;
 
-          final result = await Provider.of<SensorConfigurationProvider>(
-            context,
-            listen: false,
+          final result = await ref.read(
+            sensorConfigurationProviderFamily(widget.device.deviceId)
           ).restoreFromJson(config);
 
           if (!result && mounted) {
@@ -166,7 +165,7 @@ class _SensorConfigurationDeviceRowState
         trailing: IconButton(
           icon: const Icon(Icons.delete),
           onPressed: () async {
-            await SensorConfigurationStorage.deleteConfiguration(key);
+            await storage.deleteConfiguration(key);
             if (mounted) _updateContent();
           },
         ),

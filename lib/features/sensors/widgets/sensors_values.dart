@@ -1,54 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:openearable/features/home/state/wearables_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/features/home/state/wearables_state.dart';
 import 'package:openearable/features/sensors/widgets/selectable_sensor_card.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
-class SensorValues extends StatefulWidget {
+class SensorValues extends ConsumerWidget {
   const SensorValues({super.key});
-
+  
   @override
-  State<SensorValues> createState() => _SensorValuesState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final wearablesNotifier = ref.watch(wearablesProvider);
 
-class _SensorValuesState extends State<SensorValues> {
+    List<Widget> charts = [];
 
-  @override
-Widget build(BuildContext context) {
-  return Consumer<WearablesProvider>(
-    builder: (context, wearablesProvider, child) {
-      List<Widget> charts = [];
+    for (var wearable in wearablesNotifier.wearables) {
+      final providers =
+          wearablesNotifier.getSensorDataProviders(wearable);
 
-      for (var wearable in wearablesProvider.wearables) {
-        final providers =
-            wearablesProvider.getSensorDataProviders(wearable);
-
-        for (var dataProvider in providers) {
-          charts.add(
-            ChangeNotifierProvider.value(
-              value: dataProvider,
-              child: SelectableSensorCard(
-                sensor: dataProvider.sensor,
-                wearable: wearable,
-              ),
-            ),
-          );
-        }
+      for (int i = 0; i < providers.length; i++) {
+        final dataProvider = providers[i];
+        
+        charts.add(
+          SelectableSensorCard(
+            sensor: dataProvider.sensor,
+            wearable: wearable,
+            sensorIndex: i,
+          ),
+        );
       }
+    }
 
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 600) {
-            return _buildSmallScreenLayout(context, charts);
-          } else {
-            return _buildLargeScreenLayout(context, charts);
-          }
-        },
-      );
-    },
-  );
-}
-
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return _buildSmallScreenLayout(context, charts);
+        } else {
+          return _buildLargeScreenLayout(context, charts);
+        }
+      },
+    );
+  }
 
   Widget _buildSmallScreenLayout(BuildContext context, List<Widget> charts) {
     return Padding(

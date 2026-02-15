@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class RecordingChartProvider with ChangeNotifier {
   String? _activeChartId;
+
   bool _isOverlayVisible = true;
 
   String? get activeChartId => _activeChartId;

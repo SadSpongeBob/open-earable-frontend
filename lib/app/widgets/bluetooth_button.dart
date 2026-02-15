@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:openearable/features/home/state/wearables_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/features/home/state/wearables_state.dart';
 import 'image_button.dart';
 
 class BluetoothButton extends StatelessWidget {
@@ -17,8 +17,9 @@ class BluetoothButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<WearablesProvider>(
-      builder: (context, provider, _) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final provider = ref.watch(wearablesProvider);
         final isConnected = provider.wearables.isNotEmpty;
 
         return ImageButton(

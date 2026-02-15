@@ -1,22 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/features/sensors/widgets/sensor_configuration_view.dart';
+import 'package:openearable/app/ui/device/devices_popup_controller.dart';
+import 'package:openearable/app/widgets/devices_popup.dart';
 import 'package:openearable/features/sensors/widgets/sensors_values.dart';
 import 'package:openearable/app/widgets/bluetooth_button.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import '../../../app/routing/routes.dart';
 
-class SensorPage extends StatelessWidget {
-  final VoidCallback onBluetooth;
+class SensorPage extends StatefulWidget {
   final bool isRecordingSource;
 
-  SensorPage({
+  const SensorPage({
     super.key,
-    required this.onBluetooth,
     this.isRecordingSource = false,
   });
 
+  @override
+  State<SensorPage> createState() => _SensorPageState();
+}
+
+class _SensorPageState extends State<SensorPage> {
   final GlobalKey _sensorBluetoothKey = GlobalKey();
+  final DevicesPopupController _popupController = DevicesPopupController();
+
+  void _onBluetoothPressed() {
+    _popupController.toggle(
+      context: context,
+      positionedPopup: const Positioned(
+        top: 30,
+        left: 295,
+        child: DevicesPopup(),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _popupController.hide();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,14 +68,12 @@ class SensorPage extends StatelessWidget {
                   SizedBox(
                     child: BluetoothButton(
                       buttonKey: _sensorBluetoothKey, 
-                      onPressed: onBluetooth
+                      onPressed: _onBluetoothPressed,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Expanded(
-                    child: SensorConfigurationView(
-                      onSetConfigPressed: () {},
-                    ),
+                    child: SensorConfigurationView(),
                   ),
                   Container(
                     decoration: BoxDecoration(
@@ -63,7 +84,7 @@ class SensorPage extends StatelessWidget {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () {
-                          if (isRecordingSource) {
+                          if (widget.isRecordingSource) {
                             context.go(Routes.recording);
                           } else {
                             context.go(Routes.home);
@@ -76,7 +97,7 @@ class SensorPage extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Image.asset(
-                                isRecordingSource
+                                widget.isRecordingSource
                                     ? 'assets/buttons/shutter.png'
                                     : 'assets/buttons/projects.png',
                                 width: 70,

@@ -1,18 +1,21 @@
 import 'package:camera/camera.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
-import 'package:openearable/app/widgets/devices_popup_overlay.dart';
 import 'package:openearable/features/recordings/widgets/sensor_overlay.dart';
-import 'package:openearable/features/sensors/state/recording_chart_provider.dart';
-import 'package:openearable/features/home/state/wearables_provider.dart';
+import 'package:openearable/app/ui/device/devices_popup_controller.dart';
+import 'package:openearable/features/home/state/wearables_state.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
+import 'package:openearable/app/widgets/devices_popup.dart';
 import '../../../app/routing/routes.dart';
+import '../../home/state/home_provider.dart';
 import '../controllers/recording_controller.dart';
 import '../controllers/sensors_recording_controller.dart';
 import '../widgets/left_bar.dart';
 
-class RecordingPage extends StatefulWidget {
+class RecordingPage extends ConsumerStatefulWidget {
   const RecordingPage({
     super.key,
     this.onVideoRecorded,
@@ -23,12 +26,15 @@ class RecordingPage extends StatefulWidget {
   final CameraLensDirection initialCamera;
 
   @override
-  State<RecordingPage> createState() => _RecordingPageState();
+  ConsumerState<RecordingPage> createState() => _RecordingPageState();
 }
 
-class _RecordingPageState extends State<RecordingPage> {
+class _RecordingPageState extends ConsumerState<RecordingPage> {
   late final RecordingController _controller;
   late final SensorsRecordingController _sensorsController;
+  final DevicesPopupController _popupController = DevicesPopupController();
+
+  bool _busy = false;
 
   final GlobalKey bluetoothKey = GlobalKey();
 
@@ -37,63 +43,84 @@ class _RecordingPageState extends State<RecordingPage> {
   @override
   void initState() {
     super.initState();
-    _controller = RecordingController(initialCamera: widget.initialCamera)
-      ..addListener(_onControllerChanged)
-      ..init();
+    _controller = ref.read(recordingControllerProvider(widget.initialCamera));
+    _controller.init().then((_) {
+      if (!mounted) return;
+      setState(() {});
+    });
     _sensorsController = SensorsRecordingController();
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_onControllerChanged);
-    _controller.dispose();
+    _popupController.hide();
     _sensorsController.dispose();
     super.dispose();
   }
 
-  void _onControllerChanged() {
-    if (mounted) setState(() {});
-  }
-
   Future<void> _onShutterPressed() async {
-    final wearablesProvider = context.read<WearablesProvider>();
-    final hasSensors = wearablesProvider.isConnected;
+    final wearablesNotifier = ref.read(wearablesProvider);
+    final hasSensors = wearablesNotifier.isConnected;
 
-    if (_controller.isRecording) {
-      final path = await _controller.stopRecording();
-      if (hasSensors && _videoStartEpochMs != null) {
-        await _sensorsController.stopRecording(
-          videoStartEpochMs: _videoStartEpochMs!,
+    if (_busy) return;
+    _busy = true;
+    try {
+      if (_controller.isRecording) {
+        final recording = await _controller.stopRecording(
+          ref.read(homeStateProvider).openProjectId,
         );
-        wearablesProvider.detachSensorsRecordingController();
+        if (hasSensors && _videoStartEpochMs != null) {
+          await _sensorsController.stopRecording(
+            videoStartEpochMs: _videoStartEpochMs!,
+          );
+          wearablesNotifier.detachSensorsRecordingController();
+        }
+        if (recording != null && mounted) {
+          ref.read(homeStateProvider.notifier).addRecording(recording);
+          context.go(
+            Routes.playback(recording.isCloud, recording.id),
+            extra: recording,
+          );
+        }
+      } else {
+        await _controller.startRecording();
+        _videoStartEpochMs = DateTime.now().millisecondsSinceEpoch;
+        if (hasSensors) {
+          _sensorsController.startRecording();
+          wearablesNotifier.attachSensorsRecordingController(_sensorsController);
+        }
       }
-      if (path != null) widget.onVideoRecorded?.call(path);
-    } else {
-      _videoStartEpochMs = DateTime.now().millisecondsSinceEpoch;
-
-      await _controller.startRecording();
-      if (hasSensors) {
-        _sensorsController.startRecording();
-        wearablesProvider.attachSensorsRecordingController(_sensorsController);
-      }
+    } finally {
+      _busy = false;
     }
+
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> _onFlipOrPausePressed() async {
-    final hasSensors =
-      context.read<WearablesProvider>().isConnected;
+    final hasSensors = ref.read(wearablesProvider).isConnected;
 
-    if (!_controller.isRecording) {
-      await _controller.toggleCamera();
-    } else {
-      if (_controller.isPaused) {
-        await _controller.resumeRecording();
-        if (hasSensors) _sensorsController.resumeRecording();
+    if (_busy) return;
+    _busy = true;
+    try {
+      if (!_controller.isRecording) {
+        await _controller.toggleCamera();
       } else {
-        await _controller.pauseRecording();
-        if (hasSensors) _sensorsController.pauseRecording();
+        if (_controller.isPaused) {
+          await _controller.resumeRecording();
+          if (hasSensors) _sensorsController.resumeRecording();
+        } else {
+          await _controller.pauseRecording();
+          if (hasSensors) _sensorsController.pauseRecording();
+        }
       }
+    } finally {
+      _busy = false;
     }
+
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _navigateToHome() {
@@ -101,34 +128,17 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   Widget _buildCameraPreview() {
-    if (_controller.error != null) {
-      return Center(
-        child: Text(
-          _controller.error!,
-          style: const TextStyle(color: Colors.white),
-        ),
-      );
-    }
-
     if (!_controller.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final cameraController = _controller.cameraController!;
-
-    return ClipRect(
-      child: OverflowBox(
-        alignment: Alignment.center,
-        child: AspectRatio(
-          aspectRatio: cameraController.value.aspectRatio,
-          child: CameraPreview(cameraController),
-        ),
-      ),
-    );
+    return Positioned.fill(child: CameraPreview(_controller.cameraController!));
   }
 
   @override
   Widget build(BuildContext context) {
+    final chartProvider = ref.watch(recordingChartProvider);
+
     return SafeArea(
       child: Row(
         children: [
@@ -150,29 +160,33 @@ class _RecordingPageState extends State<RecordingPage> {
             ),
           ),
 
-          Consumer<RecordingChartProvider>(
-            builder: (context, chartProvider, _) {
-              return HomeRecordingRightBar(
-                onSettings: () => context.go(Routes.settings),
-                onWaveSound: () => context.go('${Routes.sensordata}?source=recording'),
-                onWaveSoundLongPress: () {
-                  chartProvider.toggleOverlayVisibility();
-                },
-                isWaveSoundActive: chartProvider.shouldShowOverlay,
-                onShutter: _onShutterPressed,
-                onFlipCamera: _onFlipOrPausePressed,
-                onBluetooth: () {
-                  showDevicesPopup(
-                    context: context,
-                    isSensorPage: false,
-                  );
-                },
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                isRecording: _controller.isRecording,
-                isPaused: _controller.isPaused,
-                bluetoothKey: bluetoothKey,
+          HomeRecordingRightBar(
+            onSettings: () {
+              if (!_controller.isRecording) {
+                context.go(Routes.settings);
+              }
+            },
+            onWaveSound: () => context.go('${Routes.sensordata}?source=recording'),
+            onWaveSoundLongPress: () {
+              ref.read(recordingChartProvider).toggleOverlayVisibility();
+            },
+            isWaveSoundActive: chartProvider.shouldShowOverlay,
+            onShutter: _onShutterPressed,
+            onFlipCamera: _onFlipOrPausePressed,
+            onBluetooth: () {
+              _popupController.toggle(
+                context: context,
+                positionedPopup: const Positioned(
+                  bottom: 30,
+                  right: 165,
+                  child: DevicesPopup(),
+                ),
               );
             },
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            isRecording: _controller.isRecording,
+            isPaused: _controller.isPaused,
+            bluetoothKey: bluetoothKey,
           ),
         ],
       ),

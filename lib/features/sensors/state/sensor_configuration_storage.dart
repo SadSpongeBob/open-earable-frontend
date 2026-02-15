@@ -1,13 +1,23 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/local_media.dart';
+
+final sensorConfigurationStorageProvider =
+    Provider<SensorConfigurationStorage>((ref) {
+  final localMedia = ref.watch(localMediaProvider);
+  return SensorConfigurationStorage(localMedia);
+});
 
 class SensorConfigurationStorage {
+  final LocalMedia localMedia;
+
+  SensorConfigurationStorage(this.localMedia);
+
   /// Returns the directory where sensor configurations are stored.
   /// Creates the directory if it does not exist.
-  static Future<Directory> _getConfigDirectory() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final configDir = Directory('${dir.path}/sensor_configurations');
+  Future<Directory> _getConfigDirectory() async {
+    final configDir = Directory('${localMedia.baseDir.path}/sensor_configurations');
     if (!await configDir.exists()) {
       await configDir.create(recursive: true);
     }
@@ -16,7 +26,7 @@ class SensorConfigurationStorage {
 
   /// Returns a list of all configuration files in the sensor configurations directory.
   /// Each file is expected to be a JSON file with a specific configuration.
-  static Future<List<File>> _getAllConfigFiles() async {
+  Future<List<File>> _getAllConfigFiles() async {
     final configDir = await _getConfigDirectory();
     return configDir.list().where((file) =>
       file is File && file.path.endsWith('.json'),
@@ -25,7 +35,7 @@ class SensorConfigurationStorage {
 
   /// Returns the file for a specific configuration key.
   /// Creates the file if it does not exist.
-  static Future<File> _getConfigFile(String key) async {
+  Future<File> _getConfigFile(String key) async {
     final configDir = await _getConfigDirectory();
     return File('${configDir.path}/${sanitizeKey(key)}.json');
   }
@@ -33,23 +43,23 @@ class SensorConfigurationStorage {
   /// Saves a configuration for a specific key.
   /// If the file already exists, it will be overwritten.
   /// The configuration is expected to be a map of string key-value pairs.
-  static Future<void> saveConfiguration(String key, Map<String, String> config) async {
+  Future<void> saveConfiguration(String key, Map<String, String> config) async {
     final File file = await _getConfigFile(key);
     await file.writeAsString(jsonEncode(config));
   }
 
-  static Future<List<String>> listConfigurationKeys() async {
+  Future<List<String>> listConfigurationKeys() async {
     final files = await _getAllConfigFiles();
     return files.map(_getKeyFromFile).toList();
   }
 
-  static String _getKeyFromFile(File file) =>
+  String _getKeyFromFile(File file) =>
       file.uri.pathSegments.last.replaceAll('.json', '');
 
   /// Loads all configurations from the sensor configurations directory.
   /// Returns a map where the keys are configuration names and the values are maps of string key-value pairs.
   /// Each configuration is expected to be stored in a JSON file.
-  static Future<Map<String, Map<String, String>>> loadConfigurations() async {
+  Future<Map<String, Map<String, String>>> loadConfigurations() async {
     final allConfigs = <String, Map<String, String>>{};
     final configFiles = await _getAllConfigFiles();
     for (final file in configFiles) {
@@ -59,7 +69,7 @@ class SensorConfigurationStorage {
     return allConfigs;
   }
 
-  static Future<Map<String, String>> loadConfiguration(String key) async {
+  Future<Map<String, String>> loadConfiguration(String key) async {
     final file = await _getConfigFile(key);
     if (await file.exists()) {
       final contents = await file.readAsString();
@@ -70,12 +80,12 @@ class SensorConfigurationStorage {
 
   /// Deletes a specific configuration by its key.
   /// If the file does not exist, it will do nothing.
-  static Future<void> deleteConfiguration(String key) async {
+  Future<void> deleteConfiguration(String key) async {
     final file = await _getConfigFile(key);
     if (await file.exists()) {
       await file.delete();
     }
   }
 
-  static String sanitizeKey(String key) => key.replaceAll(RegExp(r'[^\w\-]'), '_');
+  String sanitizeKey(String key) => key.replaceAll(RegExp(r'[^\w\-]'), '_');
 }

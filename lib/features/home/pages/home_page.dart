@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart' as legacy;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/home/widgets/project_bar.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
 import 'package:openearable/features/home/widgets/delete_project_dialog.dart';
-import 'package:openearable/app/widgets/devices_popup_overlay.dart';
-import 'package:openearable/features/sensors/state/recording_chart_provider.dart';
+import 'package:openearable/app/ui/device/devices_popup_controller.dart';
+import 'package:openearable/app/widgets/devices_popup.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
 import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
@@ -29,12 +30,19 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  final DevicesPopupController _popupController = DevicesPopupController();
   final GlobalKey bluetoothKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(homeControllerProvider).loadProjects());
+  }
+
+  @override
+  void dispose() {
+    _popupController.hide();
+    super.dispose();
   }
 
   @override
@@ -48,6 +56,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final state = ref.watch(homeStateProvider);
     final controller = ref.read(homeControllerProvider);
     final session = ref.watch(sessionProvider);
+    final chartProvider = ref.watch(recordingChartProvider);
 
     final selectedCount = state.selectedProjectIds.length;
 
@@ -102,13 +111,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                         },
                         onDuplicate: () {
                           if (selectedCount == 0) return;
-                          controller.duplicateProjects(state.selectedProjectIds);
+                          controller.duplicateProjects(
+                            state.selectedProjectIds,
+                          );
                         },
                         onRename: () {
                           if (selectedCount != 1) return;
                           final projectId = state.selectedProjectIds.first;
-                          final project =
-                          state.projects.firstWhere((p) => p.id == projectId);
+                          final project = state.projects.firstWhere(
+                            (p) => p.id == projectId,
+                          );
 
                           showDialog<String>(
                             context: context,
@@ -142,7 +154,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                       recordings: state.videos,
                       isSelectionMode: false,
                       selectedRecordingIds: const <String>{},
-                      onTapRecording: (item) {},
+                      onTapRecording: (item) async {
+                        if (item.isUploading) return;
+                        context.go(Routes.playback(item.isCloud, item.id));
+                      },
                       onLongPressRecording: (item) {},
                     ),
                   ),
@@ -166,20 +181,22 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
 
             // RIGHT BAR
-            legacy.Consumer<RecordingChartProvider>(
-              builder: (context, chartProvider, _) {
-                return HomeRecordingRightBar(
+            HomeRecordingRightBar(
                   onSettings: () => context.go(Routes.settings),
                   onWaveSound: () => context.go('${Routes.sensordata}?source=home'),
                   onWaveSoundLongPress: () {
-                    chartProvider.toggleOverlayVisibility();
+                    ref.read(recordingChartProvider).toggleOverlayVisibility();
                   },
                   isWaveSoundActive: chartProvider.shouldShowOverlay,
                   onShutter: () => context.go(Routes.recording),
                   onBluetooth: () {
-                    showDevicesPopup(
+                    _popupController.toggle(
                       context: context,
-                      isSensorPage: false,
+                      positionedPopup: const Positioned(
+                        bottom: 30,
+                        right: 165,
+                        child: DevicesPopup(),
+                      ),
                     );
                   },
                   padding: const EdgeInsets.symmetric(vertical: 24),
@@ -187,8 +204,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                   isPaused: false,
                   showFlipButton: false,
                   bluetoothKey: bluetoothKey,
-                );
-              },
             ),
           ],
         ),

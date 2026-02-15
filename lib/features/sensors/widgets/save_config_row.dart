@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:openearable/features/sensors/state/sensor_configurations_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/sensors/state/sensor_configuration_storage.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
-class SaveConfigRow extends StatefulWidget {
-  const SaveConfigRow({super.key});
+class SaveConfigRow extends ConsumerStatefulWidget {
+  final String deviceId;
+  
+  const SaveConfigRow({super.key, required this.deviceId});
 
   @override
-  State<SaveConfigRow> createState() => _SaveConfigRowState();
+  ConsumerState<SaveConfigRow> createState() => _SaveConfigRowState();
 }
 
-class _SaveConfigRowState extends State<SaveConfigRow> {
+class _SaveConfigRowState extends ConsumerState<SaveConfigRow> {
   String _configName = '';
 
   @override
   Widget build(BuildContext context) {
+    final provider = ref.watch(sensorConfigurationProviderFamily(widget.deviceId));
+    final storage = ref.read(sensorConfigurationStorageProvider);
+
     return ListTile(
       title: TextField(
         onChanged: (value) {
@@ -40,12 +45,10 @@ class _SaveConfigRowState extends State<SaveConfigRow> {
           backgroundColor: Color(0xFFF2F2F2),
         ),
         onPressed: () async {
-          SensorConfigurationProvider provider =
-              Provider.of<SensorConfigurationProvider>(context, listen: false);
           Map<String, String> config = provider.toJson();
 
           if (_configName.isNotEmpty) {
-            await SensorConfigurationStorage.saveConfiguration(
+            await storage.saveConfiguration(
               _configName.trim(),
               config,
             );

@@ -1,7 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 import 'package:go_router/go_router.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/app/routing/refresh_stream.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/features/auth/pages/login_page.dart';
@@ -13,7 +15,9 @@ import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
 import 'package:openearable/features/sensors/pages/sensor_page.dart';
-import 'package:openearable/app/widgets/devices_popup_overlay.dart';
+import 'package:openearable/features/sensors/pages/sensor_details_page.dart';
+import 'package:openearable/app/theme/text_styles.dart';
+import 'package:openearable/features/playback/pages/playback_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = GoRouterRefreshStream(
@@ -52,18 +56,50 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const RequestResetPage(),
       ),
       GoRoute(
+        path: '${Routes.playbackBase}/:source/:id',
+        builder: (context, state) {
+          final sourceStr = state.pathParameters['source']!;
+          final id = state.pathParameters['id']!;
+
+          final rec = state.extra as Recording?;
+          final source = sourceStr == 'cloud'
+              ? RecordingSource.cloud
+              : RecordingSource.local;
+
+          return PlaybackPage(
+            recordingId: id,
+            source: source,
+            recording: rec,
+          );
+        },
+      ),
+      GoRoute(
         path: Routes.sensordata, 
         builder: (context, state) {
           final isRecordingSource = state.uri.queryParameters['source'] == 'recording';
-          
-          return SensorPage(
-            isRecordingSource: isRecordingSource,
-            onBluetooth: () {
-              showDevicesPopup(
-                context: context,
-                isSensorPage: true,
-              );
-            },
+          return SensorPage(isRecordingSource: isRecordingSource);
+        },
+      ),
+      GoRoute(
+        path: Routes.sensordataDetails,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+
+          if (data == null) {
+            return const Scaffold(
+              body: Center(
+                child: Text(
+                  "Sensor data are missing. Please go back.", 
+                  style: GlobalTextStyles.subHeader,
+                )
+              ),
+            );
+          }
+
+          return SensorDetailsPage(
+            sensor: data['sensor'] as Sensor,
+            wearable: data['wearable'] as Wearable,
+            sensorIndex: data['sensorIndex'] as int,
           );
         },
       ),
@@ -80,8 +116,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               'loggedOut=${session.isLoggedOut}',
         );
       }
-
-
       final isPublic =
           loc == Routes.login ||
           loc == Routes.signup ||
@@ -99,14 +133,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       return null;
-    },
-
-    errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(title: const Text('Routing error')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text('No route for: ${state.uri}\n\n${state.error ?? ""}'),
-      ),
-    ),
+    }
   );
 });

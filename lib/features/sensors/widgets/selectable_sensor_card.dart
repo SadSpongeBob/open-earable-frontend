@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 import 'package:openearable/features/sensors/widgets/sensor_chart.dart';
-import 'package:openearable/features/sensors/state/recording_chart_provider.dart';
-import 'package:openearable/features/sensors/state/sensor_data_provider.dart';
-import 'package:openearable/features/sensors/widgets/sensor_value_details.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
+import '../../../app/routing/routes.dart';
 
-class SelectableSensorCard extends StatelessWidget {
+class SelectableSensorCard extends ConsumerWidget {
   final Sensor sensor;
   final Wearable wearable;
+  final int sensorIndex;
 
   const SelectableSensorCard({
     super.key,
     required this.sensor,
     required this.wearable,
+    required this.sensorIndex,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final recordingProvider = context.watch<RecordingChartProvider>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recordingProvider = ref.watch(recordingChartProvider);
 
     final chartId = "${wearable.deviceId}_${sensor.sensorName}";
     final isSelected = recordingProvider.activeChartId == chartId;
@@ -27,18 +29,13 @@ class SelectableSensorCard extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () {
-        final sensorDataProvider = context.read<SensorDataProvider>();
-        
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ChangeNotifierProvider.value(
-              value: sensorDataProvider,
-              child: SensorValueDetail(
-                sensor: sensor,
-                wearable: wearable,
-              ),
-            ),
-          ),
+        context.push(
+          Routes.sensordataDetails,
+          extra: {
+            'sensor': sensor,
+            'wearable': wearable,
+            'sensorIndex': sensorIndex,
+          },
         );
       },
       child: Card(
@@ -64,9 +61,7 @@ class SelectableSensorCard extends StatelessWidget {
                   Checkbox(
                     value: isSelected,
                     onChanged: (_) {
-                      context
-                          .read<RecordingChartProvider>()
-                          .toggleChart(chartId);
+                      ref.read(recordingChartProvider).toggleChart(chartId);
                     },
                   ),
                 ],
@@ -77,12 +72,10 @@ class SelectableSensorCard extends StatelessWidget {
               /// CHART
               SizedBox(
                 height: 220,
-                child: Consumer<SensorDataProvider>(
-                  builder: (context, provider, child) {
-                    return SensorChart(
-                      allowToggleAxes: false,
-                    );
-                  },
+                child: SensorChart(
+                  allowToggleAxes: false,
+                  deviceId: wearable.deviceId,
+                  sensorIndex: sensorIndex,
                 ),
               ),
             ],

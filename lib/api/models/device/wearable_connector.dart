@@ -7,19 +7,20 @@ abstract class WearableEvent {
 }
 
 abstract class WearableConnectionEvent extends WearableEvent {
-  // final DiscoveredDevice discoveredDevice;
-  WearableConnectionEvent(/*this.discoveredDevice, */super.wearable);
+  WearableConnectionEvent(super.wearable);
 }
+
 final class WearableConnectEvent extends WearableConnectionEvent {
-  WearableConnectEvent(/*super.discoveredDevice, */super.wearable);
+  WearableConnectEvent(super.wearable);
 }
 
 enum DisconnectReason {
   user, system
 }
+
 final class WearableDisconnectedEvent extends WearableConnectionEvent {
   final DisconnectReason disconnectReason;
-  WearableDisconnectedEvent(this.disconnectReason, /*super.discoveredDevice, */super.wearable);
+  WearableDisconnectedEvent(this.disconnectReason, super.wearable);
 }
 
 final class WearableStereoPairedEvent extends WearableEvent {
@@ -30,8 +31,6 @@ final class WearableStereoPairedEvent extends WearableEvent {
 
 /// This class handles all connections with wearables and notifies subscribers over Wearable events
 class WearableConnector {
-  // final Map<DiscoveredDevice, Wearable> _connectedDevices = {};
-
   final WearableManager _wm;
 
   final _events = StreamController<WearableEvent>.broadcast();
@@ -46,11 +45,9 @@ class WearableConnector {
   }
 
   void _handleConnection(Wearable wearable) {
-    //_connectedDevices[device] = wearable;
     wearable.addDisconnectListener(() {
-      _events.add(WearableDisconnectedEvent(DisconnectReason.system,/* device, */wearable));
-      //_connectedDevices.remove(device);
+      _events.add(WearableDisconnectedEvent(DisconnectReason.system, wearable));
     });
-    _events.add(WearableConnectEvent(/*device, */wearable));
+    _events.add(WearableConnectEvent(wearable));
   }
 }

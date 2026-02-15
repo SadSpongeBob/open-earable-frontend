@@ -1,43 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:openearable/features/sensors/state/recording_chart_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/sensors/widgets/sensor_chart.dart';
-import 'package:openearable/features/sensors/state/sensor_data_provider.dart';
-import 'package:openearable/features/home/state/wearables_provider.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
+import 'package:openearable/features/home/state/wearables_state.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
-class VideoSensorOverlay extends StatelessWidget {
+class VideoSensorOverlay extends ConsumerWidget {
   const VideoSensorOverlay({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final recordingProvider = context.watch<RecordingChartProvider>();
-    final wearablesProvider = context.watch<WearablesProvider>();
-
-    if (!recordingProvider.isOverlayVisible) return const SizedBox.shrink();
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recordingProvider = ref.watch(recordingChartProvider);
     final chartId = recordingProvider.activeChartId;
 
     if (chartId == null || !recordingProvider.isOverlayVisible) {
       return const SizedBox.shrink();
     } 
 
+    final wearablesNotifier = ref.watch(wearablesProvider);
     final String selectedId = chartId.toLowerCase();
 
-    SensorDataProvider? activeDataProvider;
+    int? matchedSensorIndex;
+    String? matchedDeviceId;
+    String? matchedSensorName;
 
-    for (var providers in wearablesProvider.sensorDataProviders.values) {
-      for (var provider in providers) {
-        String sensorName = provider.sensor.sensorName.toLowerCase();
-    
+    for (var wearable in wearablesNotifier.wearables) {
+      final providers = wearablesNotifier.getSensorDataProviders(wearable);
+      
+      for (int i = 0; i < providers.length; i++) {
+        String sensorName = providers[i].sensor.sensorName.toLowerCase();
+
         if (selectedId.contains(sensorName)) {
-          activeDataProvider = provider;
+          matchedSensorName = sensorName;
+          matchedDeviceId = wearable.deviceId;
+          matchedSensorIndex = i;
           break;
         }
       }
-      if (activeDataProvider != null) break;
+      if (matchedDeviceId != null) break;
     }
 
-    if (activeDataProvider == null) {
+    if (matchedDeviceId == null || matchedSensorIndex == null) {
       return const SizedBox.shrink();
     }
 
@@ -47,17 +50,31 @@ class VideoSensorOverlay extends StatelessWidget {
       child: Container(
         height: 200,
         width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 50),
         decoration: BoxDecoration(color: Colors.white.withOpacity(0.55)),
         padding: const EdgeInsets.all(12),
-        child: Material(
-          color: Colors.transparent,
-          child: ChangeNotifierProvider<SensorDataProvider>.value(
-            value: activeDataProvider,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: const SensorChart(allowToggleAxes: false),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              matchedSensorName ?? "Unknown Sensor",
+              style: GlobalTextStyles.textMedium,
             ),
-          ),
+
+            const SizedBox(height: 10),
+
+            Material(
+              color: Colors.transparent,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SensorChart(
+                  allowToggleAxes: false,
+                  deviceId: matchedDeviceId,
+                  sensorIndex: matchedSensorIndex,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
