@@ -41,110 +41,113 @@ class _SensorPageState extends State<SensorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        // LEFT SIDE MENU (Configuration Panel)
-        Container(
-          width: 280,
-          padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
-          decoration: BoxDecoration(
-            color: AppColors.fifty,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.twoHundred,
-                blurRadius: 30,
-                offset: const Offset(-3, 0),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  child: BluetoothButton(
-                    buttonKey: _sensorBluetoothKey,
-                    onPressed: _onBluetoothPressed,
-                  ),
+    return Scaffold(
+      body: Row(
+        children: [
+          // LEFT SIDE MENU (Configuration Panel)
+          Container(
+            width: 280,
+            padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
+            decoration: BoxDecoration(
+              color: AppColors.fifty,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.twoHundred,
+                  blurRadius: 30,
+                  offset: const Offset(-3, 0),
                 ),
-                const SizedBox(height: 10),
-                Expanded(child: SensorConfigurationView()),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
+              ],
+            ),
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    child: BluetoothButton(
+                      buttonKey: _sensorBluetoothKey,
+                      onPressed: _onBluetoothPressed,
+                    ),
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
+                  const SizedBox(height: 10),
+                  Expanded(child: SensorConfigurationView()),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        if (widget.isRecordingSource) {
-                          context.go(Routes.recording);
-                        } else {
-                          context.go(Routes.home);
-                        }
-                      },
-                      child: SizedBox(
-                        height: 120,
-                        width: 100,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              widget.isRecordingSource
-                                  ? 'assets/buttons/shutter.png'
-                                  : 'assets/buttons/projects.png',
-                              width: 70,
-                              height: 70,
-                            ),
-                            const SizedBox(width: 5),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.arrow_back_ios_new_rounded,
-                                  size: 17,
-                                ),
-                                const Text(
-                                  " Go Back",
-                                  style: AppTextStyles.footerMedium,
-                                ),
-                              ],
-                            ),
-                          ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          if (widget.isRecordingSource) {
+                            context.go(Routes.recording);
+                          } else {
+                            context.go(Routes.home);
+                          }
+                        },
+                        child: SizedBox(
+                          height: 120,
+                          width: 100,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                widget.isRecordingSource
+                                    ? 'assets/buttons/shutter.png'
+                                    : 'assets/buttons/projects.png',
+                                width: 70,
+                                height: 70,
+                              ),
+                              const SizedBox(width: 5),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    size: 17,
+                                  ),
+                                  const Text(
+                                    " Go Back",
+                                    style: AppTextStyles.footerMedium,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
 
-        // RIGHT SIDE CONTENT (Charts)
-        Expanded(
-          child: Scaffold(
-            backgroundColor: AppColors.hundred,
-            body: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 40,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text("Sensors", style: AppTextStyles.titleBold),
-                    const SizedBox(height: 10),
-                    Expanded(child: SensorValues()),
-                  ],
+          // RIGHT SIDE CONTENT (Charts)
+          Expanded(
+            child: Scaffold(
+              backgroundColor: AppColors.hundred,
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 40,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text("Sensors", style: AppTextStyles.titleBold),
+                      const SizedBox(height: 10),
+                      Expanded(child: SensorValues()),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
