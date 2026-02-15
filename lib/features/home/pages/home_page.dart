@@ -235,8 +235,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                         image: AssetImage('assets/images/background.png'),
                         fit: BoxFit.cover,
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.sixHundred, width: 2),
                     ),
                     child: RepaintBoundary(
                       child: RecordingGrid(
