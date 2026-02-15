@@ -33,6 +33,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   late final RecordingController _controller;
   late final SensorsRecordingController _sensorsController;
   final DevicesPopupController _popupController = DevicesPopupController();
+  final sensorsRecordingProvider = Provider((ref) => SensorsRecordingController());
 
   bool _busy = false;
 
@@ -44,17 +45,16 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   void initState() {
     super.initState();
     _controller = ref.read(recordingControllerProvider(widget.initialCamera));
+    _sensorsController = ref.read(sensorsRecordingProvider);
     _controller.init().then((_) {
       if (!mounted) return;
       setState(() {});
     });
-    _sensorsController = SensorsRecordingController();
   }
 
   @override
   void dispose() {
     _popupController.hide();
-    _sensorsController.dispose();
     super.dispose();
   }
 

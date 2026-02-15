@@ -15,6 +15,7 @@ final recordingControllerProvider = Provider.autoDispose
         localMedia: localMedia,
         initialCamera: initial,
       );
+      ref.keepAlive();
       ref.onDispose(controller.dispose);
       return controller;
     });
