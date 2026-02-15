@@ -144,7 +144,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       isSelectionMode: false,
                       selectedRecordingIds: const <String>{},
                       onTapRecording: (item) async {
-                        if (item.isUploading) return;
+                        if (item.isUploading || item.isUploaded) return;
                         context.go(Routes.playback(item.isCloud, item.id));
                       },
                       onLongPressRecording: (item) {},

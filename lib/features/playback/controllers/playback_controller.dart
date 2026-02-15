@@ -104,7 +104,7 @@ class PlaybackController {
 
     homeStateNotifier.updateRecording(
       id: rec.id,
-      uploadStatus: UploadStatus.pending,
+      uploadStatus: UploadStatus.uploading,
     );
 
     final ok = await uploadController.uploadRecording(
