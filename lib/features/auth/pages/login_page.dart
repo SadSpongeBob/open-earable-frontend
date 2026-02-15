@@ -8,8 +8,6 @@ import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 
-
-
 import '../../../app/theme/text_styles.dart';
 import '../../../app/widgets/user_card.dart';
 import '../widgets/auth_footer_link.dart';
@@ -73,87 +71,95 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: UserCard(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/images/app_logo.png', width: 90, height: 110),
-                const SizedBox(height: 20),
+        child: SafeArea(
+          child: UserCard(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/app_logo.png',
+                    width: 90,
+                    height: 110,
+                  ),
+                  const SizedBox(height: 20),
 
-                const Text(
-                  "Log into\nyour account",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.titleBold,
-                ),
+                  const Text(
+                    "Log into\nyour account",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.titleBold,
+                  ),
 
-                const SizedBox(height: 35),
+                  const SizedBox(height: 35),
 
-                InputBox(
-                  controller: _emailController,
-                  hint: "Email Address",
-                  validator: Validators.email,
-                  keyboardType: TextInputType.emailAddress,
-                ),
+                  InputBox(
+                    controller: _emailController,
+                    hint: "Email Address",
+                    validator: Validators.email,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                InputBox(
-                  controller: _pwController,
-                  hint: "Password",
-                  validator: Validators.password,
-                  obscureText: !_showPassword,
-                  suffixIcon: Transform.translate(
-                    offset: const Offset(-20, 0),
-                    child: IconButton(
-                      icon: Icon(
-                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                  InputBox(
+                    controller: _pwController,
+                    hint: "Password",
+                    validator: Validators.password,
+                    obscureText: !_showPassword,
+                    suffixIcon: Transform.translate(
+                      offset: const Offset(-20, 0),
+                      child: IconButton(
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
                       ),
-                      onPressed: () =>
-                          setState(() => _showPassword = !_showPassword),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 10),
-                _buildRememberForgotRow(context),
-                const SizedBox(height: 35),
+                  const SizedBox(height: 10),
+                  _buildRememberForgotRow(context),
+                  const SizedBox(height: 20),
 
-                AppButton.primary(
-                  text: "Log In",
-                  onPressed: _isFormFilled ? _handleLogin : null,
-                  isLoading: loading,
-                ),
+                  AppButton.primary(
+                    text: "Log In",
+                    onPressed: _isFormFilled ? _handleLogin : null,
+                    isLoading: loading,
+                  ),
 
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Don’t have an account yet? ",
-                      style: AppTextStyles.footerRegular,
-                    ),
-                    GestureDetector(
-                      onTap: () => context.go(Routes.signup),
-                      child: Text("Sign Up", style: AppTextStyles.footerBold),
-                    ),
-                  ],
-                ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Don’t have an account yet? ",
+                        style: AppTextStyles.footerRegular,
+                      ),
+                      GestureDetector(
+                        onTap: () => context.go(Routes.signup),
+                        child: Text("Sign Up", style: AppTextStyles.footerBold),
+                      ),
+                    ],
+                  ),
 
-                const AuthSeparator(),
+                  const AuthSeparator(),
 
-                AuthFooterLink(
-                  text: "Continue as Guest",
-                  bold: true,
-                  onTap: () async {
-                    await ref.read(authControllerProvider).guestLogin();
-                    context.go(Routes.home);
-                  },
-                ),
-              ],
+                  AuthFooterLink(
+                    text: "Continue as Guest",
+                    bold: true,
+                    onTap: () async {
+                      await ref.read(authControllerProvider).guestLogin();
+                      context.go(Routes.home);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),

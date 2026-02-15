@@ -49,53 +49,59 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: UserCard(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/images/app_logo.png', width: 90, height: 110),
-                const SizedBox(height: 20),
+        child: SafeArea(
+          child: UserCard(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/app_logo.png',
+                    width: 90,
+                    height: 110,
+                  ),
+                  const SizedBox(height: 20),
 
-                const Text(
-                  "Forgot your password?",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.titleBold,
-                ),
+                  const Text(
+                    "Forgot your password?",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.titleBold,
+                  ),
 
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                const Text(
-                  "Enter your Email so that we can send you password reset link.",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.textRegular,
-                ),
+                  const Text(
+                    "Enter your Email so that we can send you password reset link.",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.textRegular,
+                  ),
 
-                const SizedBox(height: 35),
+                  const SizedBox(height: 35),
 
-                InputBox(
-                  controller: _emailController,
-                  hint: "Email Address",
-                  validator: Validators.email,
-                  keyboardType: TextInputType.emailAddress,
-                ),
+                  InputBox(
+                    controller: _emailController,
+                    hint: "Email Address",
+                    validator: Validators.email,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                AppButton.primary(
-                  text: "Send",
-                  onPressed: _isFormFilled ? _handleSendReset : null,
-                  isLoading: _loading,
-                ),
+                  AppButton.primary(
+                    text: "Send",
+                    onPressed: _isFormFilled ? _handleSendReset : null,
+                    isLoading: _loading,
+                  ),
 
-                const SizedBox(height: 25),
+                  const SizedBox(height: 25),
 
-                AuthFooterLink(
-                  text: "< Back to Log In",
-                  onTap: () => context.go(Routes.login),
-                ),
-              ],
+                  AuthFooterLink(
+                    text: "< Back to Log In",
+                    onTap: () => context.go(Routes.login),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

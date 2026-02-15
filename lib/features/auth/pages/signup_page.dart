@@ -74,94 +74,102 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: UserCard(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/images/app_logo.png', width: 90, height: 110),
-                const SizedBox(height: 20),
+        child: SafeArea(
+          child: UserCard(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/app_logo.png',
+                    width: 90,
+                    height: 110,
+                  ),
+                  const SizedBox(height: 20),
 
-                const Text(
-                  "Create your account",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.titleBold,
-                ),
+                  const Text(
+                    "Create your account",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.titleBold,
+                  ),
 
-                const SizedBox(height: 35),
+                  const SizedBox(height: 35),
 
-                InputBox(
-                  controller: _namecontroller,
-                  hint: "Name",
-                  validator: Validators.name,
-                  keyboardType: TextInputType.name,
-                ),
+                  InputBox(
+                    controller: _namecontroller,
+                    hint: "Name",
+                    validator: Validators.name,
+                    keyboardType: TextInputType.name,
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                InputBox(
-                  controller: _emailController,
-                  hint: "Email Address",
-                  validator: Validators.email,
-                  keyboardType: TextInputType.emailAddress,
-                ),
+                  InputBox(
+                    controller: _emailController,
+                    hint: "Email Address",
+                    validator: Validators.email,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                InputBox(
-                  controller: _pwController,
-                  hint: "Password",
-                  validator: Validators.password,
-                  obscureText: !_showPassword,
-                  suffixIcon: Transform.translate(
-                    offset: const Offset(-20, 0),
-                    child: IconButton(
-                      icon: Icon(
-                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                  InputBox(
+                    controller: _pwController,
+                    hint: "Password",
+                    validator: Validators.password,
+                    obscureText: !_showPassword,
+                    suffixIcon: Transform.translate(
+                      offset: const Offset(-20, 0),
+                      child: IconButton(
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
                       ),
-                      onPressed: () =>
-                          setState(() => _showPassword = !_showPassword),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                AppButton.primary(
-                  text: "Sign Up",
-                  onPressed: _isFormFilled ? _handleSignup : null,
-                  isLoading: loading,
-                ),
+                  AppButton.primary(
+                    text: "Sign Up",
+                    onPressed: _isFormFilled ? _handleSignup : null,
+                    isLoading: loading,
+                  ),
 
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Already have an account? ",
-                      style: AppTextStyles.footerRegular,
-                    ),
-                    GestureDetector(
-                      onTap: () => context.go(Routes.login),
-                      child: Text("Log in", style: AppTextStyles.footerBold),
-                    ),
-                  ],
-                ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Already have an account? ",
+                        style: AppTextStyles.footerRegular,
+                      ),
+                      GestureDetector(
+                        onTap: () => context.go(Routes.login),
+                        child: Text("Log in", style: AppTextStyles.footerBold),
+                      ),
+                    ],
+                  ),
 
-                const AuthSeparator(),
+                  const AuthSeparator(),
 
-                AuthFooterLink(
-                  text: "Continue as Guest",
-                  bold: true,
-                  onTap: () async {
-                    await ref.read(authControllerProvider).guestLogin();
-                    context.go(Routes.home);
-                  },
-                ),
-              ],
+                  AuthFooterLink(
+                    text: "Continue as Guest",
+                    bold: true,
+                    onTap: () async {
+                      await ref.read(authControllerProvider).guestLogin();
+                      context.go(Routes.home);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),

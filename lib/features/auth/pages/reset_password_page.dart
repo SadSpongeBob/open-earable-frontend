@@ -52,56 +52,64 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: UserCard(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/images/app_logo.png', width: 90, height: 110),
-                const SizedBox(height: 20),
+        child: SafeArea(
+          child: UserCard(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/app_logo.png',
+                    width: 90,
+                    height: 110,
+                  ),
+                  const SizedBox(height: 20),
 
-                const Text(
-                  "Reset Password",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.titleBold,
-                ),
+                  const Text(
+                    "Reset Password",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.titleBold,
+                  ),
 
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                const Text(
-                  "Enter a new password.",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.textRegular,
-                ),
+                  const Text(
+                    "Enter a new password.",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.textRegular,
+                  ),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                InputBox(
-                  controller: _pwController,
-                  hint: "Password",
-                  validator: Validators.password,
-                  obscureText: !_showPassword,
-                  suffixIcon: Transform.translate(
-                    offset: const Offset(-8, 0),
-                    child: IconButton(
-                      icon: Icon(
-                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                  InputBox(
+                    controller: _pwController,
+                    hint: "Password",
+                    validator: Validators.password,
+                    obscureText: !_showPassword,
+                    suffixIcon: Transform.translate(
+                      offset: const Offset(-8, 0),
+                      child: IconButton(
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
                       ),
-                      onPressed: () =>
-                          setState(() => _showPassword = !_showPassword),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                AppButton.primary(
-                  text: "Reset",
-                  onPressed: _isFormFilled ? _handleReset : null,
-                  isLoading: _loading,
-                ),
-              ],
+                  AppButton.primary(
+                    text: "Reset",
+                    onPressed: _isFormFilled ? _handleReset : null,
+                    isLoading: _loading,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
