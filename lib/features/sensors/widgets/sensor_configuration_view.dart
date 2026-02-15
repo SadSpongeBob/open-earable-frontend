@@ -30,7 +30,7 @@ class SensorConfigurationView extends ConsumerWidget {
                   child: Center(
                     child: Text(
                       "No devices connected",
-                      style: AppTextStyles.subheaderRegular,
+                      style: AppTextStyles.subheaderBold,
                       textAlign: TextAlign.center,
                     ),
                   ),
