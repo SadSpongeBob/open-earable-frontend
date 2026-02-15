@@ -59,11 +59,10 @@ class PillMenu<T> extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: MainAxisSize.max,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Flexible(
-                    fit: FlexFit.loose,
+                  Expanded(
                     child: Text(
                       isLoading ? 'Loading' : labelOf(value as T),
                       style: AppTextStyles.footerRegular,
@@ -71,7 +70,6 @@ class PillMenu<T> extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 6),
                   SizedBox(
                     height: 20,
                     child: Align(
