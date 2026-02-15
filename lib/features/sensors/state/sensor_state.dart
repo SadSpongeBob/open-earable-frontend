@@ -31,5 +31,6 @@ final sensorDataProviderFamily =
 
 final recordingChartProvider =
     ChangeNotifierProvider<RecordingChartProvider>((ref) {
+  ref.keepAlive();
   return RecordingChartProvider();
 });
