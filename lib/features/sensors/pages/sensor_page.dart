@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/sensors/widgets/sensor_configuration_view.dart';
 import 'package:openearable/app/ui/device/devices_popup_controller.dart';
 import 'package:openearable/app/widgets/devices_popup.dart';
@@ -42,7 +43,7 @@ class _SensorPageState extends State<SensorPage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        backgroundColor: Color(0xFFE6E6E6),
+        backgroundColor: AppColors.hundred,
         body: Row(
           children: [
             // LEFT SIDE MENU (Configuration Panel)
@@ -50,10 +51,10 @@ class _SensorPageState extends State<SensorPage> {
               width: 280,
               padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
               decoration: BoxDecoration(
-                color: Color(0xFFF2F2F2),
+                color: AppColors.fifty,
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0xFF8F8F8F),
+                    color: AppColors.fiveHundred,
                     blurRadius: 30,
                     offset: Offset(-3, 0),
                   ),
