@@ -184,7 +184,7 @@ class RecordingController extends ChangeNotifier {
 
   @override
   Future<void> dispose() async {
-    await cameraController?.dispose();
+    cameraController?.dispose();
     super.dispose();
   }
 }

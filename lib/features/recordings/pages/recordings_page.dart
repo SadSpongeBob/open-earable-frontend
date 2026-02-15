@@ -82,12 +82,16 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
           );
           wearablesNotifier.detachSensorsRecordingController();
         }
+        setState(() {}); 
         if (recording != null && mounted) {
           ref.read(homeStateProvider.notifier).addRecording(recording);
-          context.go(
-            Routes.playback(recording.isCloud, recording.id),
-            extra: recording,
-          );
+          Future.microtask(() {
+            if (!mounted) return;
+            context.go(
+              Routes.playback(recording.isCloud, recording.id),
+              extra: recording,
+            );
+          });
         }
       } else {
         _videoStartEpochMs = DateTime.now().millisecondsSinceEpoch;
@@ -102,7 +106,6 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
     }
 
     if (!mounted) return;
-    setState(() {});
   }
 
   Future<void> _onFlipOrPausePressed() async {
