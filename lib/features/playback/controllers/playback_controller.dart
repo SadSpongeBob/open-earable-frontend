@@ -1,13 +1,21 @@
 import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/local_media.dart';
+import 'package:openearable/api/models/auth/auth_state.dart';
+import 'package:openearable/api/models/project/project_role.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/api/services/project/project_service.dart';
+import 'package:openearable/api/services/recording/recording_service.dart';
+import 'package:openearable/api/services/s3/s3_service.dart';
+import 'package:openearable/app/ui/toast_controller.dart';
+import 'package:openearable/app/ui/toast_event.dart';
+import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/recordings/controllers/upload_controller.dart';
 import 'package:video_player/video_player.dart';
-import 'package:openearable/api/local_media.dart';
-import 'package:openearable/api/services/recording/recording_service.dart';
-import 'package:openearable/api/services/s3/s3_service.dart';
 
 final videoPlayerControllerProvider = FutureProvider.autoDispose
     .family<VideoPlayerController, Recording>((ref, recording) async {
@@ -45,29 +53,45 @@ final playbackControllerProvider = Provider<PlaybackController>((ref) {
   final uploadController = ref.read(uploadControllerProvider);
   final homeStateNotifier = ref.read(homeStateProvider.notifier);
 
+  final projectService = ref.read(projectServiceProvider);
+  final authState = ref.watch(sessionProvider);
+  void toast(ToastEvent e) => emitToast(ref, e);
+
   return PlaybackController(
-    localMedia,
-    recordingService,
-    s3Service,
-    uploadController,
-    homeStateNotifier,
+    localMedia: localMedia,
+    recordingService: recordingService,
+    s3Service: s3Service,
+    uploadController: uploadController,
+    homeStateNotifier: homeStateNotifier,
+    projectService: projectService,
+    authState: authState,
+    toast: toast,
   );
 });
 
 class PlaybackController {
+  PlaybackController({
+    required this.localMedia,
+    required this.recordingService,
+    required this.s3Service,
+    required this.uploadController,
+    required this.homeStateNotifier,
+    required ProjectService projectService,
+    required AuthState authState,
+    required void Function(ToastEvent) toast,
+  })  : _projectService = projectService,
+        _authState = authState,
+        _toast = toast;
+
   final LocalMedia localMedia;
   final RecordingService recordingService;
   final S3Service s3Service;
   final UploadController uploadController;
   final HomeStateNotifier homeStateNotifier;
 
-  PlaybackController(
-    this.localMedia,
-    this.recordingService,
-    this.s3Service,
-    this.uploadController,
-    this.homeStateNotifier,
-  );
+  final ProjectService _projectService;
+  final AuthState _authState;
+  final void Function(ToastEvent) _toast;
 
   void togglePlay(VideoPlayerController vc) {
     if (!vc.value.isInitialized) return;
@@ -85,7 +109,37 @@ class PlaybackController {
     vc.seekTo(clamped);
   }
 
+  Future<bool> _canManageRecording(Recording rec) async {
+    final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
+
+    if (projectId == LocalMedia.defaultProjectId) return true;
+    if (_authState.isGuest) return true;
+
+    try {
+      final users = await _projectService.getProjectUsers(projectId);
+      final myId = _authState.user?.userId;
+      if (myId == null) return false;
+
+      final me = users.where((u) => u.userId == myId).toList();
+      if (me.isEmpty) return false;
+
+      final role = me.first.role;
+      return role is Owner || role is Editor;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) return false;
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> deleteRecording(Recording rec) async {
+    final can = await _canManageRecording(rec);
+    if (!can) {
+      _toast(const ToastEvent.error('No permission'));
+      return;
+    }
+
     if (rec.isCloud) {
       await recordingService.deleteCloudRecording(rec.id);
     } else {
@@ -140,6 +194,12 @@ class PlaybackController {
   }
 
   Future<void> renameRecording(Recording rec, String newName) async {
+    final can = await _canManageRecording(rec);
+    if (!can) {
+      _toast(const ToastEvent.error('No permission'));
+      return;
+    }
+
     if (rec.isCloud) {
       await recordingService.renameCloud(
         recordingId: rec.id,
