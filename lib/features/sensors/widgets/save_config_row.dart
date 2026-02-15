@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/features/sensors/state/sensor_configuration_storage.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
@@ -67,11 +68,8 @@ class _SaveConfigRowState extends ConsumerState<SaveConfigRow> {
                     style: AppTextStyles.textRegular,
                   ),
                   actions: [
-                    TextButton(
-                      child: Text(
-                        "OK", 
-                        style: AppTextStyles.subheaderRegular.copyWith(color: AppColors.sixHundred),
-                      ),
+                    AppButton.ghost(
+                      text: 'Ok',
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
