@@ -133,7 +133,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Positioned.fill(child: CameraPreview(_controller.cameraController!));
+    return CameraPreview(_controller.cameraController!);
   }
 
   @override
@@ -145,19 +145,15 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
         children: [
           RecordingLeftBar(onBackToProjects: _navigateToHome),
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return Stack(
+            child: Stack(
                   children: [
-                    SizedBox(
-                      width: constraints.maxWidth,
-                      height: constraints.maxHeight,
+                    Positioned.fill(
                       child: _buildCameraPreview(),
                     ),
-                    const VideoSensorOverlay(),
+                    const Positioned.fill(
+                      child: VideoSensorOverlay()
+                    ),
                   ],
-                );
-              },
             ),
           ),
 
