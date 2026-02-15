@@ -385,7 +385,7 @@ class HomeController {
         return;
       }
 
-      final canRename = role is Viewer;
+      final canRename = role is Owner || role is Editor;
       if (!canRename) {
         _toast(const ToastEvent.error('No permission'));
         return;
@@ -503,6 +503,18 @@ class HomeController {
           late final ProjectMetadata newProject;
 
           if (project.projectSource == ProjectSource.cloud) {
+            final role = await _getMyRoleForProject(projectId);
+            if (role == null) {
+              _toast(const ToastEvent.error('No permission'));
+              return;
+            }
+
+            final canDuplicate = role is Owner || role is Editor;
+            if (!canDuplicate) {
+              _toast(const ToastEvent.error('No permission'));
+              return;
+            }
+
             newProject = await _projectService.duplicateProject(projectId);
           } else {
             final newName = _duplicateName(project.name);
@@ -513,6 +525,14 @@ class HomeController {
           await _projectService.duplicateLocalProject(projectId, newProject);
           _state.addProject(newProject);
           successCount++;
+        } on DioException catch (e) {
+          final code = e.response?.statusCode;
+          if (code == 403) {
+            _toast(const ToastEvent.error('No permission'));
+            return;
+          }
+          failed.add(projectId);
+          _error(e, userMessage: 'Failed to duplicate project ${project.name}');
         } catch (e) {
           failed.add(projectId);
           _error(e, userMessage: 'Failed to duplicate project ${project.name}');
@@ -529,6 +549,7 @@ class HomeController {
       _state.setLoading(false);
     }
   }
+
 
   // ----------------
   // Project Selection UI state

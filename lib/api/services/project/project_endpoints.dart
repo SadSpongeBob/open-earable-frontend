@@ -7,7 +7,7 @@ class ProjectEndpoints {
 
   static String deleteProject(String projectId) => '$baseUrl/$projectId/delete';
 
-  static const String duplicateProject = '$baseUrl/duplicate';
+  static String duplicateProject(String projectId) => '$baseUrl/$projectId/duplicate';
 
   static String addProjectUser(String projectId) => '$baseUrl/$projectId/user';
 

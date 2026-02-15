@@ -174,12 +174,10 @@ class ProjectService {
   }
 
   Future<ProjectMetadata> duplicateProject(String projectId) async {
-    final res = await _dioClient.post(
-      ProjectEndpoints.duplicateProject,
-      data: {'projectId': projectId},
+    final res = await _dioClient.post<dynamic>(
+      ProjectEndpoints.duplicateProject(projectId),
     );
-    final data = res.asMap();
-    return ProjectMetadata.fromJson(data);
+    return ProjectMetadata.fromJson(res.asMap());
   }
 
   Future<void> duplicateLocalProject(
