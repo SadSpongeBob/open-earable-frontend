@@ -17,13 +17,13 @@ class VideoSensorOverlay extends ConsumerWidget {
       //return const SizedBox.shrink();
     //}
 
-    if (chartId == null || !recordingProvider.isOverlayVisible) {
+    if (chartId == null || !recordingProvider.shouldShowOverlay) {
       return Align(
         alignment: Alignment.topCenter,
         child: Container(
           color: Colors.red,
           padding: const EdgeInsets.all(4),
-          child: Text("DEBUG: ID=$chartId, Visible=${recordingProvider.isOverlayVisible}", 
+          child: Text("DEBUG: ID=$chartId, Visible=${recordingProvider.shouldShowOverlay}", 
             style: const TextStyle(color: Colors.white, fontSize: 10)),
         ),
       );
