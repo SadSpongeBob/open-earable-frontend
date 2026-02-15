@@ -137,7 +137,7 @@ class HomeController {
     return null;
   }
 
-  String _newRecordingId() => Helpers.getProjectId();
+  String _newRecordingId() => Helpers.getRecordingId();
 
   bool _recordingNameExists(String name) {
     final normalized = name.trim().toLowerCase();
@@ -162,10 +162,9 @@ class HomeController {
     if (project.id == LocalMedia.defaultProjectId) return true;
 
     if (project.projectSource == ProjectSource.local) return true;
-    if (!_authState.isAuthenticated) return true;
+    if (_authState.isGuest) return true;
 
-    final myUserId = _authState.user?.userId;
-    if (myUserId == null) return false;
+    final myUserId = _authState.user!.userId;
 
     if (state.projectUsers.isEmpty) {
       try {
@@ -649,7 +648,7 @@ class HomeController {
       final rec = _findRecordingById(id);
       if (rec == null) continue;
 
-      if (rec.localVideoPath != null) {
+      if (rec.isLocal) {
         localIds.add(id);
       } else {
         cloudIds.add(id);
