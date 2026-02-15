@@ -27,7 +27,7 @@ class SensorRepository {
         final tsRaw = item['timestampMs'];
         final values = item['values'];
         if (tsRaw == null || values is! Map) continue;
-        final acc = values['Accelerometer'];
+        final acc = values['Gyroscope'];
         if (acc is! List || acc.length < 3) continue;
 
         final ts = tsRaw is int ? tsRaw : (tsRaw is num ? tsRaw.toInt() : null);

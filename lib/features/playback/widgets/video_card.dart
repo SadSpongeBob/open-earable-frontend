@@ -22,26 +22,36 @@ class VideoCard extends StatelessWidget {
           aspectRatio: controller.value.aspectRatio,
           child: Stack(
             children: [
+              // Video als Hintergrund
               VideoPlayer(controller),
-              SizedBox(
+
+              // Sensor-Chart über der Fortschrittsleiste
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 20, // Abstand über Fortschrittsleiste
                 height: 100,
                 child: ProviderScope(
                   child: Consumer(builder: (context, ref2, _) {
                     final sensorAsync = ref2.watch(sensorDataProvider);
                     return sensorAsync.when(
-                      loading: () => const Center(child: Text('Loading sensors...')),
-                      error: (e, _) => Center(child: Text('Sensors error: $e')),
-                      data: (samples) => SensorChartWidget(controller: controller, samples: samples),
+                      loading: () => Container(),
+                      error: (e, _) => Container(),
+                      data: (samples) => SensorChartWidget(
+                        controller: controller,
+                        samples: samples, // semi-transparent
+                      ),
                     );
                   }),
                 ),
               ),
+
+              // Fortschrittsleiste unten
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
                 child: Container(
-
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: VideoProgressIndicator(
                     controller,
@@ -54,7 +64,6 @@ class VideoCard extends StatelessWidget {
                   ),
                 ),
               ),
-
             ],
           ),
         ),
@@ -62,4 +71,3 @@ class VideoCard extends StatelessWidget {
     );
   }
 }
-

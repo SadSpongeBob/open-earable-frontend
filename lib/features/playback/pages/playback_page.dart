@@ -58,7 +58,6 @@ class PlaybackPage extends ConsumerWidget {
                 data: (vc) => Column(
                   children: [
                     Expanded(child: VideoCard(controller: vc)),
-
                   ],
                 ),
               ),
