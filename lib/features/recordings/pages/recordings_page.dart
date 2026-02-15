@@ -150,7 +150,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
                     Positioned.fill(
                       child: _buildCameraPreview(),
                     ),
-                    const Positioned.fill(
+                    Positioned.fill(
                       child: VideoSensorOverlay()
                     ),
                   ],
