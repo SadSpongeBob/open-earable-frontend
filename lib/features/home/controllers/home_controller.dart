@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -533,13 +531,6 @@ class HomeController {
     _state.setRecordingSelection(next);
   }
 
-  void handleRecordingTap(String recordingId) {
-    if (state.isRecordingSelectionMode) {
-      toggleRecordingSelection(recordingId);
-      return;
-    }
-    // TODO: navigate to playback page
-  }
 
   Future<void> handleRecordingLongPress(String recordingId) async {
     if (!await _canManageRecordingsAsync()) {
@@ -563,7 +554,7 @@ class HomeController {
       final rec = _findRecordingById(id);
       if (rec == null) continue;
 
-      if (rec.localVideoPath != null) {
+      if (rec.isLocal) {
         localIds.add(id);
       } else {
         cloudIds.add(id);
@@ -584,9 +575,11 @@ class HomeController {
         }
 
         try {
-          final dir = _localMedia.recordingDir(projectId, id);
-          if (await dir.exists()) {
-            await dir.delete(recursive: true);
+          final ok = await _recordingService.deleteLocalRecording(
+            projectId: projectId,
+            recordingId: id,
+          );
+          if (ok) {
             successCount++;
           } else {
             failed.add(id);
@@ -672,28 +665,18 @@ class HomeController {
           final newId = _newRecordingId();
           final newName = _duplicateRecordingName(rec.name);
 
-          final dstDir = _localMedia.recordingDir(projectId, newId);
-          await dstDir.create(recursive: true);
+          final ok = await _recordingService.duplicateLocalRecording(
+            projectId: projectId,
+            sourceRecordingId: id,
+            newRecordingId: newId,
+            newName: newName,
+          );
 
-          final srcVideo = _localMedia.videoFile(projectId, id);
-          final dstVideo = _localMedia.videoFile(projectId, newId);
-          if (await srcVideo.exists()) await srcVideo.copy(dstVideo.path);
-
-          final srcThumb = _localMedia.thumbnailFile(projectId, id);
-          final dstThumb = _localMedia.thumbnailFile(projectId, newId);
-          if (await srcThumb.exists()) await srcThumb.copy(dstThumb.path);
-
-          final srcMeta = _localMedia.recordingMetaFile(projectId, id);
-          final dstMeta = _localMedia.recordingMetaFile(projectId, newId);
-
-          if (await srcMeta.exists()) {
-            final raw = await srcMeta.readAsString();
-            final json = jsonDecode(raw) as Map<String, dynamic>;
-            json['name'] = newName;
-            await dstMeta.writeAsString(jsonEncode(json));
+          if (ok) {
+            successCount++;
+          } else {
+            failed.add(id);
           }
-
-          successCount++;
         } catch (e) {
           failed.add(id);
           _error(e, userMessage: 'Failed to duplicate recording "${rec.name}"');
@@ -768,18 +751,20 @@ class HomeController {
       }
     }
 
-    // Determine source/target project types
-    final sourceMeta = _findById(sourceProjectId);
     final targetMeta = _findById(targetProjectId);
 
-    final sourceIsLocal = sourceProjectId == LocalMedia.defaultProjectId ||
-        (sourceMeta != null && sourceMeta.projectSource == ProjectSource.local);
-
-    final targetIsLocal = targetProjectId == LocalMedia.defaultProjectId ||
+    final targetAllowsLocal = targetProjectId == LocalMedia.defaultProjectId ||
         (targetMeta != null && targetMeta.projectSource == ProjectSource.local);
 
-    // Enforce: local->local OR cloud->cloud only
-    if (sourceIsLocal != targetIsLocal) {
+    final targetAllowsCloud = targetProjectId == LocalMedia.defaultProjectId ||
+        (targetMeta != null && targetMeta.projectSource == ProjectSource.cloud);
+
+    if (!targetAllowsLocal && localIds.isNotEmpty) {
+      _toast(const ToastEvent.error('You can only move local→local or cloud→cloud'));
+      return;
+    }
+
+    if (!targetAllowsCloud && cloudIds.isNotEmpty) {
       _toast(const ToastEvent.error('You can only move local→local or cloud→cloud'));
       return;
     }
@@ -819,7 +804,6 @@ class HomeController {
 
       // ---- Cloud move ----
       if (cloudIds.isNotEmpty) {
-        // Permission check FIRST so we can show "No permission" instead of "moved 0 failed 1"
         final myUserId = _authState.user?.userId;
         if (myUserId == null) {
           _toast(const ToastEvent.error('No permission'));
