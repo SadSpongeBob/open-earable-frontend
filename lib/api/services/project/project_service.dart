@@ -277,6 +277,15 @@ class ProjectService {
         .toList();
   }
 
+  Future<void> leaveProject({
+    required String projectId,
+  }) async {
+    await _dioClient.delete<dynamic>(
+      ProjectEndpoints.leaveProject(projectId),
+    );
+  }
+
+
   Future<void> removeUserFromProject({
     required String projectId,
     required String userId,

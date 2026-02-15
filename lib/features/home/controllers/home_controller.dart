@@ -153,6 +153,19 @@ class HomeController {
     }
     return candidate;
   }
+  Future<ProjectRole?> _getMyRoleForProject(String projectId) async {
+    if (_authState.isGuest) return null;
+    final myUserId = _authState.user?.userId;
+    if (myUserId == null) return null;
+
+    try {
+      final users = await _projectService.getProjectUsers(projectId);
+      final me = users.where((u) => u.userId == myUserId).toList().firstOrNull;
+      return me?.role;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<bool> _canManageRecordingsAsync() async {
     final project = _findById(state.openProjectId);
@@ -363,6 +376,22 @@ class HomeController {
       return;
     }
 
+    if (projectId != LocalMedia.defaultProjectId &&
+        project.projectSource == ProjectSource.cloud &&
+        !_authState.isGuest) {
+      final role = await _getMyRoleForProject(projectId);
+      if (role == null) {
+        _toast(const ToastEvent.error('No permission'));
+        return;
+      }
+
+      final canRename = role is Viewer;
+      if (!canRename) {
+        _toast(const ToastEvent.error('No permission'));
+        return;
+      }
+    }
+
     _state.setLoading(true);
     try {
       final updatedProject = project.copyWith(name: trimmed);
@@ -402,9 +431,20 @@ class HomeController {
         }
 
         try {
-          if (project.projectSource == ProjectSource.cloud) {
-            await _projectService.deleteProject(projectId);
+          if (project.projectSource == ProjectSource.cloud && !_authState.isGuest) {
+            final role = await _getMyRoleForProject(projectId);
+            if (role == null) {
+              _toast(const ToastEvent.error('No permission'));
+              return;
+            }
+
+            if (role is Owner) {
+              await _projectService.deleteProject(projectId);
+            } else {
+              await _projectService.leaveProject(projectId: projectId);
+            }
           }
+
           await _projectService.deleteLocalProject(projectId);
 
           final wasOpen = state.openProjectId == projectId;
@@ -415,6 +455,14 @@ class HomeController {
           }
 
           successCount++;
+        } on DioException catch (e) {
+          final code = e.response?.statusCode;
+          if (code == 403) {
+            _toast(const ToastEvent.error('No permission'));
+            return;
+          }
+          failed.add(projectId);
+          _error(e, userMessage: 'Failed to delete project ${project.name}');
         } catch (e) {
           failed.add(projectId);
           _error(e, userMessage: 'Failed to delete project ${project.name}');

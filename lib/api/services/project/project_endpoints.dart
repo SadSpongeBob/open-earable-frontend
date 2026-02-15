@@ -11,6 +11,8 @@ class ProjectEndpoints {
 
   static String addProjectUser(String projectId) => '$baseUrl/$projectId/user';
 
+  static String leaveProject(String projectId) => '$baseUrl/$projectId/user';
+
   static String removeProjectUser(String projectId, String userId) => '$baseUrl/$projectId/user/$userId';
 
   static const String moveRecordings = '$baseUrl/recording';
