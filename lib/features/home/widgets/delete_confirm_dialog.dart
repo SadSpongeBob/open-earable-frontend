@@ -1,33 +1,56 @@
 import 'package:flutter/material.dart';
 import '../../../app/theme/text_styles.dart';
 
-class DeleteProjectDialog extends StatefulWidget {
-  const DeleteProjectDialog({
+class DeleteConfirmDialog extends StatefulWidget {
+  const DeleteConfirmDialog({
     super.key,
-    this.onDelete,
+    required this.title,
+    required this.onDelete,
+    this.subtitle = 'This action cannot be undone',
+    this.deleteLabel = 'Delete',
+    this.closeLabel = 'Close',
   });
 
-  final VoidCallback? onDelete;
+  final String title;
+  final String subtitle;
+  final String deleteLabel;
+  final String closeLabel;
+  final VoidCallback onDelete;
 
-  static Future<void> show(BuildContext context, {VoidCallback? onDelete}) {
+  static Future<void> show(
+      BuildContext context, {
+        required String title,
+        required VoidCallback onDelete,
+        String subtitle = 'This action cannot be undone',
+        String deleteLabel = 'Delete',
+        String closeLabel = 'Close',
+      }) {
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder: (_) => Center(child: DeleteProjectDialog(onDelete: onDelete)),
+      builder: (_) => Center(
+        child: DeleteConfirmDialog(
+          title: title,
+          subtitle: subtitle,
+          deleteLabel: deleteLabel,
+          closeLabel: closeLabel,
+          onDelete: onDelete,
+        ),
+      ),
     );
   }
 
   @override
-  State<DeleteProjectDialog> createState() => _DeleteFolderDialogState();
+  State<DeleteConfirmDialog> createState() => _DeleteConfirmDialogState();
 }
 
-class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
+class _DeleteConfirmDialogState extends State<DeleteConfirmDialog> {
   bool _working = false;
 
   Future<void> _handleDelete() async {
     setState(() => _working = true);
     try {
-      widget.onDelete?.call();
+      widget.onDelete();
       Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _working = false);
@@ -54,11 +77,12 @@ class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
               // Title
               Padding(
                 padding: const EdgeInsets.only(top: 20, left: 16, right: 16),
-                child: Center(
-                  child: Text(
-                    'Do you really want to \ndelete these projects?',
-                    textAlign: TextAlign.center,
-                    style: AuthTextStyles.title.copyWith(fontSize: 20, fontWeight: FontWeight.w800),
+                child: Text(
+                  widget.title,
+                  textAlign: TextAlign.center,
+                  style: AuthTextStyles.title.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -69,7 +93,7 @@ class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Text(
-                  'This action cannot be undone',
+                  widget.subtitle,
                   textAlign: TextAlign.center,
                   style: AuthTextStyles.body.copyWith(fontSize: 18, color: Colors.grey[700]),
                 ),
@@ -77,7 +101,7 @@ class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
 
               const SizedBox(height: 12),
 
-              // middle box with grey border and Delete button (red text)
+              // Delete button row
               Container(
                 width: 400,
                 height: 50,
@@ -85,14 +109,21 @@ class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
                   color: Colors.white,
                   border: Border.all(color: Colors.grey.shade300),
                 ),
-                child: Align(
-                  alignment: Alignment.center,
+                child: Center(
                   child: TextButton(
                     onPressed: _working ? null : _handleDelete,
-                    child: Text('Delete', style: TextStyle(color: Colors.red, fontSize: 25)),
+                    child: Text(
+                      widget.deleteLabel,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 25,
+                      ),
+                    ),
                   ),
                 ),
               ),
+
+              // Close button row
               Container(
                 width: 400,
                 height: 50,
@@ -100,11 +131,16 @@ class _DeleteFolderDialogState extends State<DeleteProjectDialog> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(36),
                 ),
-                child: Align(
-                  alignment: Alignment.center,
+                child: Center(
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Close', style: TextStyle(color: Colors.grey[700], fontSize: 25)),
+                    child: Text(
+                      widget.closeLabel,
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 25,
+                      ),
+                    ),
                   ),
                 ),
               ),

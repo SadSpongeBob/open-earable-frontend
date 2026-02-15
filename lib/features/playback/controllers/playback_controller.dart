@@ -87,11 +87,11 @@ class PlaybackController {
 
   Future<void> deleteRecording(Recording rec) async {
     if (rec.isCloud) {
-      await recordingService.deleteRecording(rec.id);
+      await recordingService.deleteCloudRecording(rec.id);
     } else {
       await recordingService.deleteLocalRecording(
-        rec.projectId ?? LocalMedia.defaultProjectId,
-        rec.id,
+        projectId: rec.projectId ?? LocalMedia.defaultProjectId,
+        recordingId: rec.id,
       );
     }
     homeStateNotifier.removeRecording(rec.id);
@@ -141,7 +141,10 @@ class PlaybackController {
 
   Future<void> renameRecording(Recording rec, String newName) async {
     if (rec.isCloud) {
-      await recordingService.rename(rec.id, newName);
+      await recordingService.renameCloud(
+        recordingId: rec.id,
+        name: newName,
+      );
     } else {
       await recordingService.renameLocal(
         projectId: rec.projectId ?? LocalMedia.defaultProjectId,
@@ -149,7 +152,11 @@ class PlaybackController {
         newName: newName,
       );
     }
-    homeStateNotifier.updateRecording(id: rec.id, newName: newName);
+
+    homeStateNotifier.updateRecording(
+      id: rec.id,
+      newName: newName,
+    );
   }
 
   Future<void> exportVideoFolder(Recording rec) async {

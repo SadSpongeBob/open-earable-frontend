@@ -231,22 +231,28 @@ class ProjectService {
     }
   }
 
+  Future<void> moveRecordings({
+    required List<String> recordingIds,
+    required String? targetProjectId,
+  }) async {
+    await _dioClient.put(
+      ProjectEndpoints.moveRecordings,
+      data: {
+        'recordingIds': recordingIds,
+        'targetProjectId': targetProjectId,
+      },
+    );
+  }
+
+
   // Project Users Management
 
   Future<List<ProjectUser>> getProjectUsers(String projectId) async {
     final res = await _dioClient.get(ProjectEndpoints.projectUsers(projectId));
 
-    final root = res.data;
-    final data = root is Map<String, dynamic> ? root['data'] : root;
+    final list = res.asList();
 
-    if (data is! List) {
-      throw StateError(
-        'Expected List or {data: List} from GET ${ProjectEndpoints.projectUsers(projectId)} '
-            'but got ${data.runtimeType}',
-      );
-    }
-
-    return data
+    return list
         .map((e) => ProjectUser.fromJson(e as Map<String, dynamic>))
         .toList();
   }
@@ -254,7 +260,7 @@ class ProjectService {
   Future<List<ProjectUser>> addProjectUser({
     required String projectId,
     required String emailAddress,
-    required ProjectRole role,
+    required ProjectRoleType role,
   }) async {
     final res = await _dioClient.post<dynamic>(
       ProjectEndpoints.projectUsers(projectId),
@@ -264,17 +270,9 @@ class ProjectService {
       },
     );
 
-    final root = res.data;
-    final data = root is Map<String, dynamic> ? root['data'] : root;
+    final list = res.asList();
 
-    if (data is! List) {
-      throw StateError(
-        'Expected List or {data: List} from POST ${ProjectEndpoints.projectUsers(projectId)} '
-            'but got ${data.runtimeType}',
-      );
-    }
-
-    return data
+    return list
         .map((e) => ProjectUser.fromJson(e as Map<String, dynamic>))
         .toList();
   }

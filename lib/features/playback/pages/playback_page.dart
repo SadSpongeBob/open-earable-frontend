@@ -25,7 +25,7 @@ class PlaybackPage extends ConsumerWidget {
 
     final rec =
         recording ??
-        home.videos.firstWhere(
+        home.recordings.firstWhere(
           (r) => r.id == recordingId && r.source == source,
           orElse: () => throw Exception('Recording not found'),
         );
