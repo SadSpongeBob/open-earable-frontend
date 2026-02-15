@@ -118,9 +118,7 @@ class _ChartPainter extends CustomPainter {
         prevX = x;
         prevY = y;
       }
-
       if (prevX != null && prevY != null) path.lineTo(prevX, prevY);
-
       canvas.drawPath(path, p);
 
     }
