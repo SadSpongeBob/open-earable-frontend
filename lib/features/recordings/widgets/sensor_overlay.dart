@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-//import 'package:openearable/features/sensors/widgets/sensor_chart.dart';
+import 'package:openearable/features/sensors/widgets/sensor_chart.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/features/home/state/wearables_state.dart';
-//import 'package:openearable/app/theme/text_styles.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 class VideoSensorOverlay extends ConsumerWidget {
   const VideoSensorOverlay({super.key});
@@ -70,20 +70,40 @@ class VideoSensorOverlay extends ConsumerWidget {
 
     // CHART
     return Align(
-  alignment: Alignment.bottomCenter,
-  child: Container(
-    color: Colors.green,
-    height: 250,
-    width: double.infinity,
-    child: Center(
-      child: Text(
-        "OVERLAY ACTIVE\n"
-        "device=$matchedDeviceId\n"
-        "index=$matchedSensorIndex",
-        style: const TextStyle(color: Colors.black),
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        height: 250,
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 50),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.55)),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              matchedSensorName ?? "Unknown Sensor",
+              style: GlobalTextStyles.textMedium,
+            ),
+
+            const SizedBox(height: 10),
+
+            Material(
+              color: Colors.transparent,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  height: 200,
+                  child: SensorChart(
+                  allowToggleAxes: false,
+                  deviceId: matchedDeviceId,
+                  sensorIndex: matchedSensorIndex,
+                ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  ),
-);
+    );
   }
 }
