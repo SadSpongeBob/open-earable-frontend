@@ -6,6 +6,7 @@ import 'package:openearable/features/home/state/wearables_state.dart';
 
 final sensorConfigurationProviderFamily = 
     ChangeNotifierProvider.family<SensorConfigurationProvider, String>((ref, deviceId) {
+  ref.keepAlive();
   final wearablesNotifier = ref.watch(wearablesProvider);
   final wearable = wearablesNotifier.wearables.firstWhere(
     (w) => w.deviceId == deviceId,
@@ -16,9 +17,9 @@ final sensorConfigurationProviderFamily =
 
 final sensorDataProviderFamily = 
     ChangeNotifierProvider.family<SensorDataProvider, (String deviceId, int sensorIndex)>((ref, arg) {
+  ref.keepAlive();
   final deviceId = arg.$1;
   final index = arg.$2;
-  
   final wearablesNotifier = ref.watch(wearablesProvider);
   final wearable = wearablesNotifier.wearables.firstWhere(
     (w) => w.deviceId == deviceId,

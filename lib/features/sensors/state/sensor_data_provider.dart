@@ -48,13 +48,19 @@ class SensorDataProvider with ChangeNotifier {
   }
 
   void _throttledNotifyListeners() {
+    if (!hasListeners) return;
+
     if (_throttleTimer?.isActive ?? false) return;
 
     _throttleTimer = Timer(_throttleDuration, notifyListeners);
+    if (hasListeners) {
+      notifyListeners();
+    }
   }
 
   @override
   void dispose() {
+    _throttleTimer?.cancel();
     _sensorStreamSubscription?.cancel();
     super.dispose();
   }
