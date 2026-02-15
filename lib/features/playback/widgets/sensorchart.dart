@@ -43,7 +43,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
   @override
   Widget build(BuildContext context) {
     final end = _currentMs;
-    final start = (end - 3000).clamp(0, end); // 1-Sekunden Fenster
+    final start = (end - 6000).clamp(0, end); // 1-Sekunden Fenster
 
     final window = widget.samples
         .where((s) => s.timestampMs >= start && s.timestampMs <= end)
@@ -56,7 +56,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
 
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withOpacity(0.3), // mehr transparent als vorher (0.7 → 0.3)
               borderRadius: BorderRadius.circular(8),
             ),
           ),
