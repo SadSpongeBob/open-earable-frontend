@@ -146,6 +146,9 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   Widget build(BuildContext context) {
     final chartProvider = ref.watch(recordingChartProvider);
 
+  return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) {
     return SafeArea(
       child: Row(
         children: [
@@ -154,15 +157,10 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
             child: Stack(
                   children: [
                     Positioned.fill(
-                      child: Container(
-                        color: Colors.red.withOpacity(0.1),
-                      )
+                      child: _buildCameraPreview(),
                     ),
                     Positioned.fill(
-                      child: IgnorePointer(
-                        ignoring: true,
-                        child: VideoSensorOverlay(),
-                      ),
+                      child: VideoSensorOverlay()
                     ),
                   ],
             ),
@@ -199,5 +197,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
         ],
       ),
     );
+      },
+  );
   }
 }

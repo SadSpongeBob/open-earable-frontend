@@ -1,26 +1,27 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:camera/camera.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/app/utils/helpers.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import '../../../api/local_media.dart';
 
-final recordingControllerProvider = Provider.autoDispose
-    .family<RecordingController, CameraLensDirection>((ref, initial) {
-      final localMedia = ref.read(localMediaProvider);
-      final controller = RecordingController(
-        localMedia: localMedia,
-        initialCamera: initial,
-      );
-      ref.keepAlive();
-      ref.onDispose(controller.dispose);
-      return controller;
-    });
+final recordingControllerProvider =
+    ChangeNotifierProvider.autoDispose
+        .family<RecordingController, CameraLensDirection>((ref, initial) {
+  final localMedia = ref.read(localMediaProvider);
+  final controller = RecordingController(
+    localMedia: localMedia,
+    initialCamera: initial,
+  );
+  ref.keepAlive();
+  ref.onDispose(controller.dispose);
+  return controller;
+});
 
-class RecordingController {
+class RecordingController extends ChangeNotifier {
   RecordingController({
     required LocalMedia localMedia,
     this.initialCamera = CameraLensDirection.back,
@@ -79,6 +80,7 @@ class RecordingController {
 
     isRecording = true;
     isPaused = false;
+    notifyListeners();
   }
 
   Future<Recording?> stopRecording(String projectId) async {
@@ -90,6 +92,8 @@ class RecordingController {
     final file = await cameraController!.stopVideoRecording();
     isRecording = false;
     isPaused = false;
+    notifyListeners();
+
     final recordingId = await _saveVideo(file, projectId);
     _recordingStartedAt = null;
     return recordingId;
@@ -101,6 +105,8 @@ class RecordingController {
     await cameraController!.pauseVideoRecording();
 
     isPaused = true;
+
+    notifyListeners();
   }
 
   Future<void> resumeRecording() async {
@@ -109,6 +115,8 @@ class RecordingController {
     await cameraController!.resumeVideoRecording();
 
     isPaused = false;
+
+    notifyListeners();
   }
 
   Future<void> toggleCamera() async {
@@ -123,6 +131,8 @@ class RecordingController {
     await _initCameraController(currentLens);
 
     isInitialized = true;
+
+    notifyListeners();
   }
 
   Future<Recording> _saveVideo(XFile file, String projectId) async {
@@ -172,7 +182,9 @@ class RecordingController {
     );
   }
 
+  @override
   Future<void> dispose() async {
     await cameraController?.dispose();
+    super.dispose();
   }
 }
