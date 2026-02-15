@@ -6,8 +6,6 @@ class SensorsRecordingController extends ChangeNotifier {
   bool isRecording = false;
   bool isPaused = false;
 
-  int _recordingStartEpochMs = 0;
-
   final Map<int, Map<String, List<dynamic>>> _bucket = {};
 
   void recordData(String sensorId, List<dynamic> values) {
@@ -24,8 +22,6 @@ class SensorsRecordingController extends ChangeNotifier {
     isRecording = true;
     isPaused = false;
     _bucket.clear();
-
-    _recordingStartEpochMs = DateTime.now().millisecondsSinceEpoch;
 
     notifyListeners();
   }
@@ -45,7 +41,7 @@ class SensorsRecordingController extends ChangeNotifier {
   }
 
   /// Call when video stops
-  Future<String> stopRecording({
+  Future<List<String>> stopRecording({
     required int videoStartEpochMs,
     int? samplingRateHz,
   }) async {
@@ -62,14 +58,13 @@ class SensorsRecordingController extends ChangeNotifier {
         final values = sensorValues[sensorId];
         sensorsMap.putIfAbsent(sensorId, () => []);
 
-        final valueMap = <String, dynamic>{"timestamp": timestamp};
-        final axisNames = ['x', 'y', 'z', 'w', 'v', 'u', 't']; 
+        final valueMap = <String, dynamic>{
+          "timestamp": timestamp,
+        };
 
-        // map values to x, y, z
         if (values != null) {
           for (int i = 0; i < values.length; i++) {
-            final axis = i < axisNames.length ? axisNames[i] : 'axis$i';
-            valueMap[axis] = values[i];
+            valueMap["axis$i"] = values[i];
           }
         }
 
@@ -77,30 +72,27 @@ class SensorsRecordingController extends ChangeNotifier {
       }
     }
 
-    final sensorsList = sensorsMap.entries.map((e) {
-      return {
-        "name": e.key,
-        "values": e.value,
-      };
-    }).toList();
-
-    final json = {
-      "version": 1,
-      "recording": {
-        "startTimeEpochMs": _recordingStartEpochMs,
-        ...?samplingRateHz != null ? {"samplingRateHz": samplingRateHz} : null,
-      },
-      "video": {
-        "startTimeEpochMs": videoStartEpochMs,
-      },
-      "sensors": sensorsList,
-    };
-
     final dir = Directory('/storage/emulated/0/OpenEarable/sensors');
     await dir.create(recursive: true);
-    final path = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.json';
-    await File(path).writeAsString(jsonEncode(json));
 
-    return path;
+    final List<String> createdFiles = [];
+
+    for (final entry in sensorsMap.entries) {
+      final sensorName = entry.key;
+      final dataList = entry.value;
+
+      final json = {
+        "name": sensorName,
+        "data": dataList,
+      };
+
+      final path =
+          '${dir.path}/${sensorName}_${DateTime.now().millisecondsSinceEpoch}.json';
+
+      await File(path).writeAsString(jsonEncode(json));
+      createdFiles.add(path);
+    }
+
+    return createdFiles;
   }
 }

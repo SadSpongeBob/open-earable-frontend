@@ -154,10 +154,15 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
             child: Stack(
                   children: [
                     Positioned.fill(
-                      child: _buildCameraPreview(),
+                      child: Container(
+                        color: Colors.red.withOpacity(0.1),
+                      )
                     ),
                     Positioned.fill(
-                      child: VideoSensorOverlay()
+                      child: IgnorePointer(
+                        ignoring: true,
+                        child: VideoSensorOverlay(),
+                      ),
                     ),
                   ],
             ),
