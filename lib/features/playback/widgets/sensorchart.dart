@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../controllers/sensor_chart_controller.dart';
 import '../controllers/sensor_repository.dart';
+import '../controllers/chart_data.dart';
 import 'chart_painter.dart';
 
 class SensorChartWidget extends StatefulWidget {
@@ -54,6 +55,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
     final end = _currentMs;
     final start = (end - _logic.windowMs) < 0 ? 0 : (end - _logic.windowMs);
     final windowSamples = _logic.windowFor(end);
+    final chartData = ChartData.fromSamples(windowSamples, start, end);
     return Column(
       children: [
         SizedBox(
@@ -75,7 +77,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
               ),
               CustomPaint(
                 painter: ChartPainter(
-                  samples: windowSamples,
+                  data: chartData,
                   startMs: start,
                   endMs: end,
                 ),

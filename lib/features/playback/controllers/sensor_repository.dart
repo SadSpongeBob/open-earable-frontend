@@ -23,9 +23,10 @@ class SensorRepository {
       }).toList();
       if (samples.isEmpty) return [];
       final base = samples.first.timestampMs;
+      ///TODO -700 is a magic number to align the sensor data with the video, need to find a better solution for this
       return samples
           .map((s) => SensorSample(
-        timestampMs: s.timestampMs - base-700,
+        timestampMs: s.timestampMs - base - 700,
         x: s.x,
         y: s.y,
         z: s.z,
