@@ -12,7 +12,7 @@ class SensorRepository {
       // Pfad zum OpenEarable Recording
       final dir = await getApplicationDocumentsDirectory();
       final filePath =
-          "/data/user/0/com.openearable.openearable/app_flutter/OpenEarable/prj_69925de7611f964e58272fbd/rcd_1f10acc3-7caa-66b0-a47d-c5dd8f8c94d9/Gyroscope.json";
+          "/data/user/0/com.openearable.openearable/app_flutter/OpenEarable/prj_69925de7611f964e58272fbd/test/Gyroscope.json";
       final file = File(filePath);
 
       debugPrint("📂 Prüfe Datei: $filePath");
