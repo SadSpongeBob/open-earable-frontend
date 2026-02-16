@@ -20,7 +20,7 @@ class SensorsRecordingController extends ChangeNotifier {
   }
 
   /// Call this at the SAME TIME as video start
-  void startRecording() {
+  Future<void> startRecording() async {
     isRecording = true;
     isPaused = false;
     _bucket.clear();

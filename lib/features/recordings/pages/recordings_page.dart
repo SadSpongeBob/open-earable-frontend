@@ -102,13 +102,13 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
         }
       } else {
         _videoStartEpochMs = DateTime.now().millisecondsSinceEpoch;
-        await _controller.startRecording();
         if (hasSensors) {
-          _sensorsController.startRecording();
+          await _sensorsController.startRecording();
           wearablesNotifier.attachSensorsRecordingController(
             _sensorsController,
           );
         }
+        await _controller.startRecording();
       }
     } finally {
       _busy = false;
@@ -127,8 +127,8 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
         await _controller.toggleCamera();
       } else {
         if (_controller.isPaused) {
-          await _controller.resumeRecording();
           if (hasSensors) _sensorsController.resumeRecording();
+          await _controller.resumeRecording();
         } else {
           await _controller.pauseRecording();
           if (hasSensors) _sensorsController.pauseRecording();
