@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:openearable/app/theme/app_bar_styles.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/theme/text_styles.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 
 class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool loading;
@@ -28,47 +30,36 @@ class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      flexibleSpace: Container(decoration: GlobalAppBarStyles.appBarDecoration),
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          color: AppColors.fifty,
+          boxShadow: [BoxShadow(color: AppColors.fiveHundred, blurRadius: 30)],
+        ),
+      ),
       titleSpacing: 0,
-      title: Row(
-        children: [
-          TextButton(
-            onPressed: onBack,
-            child: const Text(
-              'Back',
-              style: GlobalAppBarStyles.appBarSecondaryText,
+      title: Padding(
+        padding: EdgeInsetsGeometry.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            AppButton.dangerGhost(
+              text: 'Back',
+              onPressed: onBack,
+              fullWidth: false,
+              textStyle: AppTextStyles.footerMedium,
             ),
-          ),
-          const Spacer(),
-          const Text('Settings', style: GlobalAppBarStyles.appBarTitle),
-          const Spacer(),
-        ],
+            const Spacer(),
+            const Text('Settings', style: AppTextStyles.titleBold),
+            const Spacer(),
+          ],
+        ),
       ),
       actions: [
-        ElevatedButton(
+        AppButton.ghost(
+          text: 'Save',
           onPressed: (canSave && !loading) ? () => onSave() : null,
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            elevation: 0,
-          ),
-          child: loading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : Text(
-                  'Save',
-                  style: (canSave
-                      ? GlobalAppBarStyles.appBarMainText
-                      : GlobalAppBarStyles.appBarInactiveText),
-                ),
+          isLoading: loading,
+          textStyle: AppTextStyles.footerMedium.copyWith(color: AppColors.nineHundred),
+          fullWidth: false,
         ),
         const SizedBox(width: 8),
       ],

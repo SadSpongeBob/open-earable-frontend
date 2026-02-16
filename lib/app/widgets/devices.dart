@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/home/state/wearables_provider.dart';
 import 'package:openearable/features/home/state/wearables_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
@@ -42,7 +43,7 @@ class _Devices extends ConsumerState<Devices> {
           final issues = snapshot.data ?? [];
 
           if (issues.isNotEmpty) {
-          // Bluetooth or Location is off
+            // Bluetooth or Location is off
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -62,12 +63,9 @@ class _Devices extends ConsumerState<Devices> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(icon, color: Color(0xFF1F1F1F), size: 26),
+                        Icon(icon, color: AppColors.nineHundred, size: 26),
                         const SizedBox(width: 8),
-                        Text(
-                          message,
-                          style: GlobalTextStyles.subHeader,
-                        ),
+                        Text(message, style: AppTextStyles.subheaderRegular),
                       ],
                     ),
                   );
@@ -82,7 +80,9 @@ class _Devices extends ConsumerState<Devices> {
           final discovered = wearableProvider.discoveredDevices;
           final connecting = wearableProvider.connectingDevices;
           final failed = wearableProvider.failedDevices;
-          final connected = wearableProvider.wearables.map((w) => w.deviceId).toSet();
+          final connected = wearableProvider.wearables
+              .map((w) => w.deviceId)
+              .toSet();
 
           return ListView.builder(
             itemCount: discovered.length,
@@ -104,7 +104,9 @@ class _Devices extends ConsumerState<Devices> {
               }
 
               return InkWell(
-                onTap: isConnected || isConnecting ? null : () => _connectToDevice(device, context),
+                onTap: isConnected || isConnecting
+                    ? null
+                    : () => _connectToDevice(device, context),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -123,13 +125,22 @@ class _Devices extends ConsumerState<Devices> {
                           ),
 
                           if (isConnecting)
-                            _statusCircle(color: Colors.green, isConnecting: isConnecting),
-                        
+                            _statusCircle(
+                              color: AppColors.green,
+                              isConnecting: isConnecting,
+                            ),
+
                           if (!isConnecting && isConnected)
-                            _statusCircle(color: Colors.green, isConnecting: isConnecting),
+                            _statusCircle(
+                              color: AppColors.green,
+                              isConnecting: isConnecting,
+                            ),
 
                           if (isConnectionFailed)
-                            _statusCircle(color: Colors.redAccent, isConnecting: isConnecting),
+                            _statusCircle(
+                              color: AppColors.primary,
+                              isConnecting: isConnecting,
+                            ),
                         ],
                       ),
 
@@ -138,7 +149,7 @@ class _Devices extends ConsumerState<Devices> {
                       Text(
                         device.name,
                         textAlign: TextAlign.center,
-                        style: GlobalTextStyles.text,
+                        style: AppTextStyles.footerMedium,
                       ),
 
                       const SizedBox(height: 4),
@@ -147,8 +158,8 @@ class _Devices extends ConsumerState<Devices> {
                         Text(
                           statusText,
                           textAlign: TextAlign.center,
-                          style: GlobalTextStyles.footnote,
-                          selectionColor: Color(0xFF6E6E6E),
+                          style: AppTextStyles.footerMedium,
+                          selectionColor: AppColors.fiveHundred,
                         ),
 
                       const SizedBox(height: 30),
@@ -168,21 +179,16 @@ class _Devices extends ConsumerState<Devices> {
       right: -15,
       top: -15,
       child: isConnecting
-      ? SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-          ),
-        )
-      : Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
+          ? SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
     );
   }
 
@@ -222,7 +228,4 @@ class _Devices extends ConsumerState<Devices> {
   }
 }
 
-enum SystemIssue {
-  bluetoothOff,
-  locationOff,
-}
+enum SystemIssue { bluetoothOff, locationOff }

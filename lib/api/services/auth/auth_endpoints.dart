@@ -4,8 +4,9 @@ class AuthEndpoints {
   static const register = "$baseUrl/register";
   static const refresh = "$baseUrl/refresh";
   static const update = "$baseUrl/update";
+  static const resetPasswordSuffix = '/reset-password';
 
   static String resetPassword(String emailAddress) {
-    return "$baseUrl/$emailAddress/reset-password";
+    return "$baseUrl/$emailAddress/$resetPasswordSuffix";
   }
 }

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 class PopupToast {
   static OverlayEntry? _entry;
 
   static void show(
-      BuildContext context, {
-        required String message,
-        Duration duration = const Duration(seconds: 2),
-      }) {
+    BuildContext context, {
+    required String message,
+    Duration duration = const Duration(seconds: 2),
+  }) {
     _entry?.remove();
     _entry = null;
 
@@ -106,6 +108,7 @@ class _ToastPillState extends State<_ToastPill>
 
 class _Pill extends StatelessWidget {
   const _Pill({required this.message});
+
   final String message;
 
   @override
@@ -115,24 +118,17 @@ class _Pill extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.fifty,
           borderRadius: BorderRadius.circular(999),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x33000000),
+              color: AppColors.fiveHundred,
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
           ],
         ),
-        child: Text(
-          message,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
+        child: Text(message, style: AppTextStyles.footerMedium),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/sensors/state/sensor_configurations_provider.dart';
 import 'package:openearable/features/sensors/widgets/sensor_configuration_device_row.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
@@ -29,7 +30,7 @@ class SensorConfigurationView extends ConsumerWidget {
                   child: Center(
                     child: Text(
                       "No devices connected",
-                      style: GlobalTextStyles.subHeader,
+                      style: AppTextStyles.subheaderBold,
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -58,7 +59,7 @@ class SensorConfigurationView extends ConsumerWidget {
   }) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1F1F1F),
+        backgroundColor: AppColors.nineHundred,
         fixedSize: const Size(240, 55),
       ),
       onPressed: () {
@@ -77,7 +78,7 @@ class SensorConfigurationView extends ConsumerWidget {
       },
       child: Text(
           'Set Configurations',
-          style: GlobalTextStyles.footnoteMedium.copyWith(color: Color(0xFFF2F2F2)),
+          style: AppTextStyles.footerMedium.copyWith(color: AppColors.fifty),
         ),
     );
   }

@@ -19,14 +19,8 @@ class ProjectUser {
     final userId = json['userId'] as String;
     final name = json['name'] as String;
     final emailAddress = json['emailAddress'] as String;
-
-    final roleRaw = json['role'];
-    if (roleRaw is! String) {
-      throw StateError('Expected "role" as String but got ${roleRaw.runtimeType}');
-    }
-
-    final pictureUrl =
-        (json['pictureUrl'] as String?) ?? (json['photoUrl'] as String?);
+    final roleRaw = json['role'] as String;
+    final pictureUrl = json['pictureUrl'] as String?;
 
     return ProjectUser(
       userId: userId,
