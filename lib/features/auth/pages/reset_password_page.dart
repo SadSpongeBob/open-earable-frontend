@@ -6,7 +6,7 @@ import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/app/widgets/app_button.dart';
-import 'package:openearable/features/auth/widgets/reset_dialog.dart';
+import 'package:openearable/app/widgets/alert_dialog.dart';
 
 import '../../../app/theme/text_styles.dart';
 import '../../../app/ui/toast_controller.dart';
@@ -144,7 +144,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
       setState(() => _loading = false);
 
-      await ResetDialog.show(
+      await AppAlertDialog.show(
         context,
         title: 'Password Reset',
         message: 'Your password has been reset successfully',

@@ -41,7 +41,6 @@ class SensorValues extends ConsumerWidget {
     );
   }
 
-
   Widget _buildSmallScreenLayout(BuildContext context, List<Widget> charts) {
     return Padding(
       padding: EdgeInsets.all(10),
