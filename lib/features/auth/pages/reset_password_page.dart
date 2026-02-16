@@ -142,6 +142,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
       if (!mounted) return;
 
+      setState(() => _loading = false);
 
       await ResetDialog.show(
         context,
