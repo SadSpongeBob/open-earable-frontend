@@ -243,7 +243,7 @@ class _UsersList extends StatelessWidget {
   }
 }
 
-class _UserCard extends StatelessWidget {
+class _UserCard extends ConsumerWidget {
   const _UserCard({
     required this.user,
     required this.myUserId,
@@ -257,10 +257,15 @@ class _UserCard extends StatelessWidget {
   final Future<void> Function(String userId) onRemove;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isMe = myUserId != null && user.userId == myUserId;
 
     final showRemove = canManage && !isMe;
+
+    final showRoleDropdown =
+        canManage && !isMe && user.role is! Owner;
+
+    final controller = ref.read(homeControllerProvider);
 
     return Material(
       elevation: 1,
@@ -320,7 +325,30 @@ class _UserCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
-                  Text(
+
+                  showRoleDropdown
+                      ? SizedBox(
+                    width: 170,
+                    height: 55,
+                    child: PillMenu<ProjectRoleType>(
+                      value: user.role is Editor
+                          ? ProjectRoleType.editor
+                          : ProjectRoleType.viewer,
+                      options: const [
+                        ProjectRoleType.viewer,
+                        ProjectRoleType.editor,
+                      ],
+                      labelOf: (r) => r.label,
+                      onChanged: (next) async {
+                        await controller.updateUserRoleForOpenProject(
+                          myUserId: myUserId,
+                          userId: user.userId,
+                          role: next,
+                        );
+                      },
+                    ),
+                  )
+                      : Text(
                     user.role.label,
                     style: AppTextStyles.footerMedium,
                   ),

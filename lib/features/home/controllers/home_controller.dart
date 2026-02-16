@@ -1022,6 +1022,44 @@ class HomeController {
     }
   }
 
+  Future<void> updateUserRoleForOpenProject({
+    required String? myUserId,
+    required String userId,
+    required ProjectRoleType role,
+  }) async {
+    final projectId = state.openProjectId;
+    if (projectId == LocalMedia.defaultProjectId) return;
+
+    if (myUserId == null) return;
+
+    _state.setUsersLoading(true);
+
+    try {
+      await _projectService.updateProjectUserRole(
+        projectId: projectId,
+        userId: userId,
+        role: role,
+      );
+
+      final users = await _projectService.getProjectUsers(projectId);
+      _state.setProjectUsers(users);
+
+      _toast(const ToastEvent.success('Role updated'));
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      if (code == 403) {
+        _toast(const ToastEvent.error('No permission'));
+        return;
+      }
+      _toast(const ToastEvent.error('Failed to update role'));
+    } catch (_) {
+      _toast(const ToastEvent.error('Failed to update role'));
+    } finally {
+      _state.setUsersLoading(false);
+    }
+  }
+
+
   Future<void> removeUserFromOpenProject({
     required String myUserId,
     required String userId,

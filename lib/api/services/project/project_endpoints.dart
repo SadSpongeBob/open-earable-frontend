@@ -17,4 +17,6 @@ class ProjectEndpoints {
 
   static const String moveRecordings = '$baseUrl/recording';
 
+  static String updateProjectUserRole(String projectId) => '$baseUrl/$projectId/user';
+
 }

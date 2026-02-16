@@ -275,6 +275,20 @@ class ProjectService {
         .toList();
   }
 
+  Future<void> updateProjectUserRole({
+    required String projectId,
+    required String userId,
+    required ProjectRoleType role,
+  }) async {
+    await _dioClient.put<dynamic>(
+      ProjectEndpoints.updateProjectUserRole(projectId),
+      data: {
+        'userId': userId,
+        'role': role.toApi(),
+      },
+    );
+  }
+
   Future<void> leaveProject({
     required String projectId,
   }) async {
