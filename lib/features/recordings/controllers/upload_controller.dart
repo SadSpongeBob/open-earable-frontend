@@ -7,7 +7,9 @@ import 'package:flutter/foundation.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
+import 'package:openearable/api/models/recording/upload_recording_response.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/services/s3/s3_service.dart';
 import 'package:openearable/api/services/user/user_preference_storage.dart';
@@ -94,7 +96,10 @@ class UploadController {
     homeStateNotifier.addRecording(uploaded);
 
     try {
-      recordingService.deleteLocalRecording(projectId: projectId, recordingId:  recordingId);
+      recordingService.deleteLocalRecording(
+        projectId: projectId,
+        recordingId: recordingId,
+      );
     } catch (e) {
       if (kDebugMode) {
         debugPrint("CLEANUP FAILED: recordingId: $recordingId, error: $e");
@@ -147,6 +152,11 @@ class UploadController {
       final thumbnail = localMedia.thumbnailFile(projectId, recordingId);
       final thumbnailExists = await thumbnail.exists();
 
+      final sensors = await recordingService.getLocalRecordingSensors(
+        projectId,
+        recordingId,
+      );
+
       final req = UploadRecordingRequest(
         name: name,
         video: RecordingFile(
@@ -155,13 +165,15 @@ class UploadController {
           sizeBytes: await videoFile.length(),
           timestamp: ts,
         ),
-        sensors: const [],
+        sensors: await sensors.map((s) => _mapToUpload(s)).wait,
         projectId: projectId == LocalMedia.defaultProjectId ? null : projectId,
         thumbnailContent: thumbnailExists ? ContentType.jpeg : null,
       );
 
       final uploadResp = await recordingService.startUpload(req);
       recordingIdForLog = uploadResp.recordingId;
+
+      _uploadSensors(sensors, uploadResp.sensorUploads);
 
       await s3Service.uploadFile(
         putUrl: uploadResp.videoUpload.uploadUrl,
@@ -175,19 +187,13 @@ class UploadController {
       );
 
       if (thumbnailExists && uploadResp.thumbnailUpload != null) {
-        try {
-          await s3Service.uploadFile(
-            putUrl: uploadResp.thumbnailUpload!.uploadUrl,
-            file: thumbnail,
-            headers: uploadResp.thumbnailUpload!.requiredHeaders,
-          );
-        } catch (e) {
-          if (kDebugMode) {
-            debugPrint(
-              "Thumbnail upload failed for local=$recordingId project=$projectId remote=$recordingIdForLog: $e",
-            );
-          }
-        }
+        _tryThumbnailUpload(
+          thumbnail,
+          uploadResp.thumbnailUpload!,
+          recordingId,
+          projectId,
+          recordingIdForLog,
+        );
       }
 
       return await recordingService.completeUpload(uploadResp.recordingId);
@@ -212,11 +218,80 @@ class UploadController {
     }
   }
 
+  Future<void> _uploadSensors(
+    List<Sensor> sensors,
+    List<SensorUploadInfo> sensorUploads,
+  ) async {
+    if (sensorUploads.length != sensors.length && kDebugMode) {
+      throw StateError(
+        "Sensor upload count mismatch local=${sensors.length} remote=${sensorUploads.length}",
+      );
+    }
+
+    final Map<int, UploadInfo> lookup = {
+      for (final u in sensorUploads) u.sensorIndex: u.sensor,
+    };
+
+    await Future.wait(
+      sensors.map((s) async {
+        final upload = lookup[s.sensorIndex];
+        if (upload == null) {
+          throw StateError(
+            "Missing upload info for sensorIndex=${s.sensorIndex}",
+          );
+        }
+
+        await s3Service.uploadFile(
+          putUrl: upload.uploadUrl,
+          file: File(s.localPath),
+          headers: upload.requiredHeaders,
+        );
+      }),
+    );
+  }
+
+  Future<void> _tryThumbnailUpload(
+    File thumbnail,
+    ThumbnailUploadInfo thumbnailUpload,
+    String recordingId,
+    String projectId,
+    String recordingIdForLog,
+  ) async {
+    try {
+      await s3Service.uploadFile(
+        putUrl: thumbnailUpload.uploadUrl,
+        file: thumbnail,
+        headers: thumbnailUpload.requiredHeaders,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          "Thumbnail upload failed for local=$recordingId project=$projectId remote=$recordingIdForLog: $e",
+        );
+      }
+    }
+  }
+
   Future<DateTime> _fallbackTimestampUtc(File file) async {
     final stat = await file.stat();
     final modified = stat.modified.toUtc();
     final changed = stat.changed.toUtc();
     return changed.isBefore(modified) ? changed : modified;
+  }
+
+  Future<SensorUpload> _mapToUpload(Sensor sensor) async {
+    final file = File(sensor.localPath);
+    return SensorUpload(
+      sensorIndex: sensor.sensorIndex,
+      name: sensor.name,
+      type: sensor.sensorType,
+      file: RecordingFile(
+        filename: file.uri.pathSegments.last,
+        contentType: ContentType.json,
+        sizeBytes: await file.length(),
+        timestamp: sensor.timeStamp,
+      ),
+    );
   }
 }
 
