@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 class SensorRepository {
   static Future<List<SensorSample>> loadFromFile(String sensortype) async {
     try {
@@ -13,6 +15,7 @@ class SensorRepository {
       final samples = rawData.map((item) {
         final ts = (item['timestamp'] as num).toInt();
         final dx = (item['axis0'] as num).toDouble();
+        debugPrint("Loaded sensor sample: ts=$ts, x=$dx");
         final dy = (item['axis1'] as num).toDouble();
         final dz = (item['axis2'] as num).toDouble();
         return SensorSample(
@@ -33,7 +36,7 @@ class SensorRepository {
         z: s.z,
       ))
           .toList();
-    } catch (_) {
+    } catch (e) {
       return [];
     }
   }

@@ -13,6 +13,7 @@ import 'package:openearable/features/playback/widgets/speed_badge.dart';
 import 'package:video_player/video_player.dart';
 import '../../../app/routing/routes.dart';
 import 'rename_dialog.dart';
+import 'select_sensors_dialog.dart';
 
 class TopBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   final VideoPlayerController vc;
@@ -150,7 +151,13 @@ class _TopBarState extends ConsumerState<TopBar> {
                           width: 26,
                           height: 26,
                         ),
-                        onPressed: () {},
+                        onPressed: () async {
+                          final result = await SelectSensorsDialog.show(context, available: []);
+                          if (result != null) {
+                            playbackNotifier.setSelectedSensors(result);
+                          }
+
+                        },
                         splashRadius: 20,
                       ),
                       IconButton(
