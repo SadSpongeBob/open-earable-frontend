@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/models/auth/user.dart';
-import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/auth/state/user_provider.dart';
@@ -13,8 +13,8 @@ import 'package:openearable/features/settings/controllers/settings_controller.da
 import 'package:openearable/features/settings/widgets/settings_avatar.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../settings/widgets/download_method_dropdown.dart';
-import '../../auth/widgets/auth_card.dart';
-import '../../auth/widgets/text_field.dart';
+import '../../../app/widgets/user_card.dart';
+import '../../../app/widgets/input_box.dart';
 import '../widgets/settings_app_bar.dart';
 
 import '../../../app/ui/popup_toast.dart';
@@ -97,7 +97,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
           ),
         ),
         child: SafeArea(
-          child: AuthCard(
+          child: UserCard(
             child: Form(
               key: _formKey,
               child: Column(
@@ -114,11 +114,11 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                         const Text(
                           'Guest Account',
                           textAlign: TextAlign.center,
-                          style: GlobalTextStyles.cardTitle,
+                          style: AppTextStyles.headerMedium,
                         ),
 
                         const SizedBox(height: 10),
-                        const CustomDropdown(),
+                        const DownloadMethodDropdown(),
                         const SizedBox(height: 10),
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -126,12 +126,15 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                           children: [
                             const Text(
                               "Already have an account? ",
-                              style: AuthTextStyles.body,
+                              style: AppTextStyles.footerRegular,
                             ),
                             GestureDetector(
                               onTap: () =>
                                   ref.read(authControllerProvider).logout(),
-                              child: Text("Log In", style: AuthTextStyles.link),
+                              child: Text(
+                                "Log In",
+                                style: AppTextStyles.footerBold,
+                              ),
                             ),
                           ],
                         ),
@@ -148,7 +151,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                 const Text(
                                   'Account',
                                   textAlign: TextAlign.center,
-                                  style: GlobalTextStyles.cardTitle,
+                                  style: AppTextStyles.headerMedium,
                                 ),
                                 const SizedBox(height: 10),
                                 SettingsAvatar(
@@ -158,21 +161,21 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                       .refreshUser(),
                                 ),
                                 const SizedBox(height: 10),
-                                AuthTextField(
+                                InputBox(
                                   controller: _nameController,
                                   hint: 'Enter a new name',
                                   validator: Validators.name,
                                   keyboardType: TextInputType.name,
                                 ),
                                 const SizedBox(height: 10),
-                                AuthTextField(
+                                InputBox(
                                   controller: _emailController,
                                   hint: 'Enter a new email address',
                                   validator: Validators.email,
                                   keyboardType: TextInputType.emailAddress,
                                 ),
                                 const SizedBox(height: 10),
-                                AuthTextField(
+                                InputBox(
                                   controller: _pwController,
                                   hint: 'Enter a new password to change',
                                   validator: _pwController.text.isEmpty
@@ -194,71 +197,39 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                const CustomDropdown(),
+                                const DownloadMethodDropdown(),
                                 const SizedBox(height: 10),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
+                                    horizontal: 4,
                                   ),
                                   child: Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      OutlinedButton(
-                                        onPressed: busy
-                                            ? null
-                                            : () => ref
-                                                  .read(authControllerProvider)
-                                                  .logout(),
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 12,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              30,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Sign Out',
-                                          style: AuthTextStyles.button.copyWith(
-                                            color: AppColors.fieldText,
-                                            fontSize: 16,
-                                          ),
+                                      Expanded(
+                                        child: AppButton.secondary(
+                                          text: 'Sign Out',
+                                          onPressed: busy
+                                              ? null
+                                              : ref
+                                                    .read(
+                                                      authControllerProvider,
+                                                    )
+                                                    .logout,
+                                          textStyle: AppTextStyles.footerMedium,
                                         ),
                                       ),
-                                      ElevatedButton(
-                                        onPressed: busy
-                                            ? null
-                                            : () => _handleDelete(),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: 12,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              30,
-                                            ),
-                                          ),
+                                      const SizedBox(width: 24),
+                                      Expanded(
+                                        child: AppButton.danger(
+                                          text: 'Delete Account',
+                                          onPressed: busy
+                                              ? null
+                                              : _handleDelete,
+                                          textStyle: AppTextStyles.footerMedium,
+                                          isLoading: _loading,
                                         ),
-                                        child: _loading
-                                            ? const SizedBox(
-                                                width: 18,
-                                                height: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : Text(
-                                                'Delete Account',
-                                                style: AuthTextStyles.button
-                                                    .copyWith(fontSize: 16),
-                                              ),
                                       ),
                                     ],
                                   ),
@@ -276,11 +247,12 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                               children: [
                                 const Text('Failed to load user'),
                                 const SizedBox(height: 8),
-                                OutlinedButton(
+                                AppButton.secondary(
+                                  text: 'Retry',
                                   onPressed: () async => ref
                                       .read(settingsControllerProvider)
                                       .refreshUser(),
-                                  child: const Text('Retry'),
+                                  textStyle: AppTextStyles.footerMedium,
                                 ),
                               ],
                             ),

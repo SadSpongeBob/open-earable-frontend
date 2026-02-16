@@ -5,15 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
-
+import 'package:openearable/app/widgets/app_button.dart';
+import 'package:openearable/features/auth/widgets/reset_dialog.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
-import '../widgets/auth_button.dart';
-import '../widgets/auth_card.dart';
-import '../widgets/auth_footer_link.dart';
-import '../widgets/text_field.dart';
+import '../../../app/widgets/user_card.dart';
+import '../../../app/widgets/input_box.dart';
 
 class RequestResetPage extends ConsumerStatefulWidget {
   const RequestResetPage({super.key});
@@ -59,54 +58,59 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: AuthCard(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/images/app_logo.png', width: 90, height: 110),
-                const SizedBox(height: 20),
+        child: SafeArea(
+          child: UserCard(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/app_logo.png',
+                    width: 90,
+                    height: 110,
+                  ),
+                  const SizedBox(height: 20),
 
-                const Text(
-                  "Forgot your password?",
-                  textAlign: TextAlign.center,
-                  style: AuthTextStyles.title,
-                ),
+                  const Text(
+                    "Forgot your password?",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.titleBold,
+                  ),
 
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                const Text(
-                  "Enter your Email so that we can send you password reset link.",
-                  textAlign: TextAlign.center,
-                  style: AuthTextStyles.body,
-                ),
+                  const Text(
+                    "Enter your Email so that we can send you password reset link.",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.textRegular,
+                  ),
 
-                const SizedBox(height: 35),
+                  const SizedBox(height: 35),
 
-                AuthTextField(
-                  controller: _emailController,
-                  hint: "Email Address",
-                  validator: Validators.email,
-                  keyboardType: TextInputType.emailAddress,
-                ),
+                  InputBox(
+                    controller: _emailController,
+                    hint: "Email Address",
+                    validator: Validators.email,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                AuthButton(
-                  text: "Send",
-                  loading: _loading,
-                  enabled: _isFormFilled && !_loading,
-                  onTap: _handleSendReset,
-                ),
+                  AppButton.primary(
+                    text: "Send",
+                    onPressed: _isFormFilled ? _handleSendReset : null,
+                    isLoading: _loading,
+                  ),
 
-                const SizedBox(height: 25),
+                  const SizedBox(height: 16),
 
-                AuthFooterLink(
-                  text: "< Back to Log In",
-                  onTap: () => context.go(Routes.login),
-                ),
-              ],
+                  AppButton.secondary(
+                    text: "Back to Log In",
+                    onPressed: () => context.go(Routes.login),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -126,20 +130,10 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
 
       if (!mounted) return;
 
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Reset Link Sent'),
-          content: Text(
-            'If an account with $email exists, a password reset link has been sent to that address.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+      await ResetDialog.show(
+        context,
+        title: 'Reset request',
+        message: 'Password reset link has been sent to your email address!',
       );
 
       context.go(Routes.login);

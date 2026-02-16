@@ -9,8 +9,8 @@ class SensorDetailsPage extends StatelessWidget {
   final int sensorIndex;
 
   const SensorDetailsPage({
-    super.key, 
-    required this.sensor, 
+    super.key,
+    required this.sensor,
     required this.wearable,
     required this.sensorIndex,
   });
@@ -19,14 +19,12 @@ class SensorDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(
-          title: Text("Go Back", style: GlobalTextStyles.textMedium),
-        ),
+        appBar: AppBar(title: Text("Go Back", style: AppTextStyles.textMedium)),
         body: Padding(
           padding: EdgeInsets.all(50),
           child: Column(
             children: [
-              Text(sensor.sensorName, style: GlobalTextStyles.titleBold),
+              Text(sensor.sensorName, style: AppTextStyles.titleBold),
               const SizedBox(height: 30),
               Expanded(
                 child: SensorChart(

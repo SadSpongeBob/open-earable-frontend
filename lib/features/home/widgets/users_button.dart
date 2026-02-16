@@ -1,12 +1,9 @@
-import 'dart:ui';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 class UsersButton extends StatelessWidget {
-  const UsersButton({
-    super.key,
-    required this.onTap,
-  });
+  const UsersButton({super.key, required this.onTap});
 
   final VoidCallback onTap;
 
@@ -20,11 +17,11 @@ class UsersButton extends StatelessWidget {
         height: 109,
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.fifty,
           borderRadius: BorderRadius.circular(20),
           boxShadow: const [
             BoxShadow(
-              color: Colors.black12,
+              color: AppColors.fiveHundred,
               blurRadius: 8,
               offset: Offset(0, 4),
             ),
@@ -39,13 +36,8 @@ class UsersButton extends StatelessWidget {
               height: 60,
               fit: BoxFit.contain,
             ),
-            const Text(
-              'Users >',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            SizedBox(height: 4),
+            const Text('Users', style: AppTextStyles.footerBold),
           ],
         ),
       ),

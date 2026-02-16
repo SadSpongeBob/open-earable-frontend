@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
-import 'home_text_field.dart';
+import 'package:openearable/app/widgets/app_button.dart';
+import 'package:openearable/app/widgets/dialog.dart';
+import 'package:openearable/app/widgets/input_box.dart';
 
 class RenameProjectDialog extends StatefulWidget {
-  const RenameProjectDialog({
-    super.key,
-    this.initialName = '',
-  });
+  const RenameProjectDialog({super.key, this.initialName = ''});
 
   final String initialName;
 
-  static Future<String?> show(
-      BuildContext context, {
-        String initialName = '',
-      }) {
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => RenameProjectDialog(initialName: initialName),
+  static Future<String?> show(BuildContext context, {String initialName = ''}) {
+    return showAppDialog(
+      context,
+      dialog: RenameProjectDialog(initialName: initialName),
     );
   }
 
@@ -47,6 +42,8 @@ class _RenameProjectDialogState extends State<RenameProjectDialog> {
   }
 
   Future<void> _submitRename() async {
+    if (_working) return;
+
     final name = _controller.text.trim();
     if (name.isEmpty) return;
 
@@ -60,70 +57,46 @@ class _RenameProjectDialogState extends State<RenameProjectDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
-    return Material(
-      color: Colors.transparent,
-      child: AnimatedPadding(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          bottom: bottomInset,
-        ),
-        child: Align(
-          alignment: Alignment.center,
-          child: Container(
-            width: 356,
-            height: 307,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1F000000),
-                  blurRadius: 12,
-                  offset: Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: 200,
-                    height: 200,
-                    child: Image.asset(
-                      'assets/images/folder.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  SizedBox(
-                    width: 300,
-                    height: 55,
-                    child: HomeTextField(
-                      controller: _controller,
-                      hint: 'Project name',
-                      textAlign: TextAlign.center,
-                      focusNode: _focus,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) {
-                        if (_working) return;
-                        _submitRename();
-                      },
-                    ),
-                  ),
-                ],
-              ),
+    return BaseDialog(
+      body: Column(
+        children: [
+          SizedBox(
+            width: 200,
+            height: 200,
+            child: Image.asset('assets/images/folder.png', fit: BoxFit.contain),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: 300,
+            height: 55,
+            child: InputBox(
+              controller: _controller,
+              hint: 'Project Name',
+              focusNode: _focus,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => {_submitRename},
             ),
           ),
-        ),
+        ],
       ),
+      actions: [
+        BaseDialogActionRow(
+          child: AppButton.dangerGhost(
+            text: 'Ok',
+            onPressed: _working ? null : _submitRename,
+            borderRadius: 0,
+          ),
+        ),
+        BaseDialogActionRow(
+          topBorder: false,
+          bottomRounded: true,
+          child: AppButton.ghost(
+            text: 'Close',
+            onPressed: () => Navigator.of(context).pop(),
+            borderRadius: 0,
+          ),
+        ),
+      ],
     );
   }
 }
-
-

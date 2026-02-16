@@ -40,20 +40,12 @@ class OpenEarableApp extends ConsumerWidget {
 
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: "Roboto",
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.light,
-        ),
+        fontFamily: 'Roboto',
+        scaffoldBackgroundColor: AppColors.fifty,
       ),
       routerConfig: router,
       builder: (context, child) {
-        return Stack(
-          children: [
-            child!,
-            const AppBootstrapper(),
-          ],
-        );
+        return Stack(children: [child!, const AppBootstrapper()]);
       },
 
     );
