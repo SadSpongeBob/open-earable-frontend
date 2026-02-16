@@ -70,6 +70,10 @@ class RecordingService {
     final timestamp = timestampRaw != null
         ? DateTime.parse(timestampRaw).toUtc()
         : (await videoFile.lastModified()).toUtc();
+    final uploadStatusRaw = meta['uploadStatus'] as String?;
+    final uploadStatus = uploadStatusRaw != null
+        ? UploadStatus.fromString(uploadStatusRaw)
+        : UploadStatus.pending;
 
     final thumbFile = _localMedia.thumbnailFile(projectId, recordingId);
 
@@ -79,6 +83,7 @@ class RecordingService {
       localVideoPath: videoFile.path,
       localThumbnailPath: thumbFile.existsSync() ? thumbFile.path : null,
       videoTimestamp: timestamp,
+      uploadStatus: uploadStatus,
       projectId: projectId == LocalMedia.defaultProjectId ? null : projectId,
     );
   }

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
@@ -102,46 +101,7 @@ class PlaybackController {
 
     final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
 
-    homeStateNotifier.updateRecording(
-      id: rec.id,
-      uploadStatus: UploadStatus.uploading,
-    );
-
-    final uploaded = await uploadController.uploadRecording(
-      recordingId: rec.id,
-      projectId: projectId,
-    );
-
-    if (uploaded == null) {
-      homeStateNotifier.updateRecording(
-        id: rec.id,
-        uploadStatus: UploadStatus.failed,
-      );
-      return;
-    }
-
-    homeStateNotifier.removeRecording(rec.id);
-
-    homeStateNotifier.addRecording(uploaded);
-
-    try {
-      recordingService.deleteLocalRecording(projectId, rec.id);
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint("CLEANUP FAILED: recordingId: ${rec.id}, error: $e");
-      }
-      try {
-        recordingService.updateLocalUploadStatus(
-          projectId,
-          rec.id,
-          UploadStatus.failed,
-        );
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint("UPDATE STATUS FAILED: recordingId: ${rec.id}, error: $e");
-        }
-      }
-    }
+    uploadController.uploadAndForget(rec.id, projectId);
   }
 
   Future<void> renameRecording(Recording rec, String newName) async {
