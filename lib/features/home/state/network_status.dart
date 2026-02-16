@@ -10,6 +10,14 @@ enum NetworkStatus {
   mobile,
   offline;
 
+  factory NetworkStatus.mapResult(ConnectivityResult result) {
+    return switch (result) {
+      ConnectivityResult.wifi => NetworkStatus.wifi,
+      ConnectivityResult.mobile => NetworkStatus.mobile,
+      _ => NetworkStatus.offline,
+    };
+  }
+
   bool shouldUpload(bool isWifiOnly) {
     return switch (this) {
       wifi => true,
@@ -71,17 +79,9 @@ final networkStatusProvider = StreamProvider<NetworkStatus>((ref) async* {
   ref.watch(networkRefreshTriggerProvider);
 
   final initial = await Connectivity().checkConnectivity();
-  yield _mapResult(initial);
+  yield NetworkStatus.mapResult(initial);
 
   await for (final result in Connectivity().onConnectivityChanged) {
-    yield _mapResult(result);
+    yield NetworkStatus.mapResult(result);
   }
 });
-
-NetworkStatus _mapResult(ConnectivityResult result) {
-  return switch (result) {
-    ConnectivityResult.wifi => NetworkStatus.wifi,
-    ConnectivityResult.mobile => NetworkStatus.mobile,
-    _ => NetworkStatus.offline,
-  };
-}

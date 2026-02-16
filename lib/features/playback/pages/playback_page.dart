@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
+import 'package:openearable/features/home/state/network_status.dart';
 
 import '../controllers/playback_controller.dart';
 import '../widgets/top_bar.dart';
@@ -29,6 +30,23 @@ class PlaybackPage extends ConsumerWidget {
           (r) => r.id == recordingId && r.source == source,
           orElse: () => throw Exception('Recording not found'),
         );
+
+    final net = ref.watch(networkStatusProvider);
+
+    if (rec.isCloud) {
+      final status = net.asData?.value;
+      if (status == NetworkStatus.offline) {
+        return Scaffold(
+          backgroundColor: Colors.grey[200],
+          body: SafeArea(
+            child: Center(
+              child: Text("You're offline. Connect to the internet to play this video."),
+            ),
+          ),
+        );
+      }
+    }
+
     final videoAsync = ref.watch(videoPlayerControllerProvider(rec));
     final speedKey = GlobalKey();
 
