@@ -861,12 +861,12 @@ class HomeController {
       }
 
       if (localIds.isNotEmpty && !targetIsLocal) {
-        _toast(const ToastEvent.error('Choose a local project as target for local recordings'));
+        _toast(const ToastEvent.error('Local recordings can only be moved to local projects.'));
         return;
       }
 
       if (cloudIds.isNotEmpty && !targetIsCloud) {
-        _toast(const ToastEvent.error('Choose a cloud project as target for cloud recordings'));
+        _toast(const ToastEvent.error('Cloud recordings can only be moved to cloud projects.'));
         return;
       }
     }
