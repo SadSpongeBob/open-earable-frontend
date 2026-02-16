@@ -9,8 +9,11 @@ import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/features/auth/widgets/reset_dialog.dart';
 
 import '../../../app/theme/text_styles.dart';
+import '../../../app/ui/toast_controller.dart';
+import '../../../app/ui/toast_event.dart';
 import '../../../app/widgets/user_card.dart';
 import '../../../app/widgets/input_box.dart';
+import '../../../app/ui/popup_toast.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
   final String authToken;
@@ -45,6 +48,12 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<ToastEvent?>(toastProvider, (prev, next) {
+      if (next == null) return;
+      PopupToast.show(context, message: next.message);
+      ref.read(toastProvider.notifier).state = null;
+    });
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -145,9 +154,8 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
       context.go(Routes.login);
     } on DioException catch (exception) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(exception.message ?? 'Request failed')),
-      );
+      ref.read(toastProvider.notifier).state =
+          ToastEvent.error(exception.message ?? 'Request failed');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

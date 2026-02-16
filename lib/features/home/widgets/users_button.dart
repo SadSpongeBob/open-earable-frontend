@@ -1,5 +1,3 @@
-import 'dart:ui';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
@@ -38,7 +36,7 @@ class UsersButton extends StatelessWidget {
               height: 60,
               fit: BoxFit.contain,
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 4),
             const Text('Users', style: AppTextStyles.footerBold),
           ],
         ),
