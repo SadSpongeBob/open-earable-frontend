@@ -30,6 +30,7 @@ class BluetoothButton extends StatelessWidget {
           width: size,
           height: size,
           onPressed: onPressed,
+          semanticLabel: 'Connect Bluetooth device',
         );
       },
     );

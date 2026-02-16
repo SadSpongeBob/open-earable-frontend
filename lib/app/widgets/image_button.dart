@@ -6,9 +6,11 @@ class ImageButton extends StatefulWidget  {
   final String activeImage;
   final Duration pressDuration;
   final VoidCallback onPressed;
+  final VoidCallback? onLongPress;
   final double width;
   final double height;
   final bool isActive;
+  final String semanticLabel;
 
   const ImageButton({
     super.key,
@@ -16,10 +18,12 @@ class ImageButton extends StatefulWidget  {
     required this.image,
     required this.activeImage,
     required this.onPressed,
+    this.onLongPress,
     required this.width,
     required this.height,
     this.pressDuration = const Duration(milliseconds: 100),
     this.isActive = false,
+    required this.semanticLabel,
   });
 
   @override
@@ -34,27 +38,38 @@ class _ImageButtonState extends State<ImageButton> {
   Widget build(BuildContext context) {
      bool showActive = _isPressed || widget.isActive;
 
-    return GestureDetector(
-      onTap: _handleTap,
-      child: SizedBox(
-        key: widget.buttonKey,
-        width: widget.width,
-        height: widget.height,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(widget.image, fit: BoxFit.contain,),
-
-            AnimatedOpacity(
-              opacity: showActive ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 100),
-              curve: Curves.easeInOut,
-              child: Image.asset(
-                widget.activeImage,
-                fit: BoxFit.contain,
+    return Semantics(
+      button: true,
+      label: widget.semanticLabel,
+      enabled: true,
+      child: GestureDetector(
+        onTap: _handleTap,
+        onLongPress: widget.onLongPress,
+        child: SizedBox(
+          key: widget.buttonKey,
+          width: widget.width,
+          height: widget.height,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                widget.image, 
+                fit: BoxFit.contain, 
+                excludeFromSemantics: true,
               ),
-            )
-          ],
+
+              AnimatedOpacity(
+                opacity: showActive ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeInOut,
+                child: Image.asset(
+                  widget.activeImage,
+                  fit: BoxFit.contain,
+                  excludeFromSemantics: true,
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
