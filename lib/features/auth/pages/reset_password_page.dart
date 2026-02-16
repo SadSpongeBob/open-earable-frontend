@@ -142,8 +142,6 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
       if (!mounted) return;
 
-      ref.read(toastProvider.notifier).state =
-      const ToastEvent.success('Password reset successfully');
 
       await ResetDialog.show(
         context,
