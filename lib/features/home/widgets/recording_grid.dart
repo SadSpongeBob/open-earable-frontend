@@ -113,8 +113,8 @@ class _RecordingTile extends StatelessWidget {
 
                       if (isUploading || isUploaded || isUploadFailed)
                         Positioned(
-                          top: 16,
-                          left: 24,
+                          top: 6,
+                          left: 14,
                           child: _UploadStatusIndicator(
                             isUploading: isUploading,
                             isUploaded: isUploaded,
