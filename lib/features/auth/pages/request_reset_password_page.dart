@@ -8,6 +8,9 @@ import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/features/auth/widgets/reset_dialog.dart';
 import '../../../app/theme/text_styles.dart';
+import '../../../app/ui/popup_toast.dart';
+import '../../../app/ui/toast_controller.dart';
+import '../../../app/ui/toast_event.dart';
 import '../../../app/widgets/user_card.dart';
 import '../../../app/widgets/input_box.dart';
 
@@ -41,6 +44,12 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<ToastEvent?>(toastProvider, (prev, next) {
+      if (next == null) return;
+      PopupToast.show(context, message: next.message);
+      ref.read(toastProvider.notifier).state = null;
+    });
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -127,13 +136,11 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
         message: 'Password reset link has been sent to your email address!',
       );
 
-      if (!mounted) return;
       context.go(Routes.login);
     } on DioException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Request failed')));
+      ref.read(toastProvider.notifier).state =
+          ToastEvent.error(e.message ?? 'Request failed');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

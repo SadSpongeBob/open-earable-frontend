@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/client_dio.dart';
@@ -17,6 +16,10 @@ import '../../settings/widgets/download_method_dropdown.dart';
 import '../../../app/widgets/user_card.dart';
 import '../../../app/widgets/input_box.dart';
 import '../widgets/settings_app_bar.dart';
+
+import '../../../app/ui/popup_toast.dart';
+import '../../../app/ui/toast_controller.dart';
+import '../../../app/ui/toast_event.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -69,6 +72,12 @@ class _SettingsState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<ToastEvent?>(toastProvider, (prev, next) {
+      if (next == null) return;
+      PopupToast.show(context, message: next.message);
+      ref.read(toastProvider.notifier).state = null;
+    });
+
     final session = ref.watch(sessionProvider);
     final user = ref.watch(userProvider);
     final busy = _saving || _loading || session.isLoading;
@@ -281,14 +290,12 @@ class _SettingsState extends ConsumerState<SettingsPage> {
       _pwController.clear();
       setState(() => _dirty = false);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Profile updated')));
+      ref.read(toastProvider.notifier).state =
+      const ToastEvent.success('Profile updated');
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to update account')));
+      ref.read(toastProvider.notifier).state =
+      const ToastEvent.error('Failed to update account');
     } finally {
       if (mounted) {
         setState(() {
@@ -304,9 +311,8 @@ class _SettingsState extends ConsumerState<SettingsPage> {
       await ref.read(settingsControllerProvider).deleteAccount();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to delete account')));
+      ref.read(toastProvider.notifier).state =
+      const ToastEvent.error('Failed to delete account');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
