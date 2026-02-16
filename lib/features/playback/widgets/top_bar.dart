@@ -168,7 +168,7 @@ class TopBar extends ConsumerWidget {
                         ),
                         IconButton(
                           icon: Image.asset(
-                            'assets/buttons/wave-sound.png',
+                            'assets/buttons/wave_sound_on.png',
                             width: 26,
                             height: 26,
                           ),

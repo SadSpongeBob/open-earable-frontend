@@ -34,6 +34,8 @@ class LocalMedia {
 
   File recordingMetaFile(String projectId, String recordingId) =>
       File(p.join(baseDir.path, projectId, recordingId, metaName));
+  File reccordingSensors(String projectId, String recordingId,String sensorName) =>
+      File(p.join(baseDir.path, projectId, recordingId,sensorName));
 
   Directory recordingExportDir(String recordingId) =>
       Directory(p.join(exportDir.path, recordingId));

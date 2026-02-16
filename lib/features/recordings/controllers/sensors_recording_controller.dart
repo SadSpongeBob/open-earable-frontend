@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/local_media.dart';
 
 class SensorsRecordingController extends ChangeNotifier {
   bool isRecording = false;
@@ -41,58 +43,55 @@ class SensorsRecordingController extends ChangeNotifier {
   }
 
   /// Call when video stops
-  Future<List<String>> stopRecording({
+  Future<void> stopRecording({
     required int videoStartEpochMs,
-    int? samplingRateHz,
+    required String recordingId,
+    required String projectId,
+    required WidgetRef ref,
   }) async {
     isRecording = false;
     isPaused = false;
-
+    final media = ref.read(localMediaProvider);
+    final dir = media.recordingDir(projectId, recordingId);
+    await dir.create(recursive: true);
     final Map<String, List<Map<String, dynamic>>> sensorsMap = {};
-
     for (var entry in _bucket.entries) {
       final timestamp = entry.key;
       final sensorValues = entry.value;
-
       for (var sensorId in sensorValues.keys) {
         final values = sensorValues[sensorId];
         sensorsMap.putIfAbsent(sensorId, () => []);
-
         final valueMap = <String, dynamic>{
           "timestamp": timestamp,
         };
-
         if (values != null) {
           for (int i = 0; i < values.length; i++) {
             valueMap["axis$i"] = values[i];
           }
         }
-
         sensorsMap[sensorId]!.add(valueMap);
       }
     }
-
-    final dir = Directory('/storage/emulated/0/OpenEarable/sensors');
-    await dir.create(recursive: true);
-
-    final List<String> createdFiles = [];
-
     for (final entry in sensorsMap.entries) {
       final sensorName = entry.key;
       final dataList = entry.value;
 
-      final json = {
+      final jsonMap = {
         "name": sensorName,
+        "startEpochMs": videoStartEpochMs,
         "data": dataList,
       };
 
-      final path =
-          '${dir.path}/${sensorName}_${DateTime.now().millisecondsSinceEpoch}.json';
+      final file = media.reccordingSensors(
+        projectId,
+        recordingId,
+        "$sensorName.json",
+      );
+      await file.writeAsString(
+        const JsonEncoder.withIndent("  ").convert(jsonMap),
+      );
 
-      await File(path).writeAsString(jsonEncode(json));
-      createdFiles.add(path);
     }
 
-    return createdFiles;
   }
 }

@@ -46,7 +46,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   final GlobalKey bluetoothKey = GlobalKey();
 
   int? _videoStartEpochMs;
-  
+
   @override
   void initState() {
     super.initState();
@@ -76,22 +76,29 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
         final recording = await _controller.stopRecording(
           ref.read(homeStateProvider).openProjectId,
         );
-        if (hasSensors && _videoStartEpochMs != null) {
-          await _sensorsController.stopRecording(
-            videoStartEpochMs: _videoStartEpochMs!,
-          );
-          wearablesNotifier.detachSensorsRecordingController();
-        }
-        setState(() {}); 
+
+
+
         if (recording != null && mounted) {
+          if (hasSensors) {
+            try {
+              await _sensorsController.stopRecording(
+                videoStartEpochMs: _videoStartEpochMs!,
+                  recordingId : recording.id, projectId: ref.read(homeStateProvider).openProjectId, ref: ref
+
+              );
+            } catch (e) {
+              debugPrint("Sensor stop failed: $e");
+            }
+
+            wearablesNotifier.detachSensorsRecordingController();
+          }
           ref.read(homeStateProvider.notifier).addRecording(recording);
-          Future.microtask(() {
-            if (!mounted) return;
-            context.go(
-              Routes.playback(recording.isCloud, recording.id),
-              extra: recording,
-            );
-          });
+
+          context.go(
+            Routes.playback(recording.isCloud, recording.id),
+            extra: recording,
+          );
         }
       } else {
         _videoStartEpochMs = DateTime.now().millisecondsSinceEpoch;
@@ -138,12 +145,24 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   }
 
   Widget _buildCameraPreview() {
+
     if (!_controller.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return CameraPreview(_controller.cameraController!);
+    final cameraController = _controller.cameraController!;
+
+    return ClipRect(
+      child: OverflowBox(
+        alignment: Alignment.center,
+        child: AspectRatio(
+          aspectRatio: cameraController.value.aspectRatio,
+          child: CameraPreview(cameraController),
+        ),
+      ),
+    );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -156,18 +175,22 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
       child: Row(
         children: [
           RecordingLeftBar(onBackToProjects: _navigateToHome),
-          Expanded(
-            child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: _buildCameraPreview(),
-                    ),
-                    Positioned.fill(
-                      child: VideoSensorOverlay()
-                    ),
-                  ],
-            ),
-          ),
+      Expanded(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                SizedBox(
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
+                  child: _buildCameraPreview(),
+                ),
+                const VideoSensorOverlay(),
+              ],
+            );
+          },
+        ),
+      ),
 
           HomeRecordingRightBar(
             onSettings: () {
