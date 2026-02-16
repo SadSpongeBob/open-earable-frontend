@@ -12,16 +12,22 @@ class HomeState {
   final String openProjectId;
   final Project? openProject;
 
-  final bool isSelectionMode;
+  // Project selection
+  final bool isProjectSelectionMode;
   final Set<String> selectedProjectIds;
 
-  final List<Recording> videos;
-  final String? selectedVideoId;
+  // Recording selection
+  final bool isRecordingSelectionMode;
+  final Set<String> selectedRecordingIds;
+  final List<Recording> recordings;
+  final String? selectedRecordingId;
 
+  // UI state
   final bool isLoading;
   final String? errorMessage;
   final bool areProjectsLoaded;
 
+  // Users popup
   final bool isUsersLoading;
   final List<ProjectUser> projectUsers;
   final String? usersErrorMessage;
@@ -30,10 +36,12 @@ class HomeState {
     required this.projects,
     required this.openProjectId,
     required this.openProject,
-    required this.isSelectionMode,
+    required this.isProjectSelectionMode,
     required this.selectedProjectIds,
-    required this.videos,
-    required this.selectedVideoId,
+    required this.isRecordingSelectionMode,
+    required this.selectedRecordingIds,
+    required this.recordings,
+    required this.selectedRecordingId,
     required this.isLoading,
     required this.errorMessage,
     required this.areProjectsLoaded,
@@ -43,18 +51,22 @@ class HomeState {
   });
 
   factory HomeState.initial() => HomeState(
-    projects: [ProjectMetadata.local(LocalMedia.defaultProjectId, 'Default')],
+    projects: [
+      ProjectMetadata.local(LocalMedia.defaultProjectId, 'Default'),
+    ],
     openProjectId: LocalMedia.defaultProjectId,
     openProject: null,
-    isSelectionMode: false,
-    selectedProjectIds: {},
-    videos: [],
-    selectedVideoId: null,
+    isProjectSelectionMode: false,
+    selectedProjectIds: const <String>{},
+    isRecordingSelectionMode: false,
+    selectedRecordingIds: const <String>{},
+    recordings: const [],
+    selectedRecordingId: null,
     isLoading: false,
     errorMessage: null,
     areProjectsLoaded: false,
     isUsersLoading: false,
-    projectUsers: [],
+    projectUsers: const [],
     usersErrorMessage: null,
   );
 
@@ -64,12 +76,14 @@ class HomeState {
     Project? openProject,
     bool clearOpenProject = false,
 
-    bool? isSelectionMode,
+    bool? isProjectSelectionMode,
     Set<String>? selectedProjectIds,
 
-    List<Recording>? videos,
-    String? selectedVideoId,
-    bool clearSelectedVideoId = false,
+    bool? isRecordingSelectionMode,
+    Set<String>? selectedRecordingIds,
+    List<Recording>? recordings,
+    String? selectedRecordingId,
+    bool clearSelectedRecordingId = false,
 
     bool? isLoading,
     String? errorMessage,
@@ -87,13 +101,18 @@ class HomeState {
       openProjectId: openProjectId ?? this.openProjectId,
       openProject: clearOpenProject ? null : (openProject ?? this.openProject),
 
-      isSelectionMode: isSelectionMode ?? this.isSelectionMode,
+      isProjectSelectionMode:
+      isProjectSelectionMode ?? this.isProjectSelectionMode,
       selectedProjectIds: selectedProjectIds ?? this.selectedProjectIds,
 
-      videos: videos ?? this.videos,
-      selectedVideoId: clearSelectedVideoId
+      isRecordingSelectionMode:
+      isRecordingSelectionMode ?? this.isRecordingSelectionMode,
+      selectedRecordingIds: selectedRecordingIds ?? this.selectedRecordingIds,
+      recordings: recordings ?? this.recordings,
+      selectedRecordingId: clearSelectedRecordingId
           ? null
-          : (selectedVideoId ?? this.selectedVideoId),
+          : (selectedRecordingId ?? this.selectedRecordingId),
+
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       areProjectsLoaded: areProjectsLoaded ?? this.areProjectsLoaded,

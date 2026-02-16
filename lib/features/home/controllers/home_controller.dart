@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,6 +28,7 @@ final homeControllerProvider = Provider<HomeController>((ref) {
   final recordingService = ref.read(recordingServiceProvider);
   final homeState = ref.read(homeStateProvider.notifier);
   final authState = ref.watch(sessionProvider);
+  final localMedia = ref.read(localMediaProvider);
 
   void toast(ToastEvent event) => emitToast(ref, event);
 
@@ -36,6 +39,7 @@ final homeControllerProvider = Provider<HomeController>((ref) {
     homeState: homeState,
     authState: authState,
     toast: toast,
+    localMedia: localMedia,
     ref: ref
   );
 });
@@ -48,17 +52,21 @@ class HomeController {
     required HomeStateNotifier homeState,
     required AuthState authState,
     required ToastSink toast,
-    required this.ref,
+    required LocalMedia localMedia,
+    required Ref ref,
   })  : _projectService = projectService,
         _recordingService = recordingService,
         _state = homeState,
+        _localMedia = localMedia,
+        _ref = ref,
         _toast = toast;
 
   final ProjectService _projectService;
   final RecordingService _recordingService;
   final HomeStateNotifier _state;
   final ToastSink _toast;
-  final Ref ref;
+  final Ref _ref;
+  final LocalMedia _localMedia;
 
   HomeState get state => _state.current;
 
@@ -102,7 +110,7 @@ class HomeController {
   }
 
   List<ProjectMetadata> _withDefault(List<ProjectMetadata> projects) {
-    final authState = ref.read(sessionProvider);
+    final authState = _ref.read(sessionProvider);
     final ProjectMetadata defaultItem = authState.isGuest
         ? ProjectMetadata.local(LocalMedia.defaultProjectId, 'Default')
         : ProjectMetadata.cloud(LocalMedia.defaultProjectId, 'Default');
@@ -125,6 +133,138 @@ class HomeController {
     return [...local, ...cloud];
   }
 
+  Recording? _findRecordingById(String id) {
+    for (final r in state.recordings) {
+      if (r.id == id) return r;
+    }
+    return null;
+  }
+
+  String _newRecordingId() => Helpers.getRecordingId();
+
+  bool _recordingNameExists(String name) {
+    final normalized = name.trim().toLowerCase();
+    return state.recordings.any((r) => r.name.trim().toLowerCase() == normalized);
+  }
+
+
+  String _duplicateRecordingName(String name) {
+    final base = '$name (Copy)';
+    var candidate = base;
+    var i = 2;
+    while (_recordingNameExists(candidate)) {
+      candidate = '$base $i';
+      i++;
+    }
+    return candidate;
+  }
+  Future<ProjectRole?> _getMyRoleForProject(String projectId) async {
+    if (_authState.isGuest) return null;
+    final myUserId = _authState.user?.userId;
+    if (myUserId == null) return null;
+
+    try {
+      final users = await _projectService.getProjectUsers(projectId);
+      final me = users.where((u) => u.userId == myUserId).toList().firstOrNull;
+      return me?.role;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> _canManageRecordingsAsync() async {
+    final project = _findById(state.openProjectId);
+    if (project == null) return false;
+    if (project.id == LocalMedia.defaultProjectId) return true;
+
+    if (project.projectSource == ProjectSource.local) return true;
+    if (_authState.isGuest) return true;
+
+    final myUserId = _authState.user!.userId;
+
+    if (state.projectUsers.isEmpty) {
+      try {
+        final users = await _projectService.getProjectUsers(state.openProjectId);
+        _state.setProjectUsers(users);
+      } catch (_) {
+        return false;
+      }
+    }
+
+    final me = state.projectUsers
+        .where((u) => u.userId == myUserId)
+        .toList()
+        .firstOrNull;
+
+    if (me == null) return false;
+    return me.role is Owner || me.role is Editor;
+  }
+
+  Future<bool> canMoveToCloudProject({
+    required String targetProjectId,
+    required String myUserId,
+  }) async {
+    try {
+      final users = await _projectService.getProjectUsers(targetProjectId);
+
+      final me = users.where((u) => u.userId == myUserId).toList();
+      if (me.isEmpty) {
+        _toast(const ToastEvent.error('No permission'));
+        return false;
+      }
+
+      final role = me.first.role;
+      final canWrite = role is Owner || role is Editor;
+
+      if (!canWrite) {
+        _toast(const ToastEvent.error('No permission'));
+        return false;
+      }
+
+      return true;
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      if (code == 403) {
+        _toast(const ToastEvent.error('No permission'));
+        return false;
+      }
+      _toast(const ToastEvent.error('Failed to check permissions'));
+      return false;
+    } catch (_) {
+      _toast(const ToastEvent.error('Failed to check permissions'));
+      return false;
+    }
+  }
+  Future<bool> canAddRecordingToOpenProject() async {
+    final project = _findById(state.openProjectId);
+    if (project == null) return false;
+
+    if (project.id == LocalMedia.defaultProjectId) return true;
+    if (project.projectSource == ProjectSource.local) return true;
+
+    if (_authState.isGuest) return true;
+
+    final myUserId = _authState.user?.userId;
+    if (myUserId == null) return false;
+
+    try {
+      final users = await _projectService.getProjectUsers(state.openProjectId);
+      _state.setProjectUsers(users);
+
+      final me = users.where((u) => u.userId == myUserId).toList().firstOrNull;
+      if (me == null) return false;
+
+      return me.role is Owner || me.role is Editor;
+    } catch (_) {
+      return false;
+    }
+  }
+
+
+  Future<void> _refreshOpenProjectRecordings() async {
+    await openProject(state.openProjectId);
+  }
+
   // ----------------
   // Load/Open
   // ----------------
@@ -132,7 +272,7 @@ class HomeController {
   Future<void> loadProjects() async {
     if (state.areProjectsLoaded) return;
 
-    final authState = ref.read(sessionProvider);
+    final authState = _ref.read(sessionProvider);
     _state.setLoading(true);
     try {
       final localProjects = await _projectService.getLocalProjects();
@@ -192,8 +332,7 @@ class HomeController {
       }
 
       _state.clearUsersPopupState();
-
-      _state.setOpenProject(projectId: projectId, videos: recordings);
+      _state.setOpenProject(projectId: projectId, recordings: recordings);
     } on DioException catch (e) {
       _error(e, userMessage: 'Failed to load project with id $projectId');
     } catch (e) {
@@ -202,7 +341,7 @@ class HomeController {
   }
 
   Future<void> handleProjectTap(String projectId) async {
-    if (state.isSelectionMode) {
+    if (state.isProjectSelectionMode) {
       toggleProjectSelection(projectId);
       return;
     }
@@ -217,7 +356,7 @@ class HomeController {
   }
 
   // ----------------
-  // Create/Rename/Delete/Duplicate
+  // Create/Rename/Delete/Duplicate Projects
   // ----------------
 
   Future<void> createProject(String name) async {
@@ -231,7 +370,7 @@ class HomeController {
       return;
     }
 
-    final authState = ref.read(sessionProvider);
+    final authState = _ref.read(sessionProvider);
     _state.setLoading(true);
     try {
       final ProjectMetadata created;
@@ -242,7 +381,6 @@ class HomeController {
       }
 
       _state.addProject(created);
-      _state.setOpenProject(projectId: created.id, videos: const []);
       _state.clearError();
       _success('Project "$trimmed" created');
     } catch (e) {
@@ -269,6 +407,22 @@ class HomeController {
       return;
     }
 
+    if (projectId != LocalMedia.defaultProjectId &&
+        project.projectSource == ProjectSource.cloud &&
+        !_authState.isGuest) {
+      final role = await _getMyRoleForProject(projectId);
+      if (role == null) {
+        _toast(const ToastEvent.error('No permission'));
+        return;
+      }
+
+      final canRename = role is Owner || role is Editor;
+      if (!canRename) {
+        _toast(const ToastEvent.error('No permission'));
+        return;
+      }
+    }
+
     _state.setLoading(true);
     try {
       final updatedProject = project.copyWith(name: trimmed);
@@ -276,8 +430,6 @@ class HomeController {
       if (project.projectSource == ProjectSource.cloud) {
         await _projectService.renameProject(projectId, trimmed);
       }
-
-      // Always keep local metadata in sync
       await _projectService.updateLocalProject(project: updatedProject);
 
       _state.renameProjectInList(projectId, trimmed);
@@ -310,9 +462,20 @@ class HomeController {
         }
 
         try {
-          if (project.projectSource == ProjectSource.cloud) {
-            await _projectService.deleteProject(projectId);
+          if (project.projectSource == ProjectSource.cloud && !_authState.isGuest) {
+            final role = await _getMyRoleForProject(projectId);
+            if (role == null) {
+              _toast(const ToastEvent.error('No permission'));
+              return;
+            }
+
+            if (role is Owner) {
+              await _projectService.deleteProject(projectId);
+            } else {
+              await _projectService.leaveProject(projectId: projectId);
+            }
           }
+
           await _projectService.deleteLocalProject(projectId);
 
           final wasOpen = state.openProjectId == projectId;
@@ -323,6 +486,14 @@ class HomeController {
           }
 
           successCount++;
+        } on DioException catch (e) {
+          final code = e.response?.statusCode;
+          if (code == 403) {
+            _toast(const ToastEvent.error('No permission'));
+            return;
+          }
+          failed.add(projectId);
+          _error(e, userMessage: 'Failed to delete project ${project.name}');
         } catch (e) {
           failed.add(projectId);
           _error(e, userMessage: 'Failed to delete project ${project.name}');
@@ -363,6 +534,18 @@ class HomeController {
           late final ProjectMetadata newProject;
 
           if (project.projectSource == ProjectSource.cloud) {
+            final role = await _getMyRoleForProject(projectId);
+            if (role == null) {
+              _toast(const ToastEvent.error('No permission'));
+              return;
+            }
+
+            final canDuplicate = role is Owner || role is Editor;
+            if (!canDuplicate) {
+              _toast(const ToastEvent.error('No permission'));
+              return;
+            }
+
             newProject = await _projectService.duplicateProject(projectId);
           } else {
             final newName = _duplicateName(project.name);
@@ -373,6 +556,14 @@ class HomeController {
           await _projectService.duplicateLocalProject(projectId, newProject);
           _state.addProject(newProject);
           successCount++;
+        } on DioException catch (e) {
+          final code = e.response?.statusCode;
+          if (code == 403) {
+            _toast(const ToastEvent.error('No permission'));
+            return;
+          }
+          failed.add(projectId);
+          _error(e, userMessage: 'Failed to duplicate project ${project.name}');
         } catch (e) {
           failed.add(projectId);
           _error(e, userMessage: 'Failed to duplicate project ${project.name}');
@@ -390,20 +581,20 @@ class HomeController {
     }
   }
 
+
   // ----------------
-  // Selection UI state
+  // Project Selection UI state
   // ----------------
 
   void enterSelectionMode({String? initialProjectId}) {
     final ids = <String>{};
-    if (initialProjectId != null &&
-        initialProjectId != LocalMedia.defaultProjectId) {
+    if (initialProjectId != null && initialProjectId != LocalMedia.defaultProjectId) {
       ids.add(initialProjectId);
     }
-    _state.setSelection(ids);
+    _state.setProjectSelection(ids);
   }
 
-  void exitSelectionMode() => _state.clearSelection();
+  void exitProjectSelectionMode() => _state.clearProjectSelection();
 
   void toggleProjectSelection(String projectId) {
     if (projectId == LocalMedia.defaultProjectId) return;
@@ -414,13 +605,353 @@ class HomeController {
     } else {
       next.add(projectId);
     }
-    _state.setSelection(next);
+    _state.setProjectSelection(next);
   }
 
   void handleProjectLongPress(String projectId) {
     if (projectId == LocalMedia.defaultProjectId) return;
-    if (!state.isSelectionMode) {
-      _state.setSelection({projectId});
+    if (!state.isProjectSelectionMode) {
+      _state.setProjectSelection({projectId});
+    }
+  }
+
+  // ----------------
+  // Recording selection UI state
+  // ----------------
+
+  void exitRecordingSelectionMode() => _state.clearRecordingSelection();
+
+  void toggleRecordingSelection(String recordingId) {
+    final next = Set<String>.from(state.selectedRecordingIds);
+    if (next.contains(recordingId)) {
+      next.remove(recordingId);
+    } else {
+      next.add(recordingId);
+    }
+    _state.setRecordingSelection(next);
+  }
+
+
+  Future<void> handleRecordingLongPress(String recordingId) async {
+    if (!await _canManageRecordingsAsync()) {
+      _toast(const ToastEvent.error('No permission to manage recordings'));
+      return;
+    }
+    if (!state.isRecordingSelectionMode) {
+      _state.setRecordingSelection({recordingId});
+    }
+  }
+
+  Future<void> deleteRecordings(Set<String> recordingIds) async {
+    if (recordingIds.isEmpty) return;
+
+    final projectId = state.openProjectId;
+
+    final localIds = <String>[];
+    final cloudIds = <String>[];
+
+    for (final id in recordingIds) {
+      final rec = _findRecordingById(id);
+      if (rec == null) continue;
+
+      if (rec.isLocal) {
+        localIds.add(id);
+      } else {
+        cloudIds.add(id);
+      }
+    }
+
+    var successCount = 0;
+    final failed = <String>[];
+
+    _state.setLoading(true);
+    try {
+      // ----- Local delete -----
+      for (final id in localIds) {
+        final rec = _findRecordingById(id);
+        if (rec == null) {
+          failed.add(id);
+          continue;
+        }
+
+        try {
+          final ok = await _recordingService.deleteLocalRecording(
+            projectId: projectId,
+            recordingId: id,
+          );
+          if (ok) {
+            successCount++;
+          } else {
+            failed.add(id);
+          }
+        } catch (e) {
+          failed.add(id);
+          _error(e, userMessage: 'Failed to delete recording "${rec.name}"');
+        }
+      }
+
+      // ----- Cloud delete -----
+      for (final id in cloudIds) {
+        final rec = _findRecordingById(id);
+        if (rec == null) {
+          failed.add(id);
+          continue;
+        }
+
+        try {
+          await _recordingService.deleteCloudRecording(id);
+          successCount++;
+        } on DioException catch (e) {
+          failed.add(id);
+
+          final code = e.response?.statusCode;
+          if (code == 403) {
+            _toast(const ToastEvent.error('No permission'));
+          } else {
+            _error(e, userMessage: 'Failed to delete recording "${rec.name}"');
+          }
+        } catch (e) {
+          failed.add(id);
+          _error(e, userMessage: 'Failed to delete recording "${rec.name}"');
+        }
+      }
+
+      await _refreshOpenProjectRecordings();
+      _state.clearRecordingSelection();
+
+      if (failed.isEmpty) {
+        _success(successCount == 1 ? 'Recording deleted' : 'Recordings deleted');
+      } else {
+        _toast(ToastEvent.error('Deleted $successCount, failed ${failed.length}'));
+      }
+    } finally {
+      _state.setLoading(false);
+    }
+  }
+
+  Future<void> duplicateRecordings(Set<String> recordingIds) async {
+    if (recordingIds.isEmpty) return;
+
+    final projectId = state.openProjectId;
+
+    final localIds = <String>[];
+    final cloudIds = <String>[];
+
+    for (final id in recordingIds) {
+      final rec = _findRecordingById(id);
+      if (rec == null) continue;
+
+      if (rec.isLocal) {
+        localIds.add(id);
+      } else {
+        cloudIds.add(id);
+      }
+    }
+
+    var successCount = 0;
+    final failed = <String>[];
+
+    _state.setLoading(true);
+    try {
+      // ----- Local duplicate -----
+      for (final id in localIds) {
+        final rec = _findRecordingById(id);
+        if (rec == null) {
+          failed.add(id);
+          continue;
+        }
+
+        try {
+          final newId = _newRecordingId();
+          final newName = _duplicateRecordingName(rec.name);
+
+          final ok = await _recordingService.duplicateLocalRecording(
+            projectId: projectId,
+            sourceRecordingId: id,
+            newRecordingId: newId,
+            newName: newName,
+          );
+
+          if (ok) {
+            successCount++;
+          } else {
+            failed.add(id);
+          }
+        } catch (e) {
+          failed.add(id);
+          _error(e, userMessage: 'Failed to duplicate recording "${rec.name}"');
+        }
+      }
+
+      // ----- Cloud duplicate -----
+      if (cloudIds.isNotEmpty) {
+        try {
+          final openId = state.openProjectId;
+          final isDefault = openId == LocalMedia.defaultProjectId;
+
+          final duplicated = await _recordingService.duplicateCloudRecordings(
+            recordingIds: cloudIds,
+            projectId: isDefault ? null : openId,
+          );
+
+          if (duplicated.isEmpty) {
+            failed.addAll(cloudIds);
+            _toast(const ToastEvent.error('No recordings duplicated from cloud'));
+          } else {
+            successCount += duplicated.length;
+          }
+        } on DioException catch (e) {
+          failed.addAll(cloudIds);
+
+          final code = e.response?.statusCode;
+          if (code == 403) {
+            _toast(const ToastEvent.error('No permission'));
+          } else {
+            _error(e, userMessage: 'Failed to duplicate cloud recordings');
+          }
+        } catch (e) {
+          failed.addAll(cloudIds);
+          _error(e, userMessage: 'Failed to duplicate cloud recordings');
+        }
+      }
+
+      await _refreshOpenProjectRecordings();
+      _state.clearRecordingSelection();
+
+      if (failed.isEmpty) {
+        _success(successCount == 1 ? 'Recording duplicated' : 'Recordings duplicated');
+      } else {
+        _toast(ToastEvent.error('Duplicated $successCount, failed ${failed.length}'));
+      }
+    } finally {
+      _state.setLoading(false);
+    }
+  }
+
+  Future<void> moveRecordings(
+      Set<String> recordingIds, {
+        required String targetProjectId,
+      }) async {
+    if (recordingIds.isEmpty) return;
+
+    final sourceProjectId = state.openProjectId;
+    if (targetProjectId == sourceProjectId) return;
+
+    final localIds = <String>[];
+    final cloudIds = <String>[];
+
+    for (final id in recordingIds) {
+      final rec = _findRecordingById(id);
+      if (rec == null) continue;
+
+      if (rec.source == RecordingSource.local) {
+        localIds.add(id);
+      } else {
+        cloudIds.add(id);
+      }
+    }
+
+    final targetMeta = _findById(targetProjectId);
+
+    final targetAllowsLocal = targetProjectId == LocalMedia.defaultProjectId ||
+        (targetMeta != null && targetMeta.projectSource == ProjectSource.local);
+
+    final targetAllowsCloud = targetProjectId == LocalMedia.defaultProjectId ||
+        (targetMeta != null && targetMeta.projectSource == ProjectSource.cloud);
+
+    if (!targetAllowsLocal && localIds.isNotEmpty) {
+      _toast(const ToastEvent.error('You can only move local→local or cloud→cloud'));
+      return;
+    }
+
+    if (!targetAllowsCloud && cloudIds.isNotEmpty) {
+      _toast(const ToastEvent.error('You can only move local→local or cloud→cloud'));
+      return;
+    }
+
+    var successCount = 0;
+    final failed = <String>[];
+
+    _state.setLoading(true);
+    try {
+      // ---- Local move (filesystem) ----
+      if (localIds.isNotEmpty) {
+        for (final id in localIds) {
+          final rec = _findRecordingById(id);
+          if (rec == null) {
+            failed.add(id);
+            continue;
+          }
+
+          try {
+            final srcDir = _localMedia.recordingDir(sourceProjectId, id);
+            final dstDir = _localMedia.recordingDir(targetProjectId, id);
+
+            if (!await srcDir.exists()) {
+              failed.add(id);
+              continue;
+            }
+
+            await dstDir.parent.create(recursive: true);
+            await srcDir.rename(dstDir.path);
+            successCount++;
+          } catch (e) {
+            failed.add(id);
+            _error(e, userMessage: 'Failed to move recording "${rec.name}"');
+          }
+        }
+      }
+
+      // ---- Cloud move ----
+      if (cloudIds.isNotEmpty) {
+        final myUserId = _authState.user?.userId;
+        if (myUserId == null) {
+          _toast(const ToastEvent.error('No permission'));
+          return;
+        }
+
+        final canMove = await canMoveToCloudProject(
+          targetProjectId: targetProjectId,
+          myUserId: myUserId,
+        );
+
+        if (!canMove) {
+          return;
+        }
+
+        try {
+          await _projectService.moveRecordings(
+            recordingIds: cloudIds,
+            targetProjectId:
+            targetProjectId == LocalMedia.defaultProjectId ? null : targetProjectId,
+          );
+          successCount += cloudIds.length;
+        } on DioException catch (e) {
+          final code = e.response?.statusCode;
+          if (code == 403) {
+            _toast(const ToastEvent.error('No permission'));
+            return;
+          }
+          _error(e, userMessage: 'Failed to move cloud recordings');
+          return;
+        } catch (e) {
+          _error(e, userMessage: 'Failed to move cloud recordings');
+          return;
+        }
+      }
+    } finally {
+      _state.setLoading(false);
+
+      await _refreshOpenProjectRecordings();
+      _state.clearRecordingSelection();
+
+      if (failed.isEmpty) {
+        if (successCount > 0) {
+          _success(successCount == 1 ? 'Recording moved' : 'Recordings moved');
+        }
+      } else {
+        _toast(ToastEvent.error('Moved $successCount, failed ${failed.length}'));
+      }
     }
   }
 
@@ -449,9 +980,9 @@ class HomeController {
   }
 
   Future<void> addUserToOpenProject({
-    required String myUserId,
+    required String? myUserId,
     required String emailAddress,
-    required ProjectRole role,
+    required ProjectRoleType role,
   }) async {
     final projectId = state.openProjectId;
     if (projectId == LocalMedia.defaultProjectId) {
@@ -474,8 +1005,6 @@ class HomeController {
       _state.setProjectUsers(updatedUsers);
       _toast(const ToastEvent.success('User added'));
     } on DioException catch (e) {
-      _state.setUsersLoading(false);
-
       final code = e.response?.statusCode;
       if (code == 409) {
         _toast(const ToastEvent.error('User already in project'));
@@ -486,14 +1015,15 @@ class HomeController {
         return;
       }
       if (code == 404) {
-        _toast(const ToastEvent.error('Project or user not found'));
+        _toast(const ToastEvent.error('User not found'));
         return;
       }
 
       _toast(const ToastEvent.error('Failed to add user'));
     } catch (_) {
-      _state.setUsersLoading(false);
       _toast(const ToastEvent.error('Failed to add user'));
+    } finally {
+      _state.setUsersLoading(false);
     }
   }
 
@@ -522,11 +1052,26 @@ class HomeController {
     }
   }
 
-  void clearUsersPopupState() => _state.clearUsersPopupState();
+  void handleRecordingTap(String recordingId) {
+    if (!state.isRecordingSelectionMode) return;
 
-  bool canManageUsers({required String myUserId}) {
-    final open = state.openProject;
-    if (open == null) return false;
-    return open.isOwner(myUserId);
+    toggleRecordingSelection(recordingId);
+
+    if (state.selectedRecordingIds.isEmpty) {
+      exitRecordingSelectionMode();
+    }
   }
+
+  Future<void> handleGoToRecordingTap({
+    required VoidCallback goToRecording,
+  }) async {
+    final can = await canAddRecordingToOpenProject();
+    if (!can) {
+      _toast(const ToastEvent.error('No permission to add a recording in this project'));
+      return;
+    }
+    goToRecording();
+  }
+
+  void clearUsersPopupState() => _state.clearUsersPopupState();
 }

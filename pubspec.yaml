@@ -28,11 +28,11 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  file_picker: ^10.3.10
   image: ^4.0.21
   connectivity_plus: ^5.0.2
 
   video_thumbnail: ^0.5.3
-
   uuid: ^4.4.2
   path: ^1.9.0
   flutter_dotenv: ^5.1.0
@@ -46,6 +46,7 @@ dependencies:
 
   go_router: ^13.2.0
   app_links: ^7.0.0
+  logger: ^2.5.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -58,6 +59,14 @@ dependencies:
   flutter_riverpod: ^3.2.0
   # Optional: Uncomment if you want centralized runtime permission handling
   # permission_handler: ^11.4.0
+
+  # Bluetooth connection packages
+  open_earable_flutter: ^2.3.0
+  flutter_blue_plus: ^2.0.0
+  geolocator: ^14.0.2
+
+  # Sensor charts packages
+  fl_chart: ^1.0.0
 
 dev_dependencies:
   flutter_launcher_icons: 0.14.4
