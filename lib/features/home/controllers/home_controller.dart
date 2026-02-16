@@ -830,7 +830,10 @@ class HomeController {
     if (recordingIds.isEmpty) return;
 
     final sourceProjectId = state.openProjectId;
-    if (targetProjectId == sourceProjectId) return;
+    if (sourceProjectId == targetProjectId) {
+      _toast(const ToastEvent.error('Choose a different target project'));
+      return;
+    }
 
     final localIds = <String>[];
     final cloudIds = <String>[];
@@ -903,18 +906,20 @@ class HomeController {
 
       // ---- Cloud move ----
       if (cloudIds.isNotEmpty) {
-        final myUserId = _authState.user?.userId;
-        if (myUserId == null) {
-          _toast(const ToastEvent.error('No permission'));
-          return;
+        if (targetProjectId != LocalMedia.defaultProjectId) {
+          final myUserId = _authState.user?.userId;
+          if (myUserId == null) {
+            _toast(const ToastEvent.error('No permission'));
+            return;
+          }
+
+          final canMove = await canMoveToCloudProject(
+            targetProjectId: targetProjectId,
+            myUserId: myUserId,
+          );
+
+          if (!canMove) return;
         }
-
-        final canMove = await canMoveToCloudProject(
-          targetProjectId: targetProjectId,
-          myUserId: myUserId,
-        );
-
-        if (!canMove) return;
 
         try {
           await _projectService.moveRecordings(
