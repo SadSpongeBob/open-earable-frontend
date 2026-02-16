@@ -40,28 +40,28 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
 
     final rec =
         widget.recording ??
-            home.recordings.firstWhere(
-                  (r) => r.id == widget.recordingId && r.source == widget.source,
-              orElse: () => throw Exception('Recording not found'),
-            );
+        home.recordings.firstWhere(
+          (r) => r.id == widget.recordingId && r.source == widget.source,
+          orElse: () => throw Exception('Recording not found'),
+        );
 
     final videoAsync = ref.watch(videoPlayerControllerProvider(rec));
     final speedKey = GlobalKey();
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: AppColors.twoHundred,
       appBar: videoAsync.when(
         loading: () => null,
         error: (_, _) => null,
         data: (vc) => TopBar(vc: vc, speedKey: speedKey, recording: rec),
       ),
-      body: videoAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text("Failed to load video: $e")),
-        data: (vc) => SafeArea(
-          child: Center(
-            child: VideoCard(controller: vc),
-          ),
+      body: Padding(
+        padding: EdgeInsetsGeometry.all(20),
+        child: videoAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text("Failed to load video: $e")),
+          data: (vc) => Center(child: VideoCard(controller: vc)),
         ),
       ),
     );
