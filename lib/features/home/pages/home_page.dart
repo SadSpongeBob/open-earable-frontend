@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/app/constants/colors.dart';
 
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
@@ -51,6 +52,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     _popupController.hide();
     super.dispose();
   }
+
   void _exitMoveMode() {
     if (!_isChoosingMoveTarget) return;
     setState(() {
@@ -74,13 +76,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
 
     final projects = ref.watch(homeStateProvider.select((s) => s.projects));
-    final openProjectId =
-    ref.watch(homeStateProvider.select((s) => s.openProjectId));
+    final openProjectId = ref.watch(
+      homeStateProvider.select((s) => s.openProjectId),
+    );
 
-    final isProjectSelectionMode =
-    ref.watch(homeStateProvider.select((s) => s.isProjectSelectionMode));
-    final selectedProjectIds =
-    ref.watch(homeStateProvider.select((s) => s.selectedProjectIds));
+    final isProjectSelectionMode = ref.watch(
+      homeStateProvider.select((s) => s.isProjectSelectionMode),
+    );
+    final selectedProjectIds = ref.watch(
+      homeStateProvider.select((s) => s.selectedProjectIds),
+    );
 
     final recordings = ref.watch(homeStateProvider.select((s) => s.recordings));
     final isRecordingSelectionMode = ref.watch(
@@ -103,7 +108,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final isLocalOpenProject = _isLocalProject(openMeta, openProjectId);
 
-    final showUsersButton = session.isAuthenticated &&
+    final showUsersButton =
+        session.isAuthenticated &&
         !isLocalOpenProject &&
         openProjectId != LocalMedia.defaultProjectId &&
         !_isChoosingMoveTarget;
@@ -113,16 +119,16 @@ class _HomePageState extends ConsumerState<HomePage> {
       final sourceIsLocal = _isLocalProject(openMeta, openProjectId);
 
       if (sourceIsLocal != targetIsLocal) {
-        ref.read(toastProvider.notifier).state =
-        const ToastEvent.error(
+        ref.read(toastProvider.notifier).state = const ToastEvent.error(
           'You can only move local→local or cloud→cloud',
         );
         return;
       }
 
       if (target.id == openProjectId) {
-        ref.read(toastProvider.notifier).state =
-        const ToastEvent.error('Choose a different project');
+        ref.read(toastProvider.notifier).state = const ToastEvent.error(
+          'Choose a different project',
+        );
         return;
       }
 
@@ -138,12 +144,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     final selectionEnabled = isRecordingSelectionMode && !_isChoosingMoveTarget;
 
     return Scaffold(
-      body: SafeArea(
-        child: Row(
-          children: [
-            // PROJECTS BAR
-            SizedBox(
-              width: 500,
+      resizeToAvoidBottomInset: false,
+      body: Row(
+        children: [
+          // PROJECTS BAR
+          SizedBox(
+            width: 500,
+            child: SafeArea(
               child: Stack(
                 children: [
                   Positioned.fill(
@@ -182,12 +189,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                           final projectIds = selectedProjectIds;
                           DeleteConfirmDialog.show(
                             context,
-                            title: 'Do you really want to\ndelete these projects?',
                             onDelete: () async {
                               await controller.deleteProjects(projectIds);
                               if (!mounted) return;
                               controller.exitProjectSelectionMode();
                             },
+                            title:
+                                'Do you really want to \ndelete these projects?',
                           );
                         },
                         onDuplicate: () {
@@ -197,13 +205,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                         onRename: () {
                           if (selectedProjectCount != 1) return;
                           final projectId = selectedProjectIds.first;
-                          final project =
-                          projects.firstWhere((p) => p.id == projectId);
+                          final project = projects.firstWhere(
+                            (p) => p.id == projectId,
+                          );
 
-                          showDialog<String>(
-                            context: context,
-                            builder: (_) =>
-                                RenameProjectDialog(initialName: project.name),
+                          RenameProjectDialog.show(
+                            context,
+                            initialName: project.name,
                           ).then((newName) {
                             if (newName != null && newName.trim().isNotEmpty) {
                               controller.renameProject(projectId, newName);
@@ -216,13 +224,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ],
               ),
             ),
+          ),
 
-            // RECORDINGS GRID
-            Expanded(
+          // RECORDINGS GRID
+          Expanded(
+            child: SafeArea(
               child: Stack(
                 children: [
                   Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       image: DecorationImage(
                         image: AssetImage('assets/images/background.png'),
                         fit: BoxFit.cover,
@@ -239,12 +249,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                             return;
                           }
                           if (item.isUploading) return;
+
+                          if (selectionEnabled) {
+                            controller.handleRecordingTap(item.id);
+                            return;
+                          }
+
                           context.go(Routes.playback(item.isCloud, item.id));
                         },
                         onLongPressRecording: (item) {
                           if (_isChoosingMoveTarget) return;
                           controller.handleRecordingLongPress(item.id);
-                        }
+                        },
                       ),
                     ),
                   ),
@@ -259,14 +275,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                         onDelete: () {
                           DeleteConfirmDialog.show(
                             context,
-                            title:
-                            'Do you really want to\ndelete these recordings?',
                             onDelete: () async {
-                              await controller
-                                  .deleteRecordings(selectedRecordingIds);
+                              await controller.deleteRecordings(
+                                selectedRecordingIds,
+                              );
                               if (!mounted) return;
                               controller.exitRecordingSelectionMode();
                             },
+                            title:
+                                'Do you really want to\ndelete these recordings?',
                           );
                         },
                         onDuplicate: () {
@@ -275,8 +292,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         onMove: () {
                           setState(() {
                             _isChoosingMoveTarget = true;
-                            _recordingIdsToMove =
-                            Set<String>.from(selectedRecordingIds);
+                            _recordingIdsToMove = Set<String>.from(
+                              selectedRecordingIds,
+                            );
                           });
                         },
                         onDone: controller.exitRecordingSelectionMode,
@@ -290,7 +308,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         behavior: HitTestBehavior.opaque,
                         onTap: _exitMoveMode,
                         child: Container(
-                          color: Colors.black.withOpacity(0.35),
+                          color: AppColors.nineHundred.withValues(alpha: 0.35),
                           child: Center(
                             child: GestureDetector(
                               onTap: () {},
@@ -318,24 +336,29 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ],
               ),
             ),
+          ),
 
-            // RIGHT BAR
-            AbsorbPointer(
-              absorbing: _isChoosingMoveTarget,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: _isChoosingMoveTarget ? 0.4 : 1.0,
+          // RIGHT BAR
+          AbsorbPointer(
+            absorbing: _isChoosingMoveTarget,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: _isChoosingMoveTarget ? 0.4 : 1.0,
+              child: SafeArea(
                 child: HomeRecordingRightBar(
                   onSettings: () => context.go(Routes.settings),
-                  onWaveSound: () => context.go('${Routes.sensordata}?source=home'),
-                  onShutter: () => ref.read(homeControllerProvider).handleGoToRecordingTap(
-                    goToRecording: () => context.go(Routes.recording),
-                  ),
+                  onWaveSound: () =>
+                      context.go('${Routes.sensordata}?source=home'),
+                  onShutter: () => ref
+                      .read(homeControllerProvider)
+                      .handleGoToRecordingTap(
+                        goToRecording: () => context.go(Routes.recording),
+                      ),
                   onBluetooth: () {
                     _popupController.toggle(
                       context: context,
                       positionedPopup: const Positioned(
-                        bottom: 30,
+                        bottom: 40,
                         right: 165,
                         child: DevicesPopup(),
                       ),
@@ -349,12 +372,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+      backgroundColor: AppColors.fifty,
     );
   }
 }
+
 extension _FirstOrNullX<T> on List<T> {
   T? get firstOrNull => isEmpty ? null : first;
 }

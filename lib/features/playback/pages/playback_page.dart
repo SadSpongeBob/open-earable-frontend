@@ -4,6 +4,7 @@ import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/app/ui/popup_toast.dart';
 import 'package:openearable/app/ui/toast_controller.dart';
 import 'package:openearable/app/ui/toast_event.dart';
+
 import 'package:openearable/features/home/state/home_provider.dart';
 
 import '../controllers/playback_controller.dart';
@@ -39,10 +40,10 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
 
     final rec =
         widget.recording ??
-            home.recordings.firstWhere(
-                  (r) => r.id == widget.recordingId && r.source == widget.source,
-              orElse: () => throw Exception('Recording not found'),
-            );
+        home.recordings.firstWhere(
+          (r) => r.id == widget.recordingId && r.source == widget.source,
+          orElse: () => throw Exception('Recording not found'),
+        );
 
     final videoAsync = ref.watch(videoPlayerControllerProvider(rec));
     final speedKey = GlobalKey();

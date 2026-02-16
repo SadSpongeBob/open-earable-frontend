@@ -29,8 +29,10 @@ extension ProjectRoleTypeApi on ProjectRoleType {
         return ProjectRoleType.owner;
       case 'EDITOR':
         return ProjectRoleType.editor;
-      default:
+      case 'VIEWER':
         return ProjectRoleType.viewer;
+      default:
+        throw ArgumentError.value(role, 'role', 'Invalid role');
     }
   }
 }
@@ -41,8 +43,11 @@ abstract class ProjectRole {
   const ProjectRole({required this.userId});
 
   bool canViewVideos() => true;
+
   bool canEditVideos() => false;
+
   bool canRecord() => false;
+
   bool canManageUsers() => false;
 
   factory ProjectRole.fromApi({

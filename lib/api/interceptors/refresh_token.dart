@@ -59,13 +59,11 @@ class RefreshTokenInterceptor extends Interceptor {
   }
 
   bool _isAuthEndpoint(String path) {
-    const resetPrefix = '/api/auth/';
-    const resetSuffix = '/reset-password';
-
     return path == AuthEndpoints.login ||
         path == AuthEndpoints.register ||
         path == AuthEndpoints.refresh ||
-        (path.startsWith(resetPrefix) && path.endsWith(resetSuffix));
+        (path.startsWith(AuthEndpoints.baseUrl) &&
+            path.endsWith(AuthEndpoints.resetPasswordSuffix));
   }
 
   Future<Response<dynamic>> _refreshAndRetry(

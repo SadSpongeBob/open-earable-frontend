@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 class ProjectBar extends StatelessWidget {
   const ProjectBar({
@@ -28,7 +30,7 @@ class ProjectBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 500,
-      color: Colors.white,
+      color: AppColors.fifty,
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -136,10 +138,7 @@ class _ProjectTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: AppTextStyles.footerBold
                     ),
                   ),
                 ],
@@ -179,16 +178,16 @@ class _SelectionCircle extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(width: 2, color: isOpen ? Colors.pink.shade600 : Colors.grey.shade700),
+        border: Border.all(width: 2, color: isOpen ? AppColors.primary : AppColors.sevenHundred),
         color: isChecked
-            ? (isOpen ? Colors.pink.shade600 : Colors.grey.shade700)
+            ? (isOpen ? AppColors.primary : AppColors.sevenHundred)
             : Colors.transparent,
       ),
       child: isChecked ? const Center(
         child: Icon(
           Icons.check,
           size: 30,
-          color: Colors.white,
+          color: AppColors.fifty,
         ),
       )
           : null,

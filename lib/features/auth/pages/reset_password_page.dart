@@ -5,11 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
+import 'package:openearable/app/widgets/app_button.dart';
+import 'package:openearable/features/auth/widgets/reset_dialog.dart';
 
 import '../../../app/theme/text_styles.dart';
-import '../widgets/auth_button.dart';
-import '../widgets/auth_card.dart';
-import '../widgets/text_field.dart';
+import '../../../app/widgets/user_card.dart';
+import '../../../app/widgets/input_box.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
   final String authToken;
@@ -52,56 +53,64 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: AuthCard(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/images/app_logo.png', width: 90, height: 110),
-                const SizedBox(height: 20),
+        child: SafeArea(
+          child: UserCard(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/app_logo.png',
+                    width: 90,
+                    height: 110,
+                  ),
+                  const SizedBox(height: 20),
 
-                const Text(
-                  "Reset Password",
-                  textAlign: TextAlign.center,
-                  style: AuthTextStyles.title,
-                ),
+                  const Text(
+                    "Reset Password",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.titleBold,
+                  ),
 
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                const Text(
-                  "Enter a new password.",
-                  textAlign: TextAlign.center,
-                  style: AuthTextStyles.body,
-                ),
+                  const Text(
+                    "Enter a new password.",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.textRegular,
+                  ),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                AuthTextField(
-                  controller: _pwController,
-                  hint: "Password",
-                  validator: Validators.password,
-                  obscureText: !_showPassword,
-                  suffixIcon: Transform.translate(
-                    offset: const Offset(-8, 0),
-                    child: IconButton(
-                      icon: Icon(
-                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                  InputBox(
+                    controller: _pwController,
+                    hint: "Password",
+                    validator: Validators.password,
+                    obscureText: !_showPassword,
+                    suffixIcon: Transform.translate(
+                      offset: const Offset(-8, 0),
+                      child: IconButton(
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
                       ),
-                      onPressed: () => setState(() => _showPassword = !_showPassword),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                AuthButton(
-                  text: "Reset",
-                  loading: _loading,
-                  enabled: _isFormFilled && !_loading,
-                  onTap: _handleReset,
-                ),
-              ],
+                  AppButton.primary(
+                    text: "Reset",
+                    onPressed: _isFormFilled ? _handleReset : null,
+                    isLoading: _loading,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -126,20 +135,10 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
       setState(() => _loading = false);
 
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Password Reset'),
-          content: const Text('Your password has been reset successfully.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+      await ResetDialog.show(
+        context,
+        title: 'Password Reset',
+        message: 'Your password has been reset successfully',
       );
 
       if (!mounted) return;
