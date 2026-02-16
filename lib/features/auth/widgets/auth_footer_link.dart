@@ -19,9 +19,7 @@ class AuthFooterLink extends StatelessWidget {
       onTap: onTap,
       child: Text(
         text,
-        style: bold
-            ? AuthTextStyles.link.copyWith(fontWeight: FontWeight.w700)
-            : AuthTextStyles.link,
+        style: bold ? AppTextStyles.footerBold : AppTextStyles.footerRegular,
       ),
     );
   }

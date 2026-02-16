@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/app/widgets/devices.dart';
 
@@ -16,15 +17,12 @@ class DevicesPopup extends StatelessWidget {
         height: 550,
         padding: const EdgeInsets.symmetric(vertical: 30),
         decoration: BoxDecoration(
-          color: Color(0xFFF2F2F2),
+          color: AppColors.fifty,
           borderRadius: BorderRadius.circular(36),
         ),
         child: Column(
           children: [
-            const Text(
-              'Devices',
-              style: GlobalTextStyles.headerMedium,
-            ),
+            const Text('Devices', style: AppTextStyles.headerRegular),
             const SizedBox(height: 30),
             const Devices(),
           ],

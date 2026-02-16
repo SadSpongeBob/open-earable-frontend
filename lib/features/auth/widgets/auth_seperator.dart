@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 import '../../../app/theme/text_styles.dart';
 
 class AuthSeparator extends StatelessWidget {
@@ -10,11 +11,11 @@ class AuthSeparator extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: const [
         SizedBox(width: 75),
-        Expanded(child: Divider(thickness: 2, color: Colors.black)),
+        Expanded(child: Divider(thickness: 2, color: AppColors.nineHundred)),
         SizedBox(width: 9),
-        Text("or", style: AuthTextStyles.body),
+        Text("or", style: AppTextStyles.footerRegular),
         SizedBox(width: 9),
-        Expanded(child: Divider(thickness: 2, color: Colors.black)),
+        Expanded(child: Divider(thickness: 2, color: AppColors.nineHundred)),
         SizedBox(width: 75),
       ],
     );
