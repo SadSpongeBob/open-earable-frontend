@@ -180,25 +180,18 @@ class RecordingService {
       final sensorFile = File(p.join(dir.path, LocalMedia.sensorDataName));
       if (!await sensorFile.exists()) continue;
       final json = await _readJson(sensorFile, recordingId);
-      final name = (json['name'] as String?)?.trim();
-      final tsRaw = json['timestamp'] as String?;
-      final typeRaw = json['sensorType'] as String?;
+      final name = (json['sourceName'] as String?)?.trim();
+      final tsRaw = json['startEpochMs'] as int?;
       final DateTime timestamp = tsRaw == null
           ? (await sensorFile.lastModified()).toUtc()
-          : DateTime.parse(tsRaw).toUtc();
-      final SensorType sensorType;
-      try {
-        sensorType = SensorType.fromString(typeRaw ?? '');
-      } catch (_) {
-        continue;
-      }
+          : DateTime.fromMicrosecondsSinceEpoch(tsRaw, isUtc: true);
+
       sensors.add(
         Sensor(
           sensorIndex: i++,
           sensorId: p.basename(dir.path),
           name: (name == null || name.isEmpty) ? 'Sensor' : name,
           timeStamp: timestamp,
-          sensorType: sensorType,
           localPath: sensorFile.path,
         ),
       );

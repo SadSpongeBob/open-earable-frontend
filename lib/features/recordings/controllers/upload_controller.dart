@@ -284,7 +284,7 @@ class UploadController {
     return SensorUpload(
       sensorIndex: sensor.sensorIndex,
       name: sensor.name,
-      type: sensor.sensorType,
+      type: SensorType.heartRate,
       file: RecordingFile(
         filename: file.uri.pathSegments.last,
         contentType: ContentType.json,
