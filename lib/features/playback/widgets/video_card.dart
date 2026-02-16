@@ -27,7 +27,7 @@ class VideoCard extends StatelessWidget {
                 left: 0,
                 right: 0,
                 bottom: 20,
-                height: 150,
+                height: 200,
                 child: ProviderScope(
                   child: Consumer(builder: (context, ref2, _) {
                     final sensorAsync = ref2.watch(sensorDataProvider("Gyroscope"));

@@ -1,4 +1,5 @@
 import 'sensor_repository.dart';
+
 class SensorChartController {
   final List<SensorSample> samples;
   final int windowMs;
@@ -7,10 +8,9 @@ class SensorChartController {
 
   List<SensorSample> windowFor(int currentMs) {
     final start = (currentMs - windowMs).clamp(0, currentMs);
-    return samples
-        .where((s) => s.timestampMs >= start && s.timestampMs <= currentMs)
-        .toList();
+    return samples.where((s) => s.timestampMs >= start && s.timestampMs <= currentMs).toList();
   }
+
   List<double> axisValues(List<SensorSample> list, String axis) {
     switch (axis) {
       case 'X':
@@ -23,6 +23,7 @@ class SensorChartController {
         return [];
     }
   }
+
   List<double> smooth(List<double> values, int window) {
     if (values.length <= window) return List.from(values);
     final out = <double>[];

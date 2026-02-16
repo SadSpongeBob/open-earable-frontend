@@ -20,8 +20,9 @@ class SensorChartWidget extends StatefulWidget {
 
 class _SensorChartWidgetState extends State<SensorChartWidget> {
   late final VoidCallback _listener;
-  int _currentMs = 0;
   late SensorChartController _logic;
+  int _currentMs = 0;
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +34,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
     };
     widget.controller.addListener(_listener);
   }
+
   @override
   void dispose() {
     widget.controller.removeListener(_listener);
@@ -52,12 +54,6 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
     final end = _currentMs;
     final start = (end - _logic.windowMs) < 0 ? 0 : (end - _logic.windowMs);
     final windowSamples = _logic.windowFor(end);
-    final xRaw = _logic.axisValues(windowSamples, 'X');
-    final yRaw = _logic.axisValues(windowSamples, 'Y');
-    final zRaw = _logic.axisValues(windowSamples, 'Z');
-    final xVals = _logic.smooth(xRaw, 4);
-    final yVals = _logic.smooth(yRaw, 4);
-    final zVals = _logic.smooth(zRaw, 4);
     return Column(
       children: [
         SizedBox(
@@ -66,11 +62,11 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withAlpha((0.15 * 255).round()),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withAlpha((0.05 * 255).round()),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                     ),
@@ -80,9 +76,6 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
               CustomPaint(
                 painter: ChartPainter(
                   samples: windowSamples,
-                  xVals: xVals,
-                  yVals: yVals,
-                  zVals: zVals,
                   startMs: start,
                   endMs: end,
                 ),
@@ -95,4 +88,3 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
     );
   }
 }
-
