@@ -14,7 +14,7 @@ class AuthController {
   final SessionNotifier _session;
   final UserService _userService;
   final HomeStateNotifier _homeState;
-  final NetworkStatus? _networkStatus;
+  final Ref _ref;
 
   AuthController(
     this._authService,
@@ -22,15 +22,25 @@ class AuthController {
     this._guestStorage,
     this._session,
     this._homeState,
-    this._networkStatus,
+    this._ref,
   );
 
   Future<void> bootstrap() async {
     _session.setLoading();
+
     try {
-      if (await _guestStorage.isGuest() ||
-          _networkStatus == null ||
-          _networkStatus == NetworkStatus.offline) {
+      if (await _guestStorage.isGuest()) {
+        _session.setGuest();
+        return;
+      }
+
+      final status = await waitForFirstData(
+        _ref,
+        networkStatusProvider,
+        timeout: const Duration(seconds: 2),
+      ).catchError((_) => NetworkStatus.offline);
+
+      if (status.isOffline) {
         _session.setGuest();
         return;
       }
@@ -96,7 +106,6 @@ final authControllerProvider = Provider<AuthController>((ref) {
   final session = ref.read(sessionProvider.notifier);
   final guestStorage = ref.read(guestStorageProvider);
   final homeState = ref.read(homeStateProvider.notifier);
-  final networkStatus = ref.read(networkStatusProvider).value;
 
   return AuthController(
     authService,
@@ -104,6 +113,6 @@ final authControllerProvider = Provider<AuthController>((ref) {
     guestStorage,
     session,
     homeState,
-    networkStatus,
+    ref,
   );
 });
