@@ -19,11 +19,4 @@ class User {
       photoUrl: json['photoUrl'] as String?,
     );
   }
-
-  Map<String, dynamic> toJson() => {
-    'id': userId,
-    'name': name,
-    'emailAddress': emailAddress,
-    'photoUrl': photoUrl,
-  };
 }

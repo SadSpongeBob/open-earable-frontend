@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/app/ui/device/devices_popup_controller.dart';
@@ -113,8 +114,8 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
           RecordingLeftBar(onBackToProjects: _navigateToHome),
           Expanded(
             child: Container(
-              color: Colors.black,
-              child: Stack(children: [_buildCameraPreview()]),
+              color: AppColors.nineHundred,
+              child: Stack(children: [ _buildCameraPreview() ]),
             ),
           ),
           HomeRecordingRightBar(

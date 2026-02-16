@@ -4,6 +4,7 @@ import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/app/ui/popup_toast.dart';
 import 'package:openearable/app/ui/toast_controller.dart';
 import 'package:openearable/app/ui/toast_event.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 
 import '../controllers/playback_controller.dart';
@@ -39,39 +40,28 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
 
     final rec =
         widget.recording ??
-            home.recordings.firstWhere(
-                  (r) => r.id == widget.recordingId && r.source == widget.source,
-              orElse: () => throw Exception('Recording not found'),
-            );
+        home.recordings.firstWhere(
+          (r) => r.id == widget.recordingId && r.source == widget.source,
+          orElse: () => throw Exception('Recording not found'),
+        );
 
     final videoAsync = ref.watch(videoPlayerControllerProvider(rec));
     final speedKey = GlobalKey();
 
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      body: SafeArea(
-        child: Column(
-          children: [
-            PreferredSize(
-              preferredSize: const Size.fromHeight(88),
-              child: videoAsync.when(
-                loading: () => const SizedBox(height: 88),
-                error: (_, _) => const SizedBox(height: 88),
-                data: (vc) => TopBar(
-                  vc: vc,
-                  speedKey: speedKey,
-                  recording: rec,
-                ),
-              ),
-            ),
-            Expanded(
-              child: videoAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text("Failed to load video: $e")),
-                data: (vc) => VideoCard(controller: vc),
-              ),
-            ),
-          ],
+      resizeToAvoidBottomInset: false,
+      backgroundColor: AppColors.twoHundred,
+      appBar: videoAsync.when(
+        loading: () => null,
+        error: (_, _) => null,
+        data: (vc) => TopBar(vc: vc, speedKey: speedKey, recording: rec),
+      ),
+      body: Padding(
+        padding: EdgeInsetsGeometry.all(20),
+        child: videoAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text("Failed to load video: $e")),
+          data: (vc) => Center(child: VideoCard(controller: vc)),
         ),
       ),
     );

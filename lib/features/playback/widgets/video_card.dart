@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoCard extends StatelessWidget {
@@ -24,14 +25,17 @@ class VideoCard extends StatelessWidget {
                 left: 0,
                 right: 0,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   child: VideoProgressIndicator(
                     controller,
                     allowScrubbing: true,
                     colors: const VideoProgressColors(
-                      playedColor: Colors.red,
-                      bufferedColor: Colors.white54,
-                      backgroundColor: Colors.white24,
+                      playedColor: AppColors.primary,
+                      bufferedColor: AppColors.sixHundred,
+                      backgroundColor: AppColors.fifty,
                     ),
                   ),
                 ),
@@ -43,4 +47,3 @@ class VideoCard extends StatelessWidget {
     );
   }
 }
-

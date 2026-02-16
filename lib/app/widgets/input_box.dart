@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/text_styles.dart';
-import '../../../app/constants/colors.dart';
+import '../theme/text_styles.dart';
+import '../constants/colors.dart';
 
-class AuthTextField extends StatelessWidget {
+class InputBox extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final String? Function(String?)? validator;
@@ -10,8 +10,11 @@ class AuthTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final TextInputType keyboardType;
   final TextAlign textAlign;
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
-  const AuthTextField({
+  const InputBox({
     super.key,
     required this.controller,
     required this.hint,
@@ -20,6 +23,9 @@ class AuthTextField extends StatelessWidget {
     this.suffixIcon,
     this.keyboardType = TextInputType.text,
     this.textAlign = TextAlign.start,
+    this.focusNode,
+    this.textInputAction,
+    this.onSubmitted,
   });
 
   @override
@@ -30,12 +36,19 @@ class AuthTextField extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       textAlign: textAlign,
-      style: AuthTextStyles.fieldInput,
+      focusNode: focusNode,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onSubmitted,
+      style: AppTextStyles.textRegular,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: AuthTextStyles.fieldHint,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        hintStyle: AppTextStyles.textRegular.copyWith(
+          color: AppColors.sevenHundred,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
         border: _border(),
         enabledBorder: _border(),
         focusedBorder: _border(),
@@ -47,10 +60,7 @@ class AuthTextField extends StatelessWidget {
   OutlineInputBorder _border() {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(36),
-      borderSide: const BorderSide(
-        width: 3,
-        color: AppColors.fieldBorder,
-      ),
+      borderSide: const BorderSide(width: 3, color: AppColors.nineHundred),
     );
   }
 }
