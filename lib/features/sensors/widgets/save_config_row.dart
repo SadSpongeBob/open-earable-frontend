@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/app/constants/colors.dart';
-import 'package:openearable/app/widgets/app_button.dart';
+import 'package:openearable/app/widgets/alert_dialog.dart';
 import 'package:openearable/features/sensors/state/sensor_configuration_storage.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
@@ -60,21 +60,9 @@ class _SaveConfigRowState extends ConsumerState<SaveConfigRow> {
                 showDialog(
                   context: context,
                   builder: (context) {
-                    return AlertDialog(
-                      title: Text(
-                        "Configuration Name Required",
-                        style: AppTextStyles.subheaderMedium,
-                      ),
-                      content: Text(
-                        "Please enter a name for the configuration.",
-                        style: AppTextStyles.textRegular,
-                      ),
-                      actions: [
-                        AppButton.ghost(
-                          text: 'Ok',
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ],
+                    return AppAlertDialog(
+                      title: "Configuration Name",
+                      message: "Please enter a name for the configuration!",
                     );
                   },
                 );
