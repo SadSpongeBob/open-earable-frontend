@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/app/widgets/pill_menu.dart';
 import 'package:openearable/app/ui/popup_toast.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/settings/controllers/settings_controller.dart';
 
 class SettingsAvatar extends ConsumerStatefulWidget {
@@ -43,7 +44,7 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
       childBuilder: (context, isOpen) {
         return CircleAvatar(
           radius: 50,
-          backgroundColor: Colors.grey[200],
+          backgroundColor: AppColors.primary,
           backgroundImage: hasImage
               ? NetworkImage(url)
               : const AssetImage("assets/images/user.png") as ImageProvider,
