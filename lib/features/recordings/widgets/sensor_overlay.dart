@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/sensors/widgets/sensor_chart.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/features/home/state/wearables_state.dart';
@@ -50,14 +51,14 @@ class VideoSensorOverlay extends ConsumerWidget {
       child: Container(
         height: 250,
         width: double.infinity,
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.55)),
+        decoration: BoxDecoration(color: AppColors.fifty.withValues(alpha: 0.55)),
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               matchedSensorName ?? "Sensor",
-              style: GlobalTextStyles.text,
+              style: AppTextStyles.textRegular,
             ),
 
             const SizedBox(height: 20),
