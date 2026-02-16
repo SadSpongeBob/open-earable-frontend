@@ -31,29 +31,32 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
     final url = widget.avatarUrl;
     final bool hasImage = url != null && url.isNotEmpty;
 
-    return PillMenuAnchor<String>(
-      value: 'avatar_menu',
-      options: hasImage ? const ['Upload', 'Remove'] : const ['Upload'],
-      labelOf: (opt) => opt,
-      onChanged: (opt) async {
-        if (opt == 'Upload') {
-          await _pickAndUploadImage();
-        } else if (opt == 'Remove') {
-          await _removeAvatar();
-        }
-      },
-      childBuilder: (context, isOpen) {
-        return CircleAvatar(
-          radius: 50,
-          backgroundColor: AppColors.primary,
-          backgroundImage: hasImage
-              ? NetworkImage(url)
-              : const AssetImage("assets/images/user.png") as ImageProvider,
-          child: _uploading
-              ? const CircularProgressIndicator(strokeWidth: 3)
-              : null,
-        );
-      },
+    return IgnorePointer(
+      ignoring: _uploading,
+      child: PillMenuAnchor<String>(
+        value: _uploading ? null : 'avatar_menu',
+        options: hasImage ? const ['Upload', 'Remove'] : const ['Upload'],
+        labelOf: (opt) => opt,
+        onChanged: (opt) async {
+          if (opt == 'Upload') {
+            await _pickAndUploadImage();
+          } else if (opt == 'Remove') {
+            await _removeAvatar();
+          }
+        },
+        childBuilder: (context, isOpen) {
+          return CircleAvatar(
+            radius: 50,
+            backgroundColor: AppColors.primary,
+            backgroundImage: hasImage
+                ? NetworkImage(url)
+                : const AssetImage("assets/images/user.png") as ImageProvider,
+            child: _uploading
+                ? const CircularProgressIndicator(strokeWidth: 3)
+                : null,
+          );
+        },
+      ),
     );
   }
 
