@@ -6,5 +6,5 @@ class Helpers {
   static String getProjectId() => "prj_${_uuid.v6()}";
 
   static String getRecordingId() => "rcd_${_uuid.v6()}";
-  static String getSensorDataId() => "sdt_${_uuid.v6()}";
+  static String getSensorDataId() => "sns_${_uuid.v6()}";
 }
