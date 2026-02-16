@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/app/widgets/pill_menu.dart';
-import 'package:openearable/app/ui/popup_toast.dart';
+import 'package:openearable/app/ui/toast_controller.dart';
+import 'package:openearable/app/ui/toast_event.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/settings/controllers/settings_controller.dart';
 
@@ -68,10 +69,13 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
       await ref.read(settingsControllerProvider).uploadAvatar(file);
 
       if (mounted) {
-        PopupToast.show(context, message: "Profile photo updated");
+        ref.read(toastProvider.notifier).state = 
+            const ToastEvent.success("Profile photo updated");
       }
     } catch (e) {
-      if (mounted) PopupToast.show(context, message: "Upload failed");
+      if (mounted) {
+        ref.read(toastProvider.notifier).state = const ToastEvent.success("Upload failed");
+      }
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -83,10 +87,14 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
       await ref.read(settingsControllerProvider).removeAvatar();
 
       if (mounted) {
-        if (mounted) PopupToast.show(context, message: "Profile photo removed");
+        ref.read(toastProvider.notifier).state = 
+            const ToastEvent.success("Profile photo removed");
       }
     } catch (e) {
-      if (mounted) PopupToast.show(context, message: "Failed to remove photo");
+      if (mounted) {
+        ref.read(toastProvider.notifier).state = 
+            const ToastEvent.success("Failed to remove photo");
+      }
     } finally {
       if (mounted) setState(() => _uploading = false);
     }

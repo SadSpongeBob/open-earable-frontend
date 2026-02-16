@@ -59,7 +59,7 @@ class SettingsController {
     final response = await userService.removeAvatar();
 
     if (response.statusCode != 204) {
-      throw Exception("Failed to remove avatar");
+      throw Exception("Failed to remove photo");
     }
 
     await refreshUser();
