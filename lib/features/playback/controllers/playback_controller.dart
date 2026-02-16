@@ -15,6 +15,7 @@ import 'package:openearable/app/ui/toast_event.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/recordings/controllers/upload_controller.dart';
+import 'package:path/path.dart' as p;
 import 'package:video_player/video_player.dart';
 
 final videoPlayerControllerProvider = FutureProvider.autoDispose
@@ -253,4 +254,34 @@ class PlaybackController {
       }
     }
   }
+  List<String> getAvailableSensors(Recording rec) {
+    if (rec.isCloud) return [];
+
+    final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
+    final recordingId = rec.id;
+
+    final recordingDir = localMedia.recordingDir(projectId, recordingId);
+    if (!recordingDir.existsSync()) return [];
+
+    final sensorFiles = recordingDir
+        .listSync(recursive: true)
+        .whereType<File>()
+    // Datei muss sensorDataName heißen
+        .where((f) => p.basename(f.path) == LocalMedia.sensorDataName)
+    // Parent Folder muss sns_xxx sein
+        .where((f) => p.basename(f.parent.path).startsWith("sns_"))
+        .toList();
+
+    debugPrint("Found sensor files:");
+    for (final f in sensorFiles) {
+      debugPrint("  ${f.path}");
+    }
+
+    return sensorFiles
+        .map((f) => p.basename(f.parent.path))
+        .toList();
+  }
+
+
+
 }

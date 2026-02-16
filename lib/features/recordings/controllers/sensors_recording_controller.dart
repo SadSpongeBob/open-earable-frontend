@@ -88,6 +88,7 @@ class SensorsRecordingController extends ChangeNotifier {
         recordingId,
         generatedSensorId,
       );
+      await file.parent.create(recursive: true);
       await file.writeAsString(
         const JsonEncoder.withIndent("  ").convert(jsonMap),
       );

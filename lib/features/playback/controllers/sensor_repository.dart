@@ -1,21 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:openearable/api/local_media.dart';
+
 class SensorRepository {
-  static Future<List<SensorSample>> loadFromFile(String sensortype) async {
+  static Future<List<SensorSample>> loadFromFilePath(String filePath) async {
     try {
-      ///TODO - this is a hardcoded path for testing
-      final filePath =
-          "/data/user/0/com.openearable.openearable/app_flutter/OpenEarable/prj_69925de7611f964e58272fbd/rcd_1f10b5a6-fd1f-6930-9903-fd7cc8487d2c/Accelerometer.json";
       final file = File(filePath);
       final jsonString = await file.readAsString();
       final decoded = jsonDecode(jsonString);
-      final rawData = decoded['data'] as List;
+      final rawData = decoded['data'] as List?;
+      if (rawData == null) return [];
       final samples = rawData.map((item) {
         final ts = (item['timestamp'] as num).toInt();
         final dx = (item['axis0'] as num).toDouble();
-        debugPrint("Loaded sensor sample: ts=$ts, x=$dx");
         final dy = (item['axis1'] as num).toDouble();
         final dz = (item['axis2'] as num).toDouble();
         return SensorSample(
@@ -27,16 +26,27 @@ class SensorRepository {
       }).toList();
       if (samples.isEmpty) return [];
       final base = samples.first.timestampMs;
-      ///TODO -700 is a magic number to align the sensor data with the video, need to find a better solution for this
+      const magicOffset = 700;
       return samples
           .map((s) => SensorSample(
-        timestampMs: s.timestampMs - base - 700,
-        x: s.x,
-        y: s.y,
-        z: s.z,
-      ))
+                timestampMs: s.timestampMs - base - magicOffset,
+                x: s.x,
+                y: s.y,
+                z: s.z,
+              ))
           .toList();
     } catch (e) {
+      if (kDebugMode) debugPrint('SensorRepository.loadFromFilePath failed: $e');
+      return [];
+    }
+  }
+  static Future<List<SensorSample>> loadFromLocalMedia(
+      LocalMedia localMedia, String projectId, String recordingId, String sensorId) async {
+    try {
+      final file = localMedia.reccordingSensors(projectId, recordingId, sensorId);
+      return await loadFromFilePath(file.path);
+    } catch (e) {
+      if (kDebugMode) debugPrint('SensorRepository.loadFromLocalMedia failed: $e');
       return [];
     }
   }

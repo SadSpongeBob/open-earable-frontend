@@ -152,12 +152,22 @@ class _TopBarState extends ConsumerState<TopBar> {
                           height: 26,
                         ),
                         onPressed: () async {
-                          final result = await SelectSensorsDialog.show(context, available: []);
+                          final available = controller.getAvailableSensors(current);
+                          // open dialog and update selection immediately when user changes it
+                          final result = await SelectSensorsDialog.show(
+                            context,
+                            available: available,
+                            initialSelected: playbackState.selectedSensors,
+                            onChanged: (selected) => playbackNotifier.setSelectedSensors(selected),
+                          );
+
+                          // final confirmation (OK) still applies the selection
                           if (result != null) {
                             playbackNotifier.setSelectedSensors(result);
                           }
 
                         },
+                        onLongPress: () => playbackNotifier.toggleShowSensorChart(),
                         splashRadius: 20,
                       ),
                       IconButton(

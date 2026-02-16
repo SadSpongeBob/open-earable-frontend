@@ -6,10 +6,29 @@ import 'package:openearable/app/theme/text_styles.dart';
 
 class SelectSensorsDialog extends StatefulWidget {
   final List<String> available;
-  const SelectSensorsDialog({super.key, required this.available});
+  final List<String> initialSelected;
+  final void Function(List<String>)? onChanged;
+  const SelectSensorsDialog({
+    super.key,
+    required this.available,
+    this.initialSelected = const [],
+    this.onChanged,
+  });
 
-  static Future<List<String>?> show(BuildContext context, {List<String>? available}) {
-    return showAppDialog(context, dialog: SelectSensorsDialog(available: available ?? []));
+  static Future<List<String>?> show(
+    BuildContext context, {
+    List<String>? available,
+    List<String>? initialSelected,
+    void Function(List<String>)? onChanged,
+  }) {
+    return showAppDialog(
+      context,
+      dialog: SelectSensorsDialog(
+        available: available ?? [],
+        initialSelected: initialSelected ?? [],
+        onChanged: onChanged,
+      ),
+    );
   }
 
   @override
@@ -17,7 +36,28 @@ class SelectSensorsDialog extends StatefulWidget {
 }
 
 class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
-  final Set<String> _selected = {};
+  String? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    // If there was an initial selection, pick the first element
+    if (widget.initialSelected.isNotEmpty) {
+      _selected = widget.initialSelected.first;
+    }
+  }
+
+  void _onSelect(String? value) {
+    setState(() => _selected = value);
+    // notify immediately that selection changed
+    if (widget.onChanged != null) {
+      widget.onChanged!(_selected == null ? [] : [_selected!]);
+    }
+    // close the dialog immediately with the selection
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop(_selected == null ? <String>[] : <String>[_selected!]);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +70,6 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
         children: [
           const SizedBox(height: 6),
           Text('No sensors available.', style: AppTextStyles.textRegular),
-
         ],
       );
     } else {
@@ -42,14 +81,11 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
           separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (c, i) {
             final name = avail[i];
-            return CheckboxListTile(
+            return RadioListTile<String>(
               title: Text(name, style: AppTextStyles.textMedium),
-              value: _selected.contains(name),
-              onChanged: (v) {
-                setState(() {
-                  if (v == true) _selected.add(name); else _selected.remove(name);
-                });
-              },
+              value: name,
+              groupValue: _selected,
+              onChanged: _onSelect,
             );
           },
         ),
@@ -57,16 +93,9 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
     }
 
     return BaseDialog(
-      title: 'Select sensors',
+      title: 'Select sensor',
       body: body,
       actions: [
-        BaseDialogActionRow(
-          child: AppButton.primary(
-            text: 'OK',
-            onPressed: _selected.isEmpty ? null : () => Navigator.of(context).pop(_selected.toList()),
-            borderRadius: 0,
-          ),
-        ),
         BaseDialogActionRow(
           topBorder: false,
           bottomRounded: true,
