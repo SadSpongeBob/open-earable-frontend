@@ -94,7 +94,7 @@ class UploadController {
     homeStateNotifier.addRecording(uploaded);
 
     try {
-      recordingService.deleteLocalRecording(projectId, recordingId);
+      recordingService.deleteLocalRecording(projectId: projectId, recordingId:  recordingId);
     } catch (e) {
       if (kDebugMode) {
         debugPrint("CLEANUP FAILED: recordingId: $recordingId, error: $e");

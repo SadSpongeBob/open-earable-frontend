@@ -159,8 +159,9 @@ class HomeController {
     return candidate;
   }
   Future<ProjectRole?> _getMyRoleForProject(String projectId) async {
-    if (_authState.isGuest) return null;
-    final myUserId = _authState.user?.userId;
+    final authState = _ref.read(sessionProvider);
+    if (authState.isGuest) return null;
+    final myUserId = authState.user?.userId;
     if (myUserId == null) return null;
 
     try {
@@ -178,9 +179,11 @@ class HomeController {
     if (project.id == LocalMedia.defaultProjectId) return true;
 
     if (project.projectSource == ProjectSource.local) return true;
-    if (_authState.isGuest) return true;
 
-    final myUserId = _authState.user!.userId;
+    final authState = _ref.read(sessionProvider);
+    if (authState.isGuest) return true;
+
+    final myUserId = authState.user!.userId;
 
     if (state.projectUsers.isEmpty) {
       try {
@@ -242,9 +245,10 @@ class HomeController {
     if (project.id == LocalMedia.defaultProjectId) return true;
     if (project.projectSource == ProjectSource.local) return true;
 
-    if (_authState.isGuest) return true;
+    final authState = _ref.read(sessionProvider);
+    if (authState.isGuest) return true;
 
-    final myUserId = _authState.user?.userId;
+    final myUserId = authState.user?.userId;
     if (myUserId == null) return false;
 
     try {
@@ -407,9 +411,10 @@ class HomeController {
       return;
     }
 
+    final authState = _ref.read(sessionProvider);
     if (projectId != LocalMedia.defaultProjectId &&
         project.projectSource == ProjectSource.cloud &&
-        !_authState.isGuest) {
+        !authState.isGuest) {
       final role = await _getMyRoleForProject(projectId);
       if (role == null) {
         _toast(const ToastEvent.error('No permission'));
@@ -461,8 +466,9 @@ class HomeController {
           continue;
         }
 
+        final authState = _ref.read(sessionProvider);
         try {
-          if (project.projectSource == ProjectSource.cloud && !_authState.isGuest) {
+          if (project.projectSource == ProjectSource.cloud && !authState.isGuest) {
             final role = await _getMyRoleForProject(projectId);
             if (role == null) {
               _toast(const ToastEvent.error('No permission'));
@@ -903,8 +909,9 @@ class HomeController {
       }
 
       // ---- Cloud move ----
+      final authState = _ref.read(sessionProvider);
       if (cloudIds.isNotEmpty) {
-        final myUserId = _authState.user?.userId;
+        final myUserId = authState.user?.userId;
         if (myUserId == null) {
           _toast(const ToastEvent.error('No permission'));
           return;
