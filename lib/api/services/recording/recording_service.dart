@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:openearable/api/client_dio.dart';
@@ -16,11 +17,9 @@ import 'package:openearable/api/models/recording/upload_recording_response.dart'
 import 'package:openearable/api/services/recording/recording_endpoints.dart';
 
 class RecordingService {
-  RecordingService({
-    required Dio dio,
-    required LocalMedia localMedia,
-  })  : _dio = dio,
-        _localMedia = localMedia;
+  RecordingService({required Dio dio, required LocalMedia localMedia})
+    : _dio = dio,
+      _localMedia = localMedia;
 
   final Dio _dio;
   final LocalMedia _localMedia;
@@ -29,7 +28,9 @@ class RecordingService {
   // Cloud
   // =========================
 
-  Future<UploadRecordingResponse> startUpload(UploadRecordingRequest req) async {
+  Future<UploadRecordingResponse> startUpload(
+    UploadRecordingRequest req,
+  ) async {
     final res = await _dio.post(RecordingEndpoints.base, data: req.toJson());
     return UploadRecordingResponse.fromJson(res.asMap());
   }
@@ -70,10 +71,7 @@ class RecordingService {
   }) async {
     final res = await _dio.post<dynamic>(
       '${RecordingEndpoints.base}/duplicate',
-      data: {
-        'recordingIds': recordingIds,
-        'projectId': ?projectId,
-      },
+      data: {'recordingIds': recordingIds, 'projectId': ?projectId},
     );
     final list = res.asList();
     return list
@@ -86,9 +84,9 @@ class RecordingService {
   // =========================
 
   Future<Recording> getLocalRecording(
-      String projectId,
-      String recordingId,
-      ) async {
+    String projectId,
+    String recordingId,
+  ) async {
     final videoFile = _localMedia.videoFile(projectId, recordingId);
     if (!await videoFile.exists()) {
       throw FileSystemException(
@@ -105,7 +103,7 @@ class RecordingService {
       );
     }
 
-    final meta = await _readMeta(metaFile, recordingId);
+    final meta = await _readJson(metaFile, recordingId);
 
     final name = (meta['name'] as String?)?.trim();
     final resolvedName = (name == null || name.isEmpty)
@@ -151,15 +149,11 @@ class RecordingService {
         recordings.add(rec);
       } on FileSystemException catch (e) {
         if (kDebugMode) {
-          debugPrint(
-            'Failed to load local recording id=$recordingId: $e',
-          );
+          debugPrint('Failed to load local recording id=$recordingId: $e');
         }
       } on FormatException catch (e) {
         if (kDebugMode) {
-          debugPrint(
-            'Corrupted meta for local recording id=$recordingId: $e',
-          );
+          debugPrint('Corrupted meta for local recording id=$recordingId: $e');
         }
       }
     }
@@ -170,6 +164,46 @@ class RecordingService {
 
   Future<List<Recording>> getLocalRecordings() async {
     return getLocalProjectRecordings(LocalMedia.defaultProjectId);
+  }
+
+  Future<List<Sensor>> getLocalRecordingSensors(
+    String projectId,
+    String recordingId,
+  ) async {
+    final directory = _localMedia.recordingDir(projectId, recordingId);
+    final entities = await directory.list(followLinks: false).toList();
+    final sensorDirs = entities.whereType<Directory>().toList()
+      ..sort((a, b) => p.basename(a.path).compareTo(p.basename(b.path)));
+    final sensors = <Sensor>[];
+    int i = 0;
+    for (final dir in sensorDirs) {
+      final sensorFile = File(p.join(dir.path, LocalMedia.sensorDataName));
+      if (!await sensorFile.exists()) continue;
+      final json = await _readJson(sensorFile, recordingId);
+      final name = (json['name'] as String?)?.trim();
+      final tsRaw = json['timestamp'] as String?;
+      final typeRaw = json['sensorType'] as String?;
+      final DateTime timestamp = tsRaw == null
+          ? (await sensorFile.lastModified()).toUtc()
+          : DateTime.parse(tsRaw).toUtc();
+      final SensorType sensorType;
+      try {
+        sensorType = SensorType.fromString(typeRaw ?? '');
+      } catch (_) {
+        continue;
+      }
+      sensors.add(
+        Sensor(
+          sensorIndex: i++,
+          sensorId: p.basename(dir.path),
+          name: (name == null || name.isEmpty) ? 'Sensor' : name,
+          timeStamp: timestamp,
+          sensorType: sensorType,
+          localPath: sensorFile.path,
+        ),
+      );
+    }
+    return sensors;
   }
 
   // =========================
@@ -196,23 +230,23 @@ class RecordingService {
       throw FileSystemException('Meta file not found', metaFile.path);
     }
 
-    final meta = await _readMeta(metaFile, recordingId);
+    final meta = await _readJson(metaFile, recordingId);
     meta['name'] = newName;
 
     await _atomicWriteJson(metaFile, meta);
   }
 
   Future<void> updateLocalUploadStatus(
-      String projectId,
-      String recordingId,
-      UploadStatus uploadStatus,
-      ) async {
+    String projectId,
+    String recordingId,
+    UploadStatus uploadStatus,
+  ) async {
     final metaFile = _localMedia.recordingMetaFile(projectId, recordingId);
     if (!await metaFile.exists()) {
       throw FileSystemException("Meta file not found", metaFile.path);
     }
 
-    final decoded = await _readMeta(metaFile, recordingId);
+    final decoded = await _readJson(metaFile, recordingId);
 
     decoded['uploadStatus'] = uploadStatus.json;
 
@@ -245,7 +279,7 @@ class RecordingService {
     final dstMeta = _localMedia.recordingMetaFile(projectId, newRecordingId);
 
     if (await srcMeta.exists()) {
-      final meta = await _readMeta(srcMeta, sourceRecordingId);
+      final meta = await _readJson(srcMeta, sourceRecordingId);
       meta['name'] = newName;
       await _atomicWriteJson(dstMeta, meta);
     }
@@ -257,11 +291,13 @@ class RecordingService {
   // Helpers
   // =========================
 
-  Future<Map<String, dynamic>> _readMeta(File metaFile, String recordingId) async {
-    final raw = await metaFile.readAsString();
+  Future<Map<String, dynamic>> _readJson(File file, String recordingId) async {
+    final raw = await file.readAsString();
     final decoded = jsonDecode(raw);
     if (decoded is! Map<String, dynamic>) {
-      throw FormatException('Meta is not a JSON object for recordingId=$recordingId');
+      throw FormatException(
+        'File is not a JSON object for recordingId=$recordingId',
+      );
     }
     return decoded;
   }
