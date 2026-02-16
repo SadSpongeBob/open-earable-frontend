@@ -22,10 +22,7 @@ class VideoCard extends StatelessWidget {
           aspectRatio: controller.value.aspectRatio,
           child: Stack(
             children: [
-              // Video als Hintergrund
               VideoPlayer(controller),
-
-              // Sensor-Chart über der Fortschrittsleiste
               Positioned(
                 left: 0,
                 right: 0,
