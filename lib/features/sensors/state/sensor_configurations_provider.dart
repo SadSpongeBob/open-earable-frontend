@@ -18,6 +18,8 @@ class SensorConfigurationProvider with ChangeNotifier {
   }) : _sensorConfigurationManager = sensorConfigurationManager {
     _sensorConfigurationSubscription =
         _sensorConfigurationManager.sensorConfigurationStream.listen((event) {
+      if (!hasListeners) return;
+
       for (final e in event.entries) {
         final sensorConfiguration = e.key;
         final sensorConfigurationValue = e.value;
