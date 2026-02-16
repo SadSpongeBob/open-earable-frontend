@@ -36,6 +36,7 @@ final homeControllerProvider = Provider<HomeController>((ref) {
     homeState: homeState,
     authState: authState,
     toast: toast,
+    ref: ref
   );
 });
 
@@ -47,17 +48,17 @@ class HomeController {
     required HomeStateNotifier homeState,
     required AuthState authState,
     required ToastSink toast,
+    required this.ref,
   })  : _projectService = projectService,
         _recordingService = recordingService,
         _state = homeState,
-        _authState = authState,
         _toast = toast;
 
   final ProjectService _projectService;
   final RecordingService _recordingService;
   final HomeStateNotifier _state;
-  final AuthState _authState;
   final ToastSink _toast;
+  final Ref ref;
 
   HomeState get state => _state.current;
 
@@ -101,7 +102,8 @@ class HomeController {
   }
 
   List<ProjectMetadata> _withDefault(List<ProjectMetadata> projects) {
-    final ProjectMetadata defaultItem = _authState.isGuest
+    final authState = ref.read(sessionProvider);
+    final ProjectMetadata defaultItem = authState.isGuest
         ? ProjectMetadata.local(LocalMedia.defaultProjectId, 'Default')
         : ProjectMetadata.cloud(LocalMedia.defaultProjectId, 'Default');
 
@@ -130,12 +132,13 @@ class HomeController {
   Future<void> loadProjects() async {
     if (state.areProjectsLoaded) return;
 
+    final authState = ref.read(sessionProvider);
     _state.setLoading(true);
     try {
       final localProjects = await _projectService.getLocalProjects();
 
       final List<ProjectMetadata> merged;
-      if (!_authState.isGuest) {
+      if (!authState.isGuest) {
         final remoteProjects = await _projectService.getProjects();
         merged = _mergeProjects(localProjects, remoteProjects);
       } else {
@@ -228,10 +231,11 @@ class HomeController {
       return;
     }
 
+    final authState = ref.read(sessionProvider);
     _state.setLoading(true);
     try {
       final ProjectMetadata created;
-      if (_authState.isGuest) {
+      if (authState.isGuest) {
         created = await _projectService.createLocalProject(name: trimmed);
       } else {
         created = (await _projectService.createProject(trimmed)).toMetadata();
