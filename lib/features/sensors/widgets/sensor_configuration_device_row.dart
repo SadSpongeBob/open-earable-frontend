@@ -136,8 +136,7 @@ class _SensorConfigurationDeviceRowState
       return ListTile(
         title: Text(key),
         onTap: () async {
-          final config =
-              await storage.loadConfiguration(key);
+          final config = await storage.loadConfiguration(key);
           if (!mounted) return;
 
           final result = await ref.read(

@@ -15,6 +15,7 @@ import 'package:openearable/app/widgets/devices_popup.dart';
 import 'package:openearable/features/home/widgets/delete_confirm_dialog.dart';
 
 import '../../../api/models/project/project_metadata.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
 import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
@@ -97,6 +98,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final controller = ref.read(homeControllerProvider);
     final session = ref.watch(sessionProvider);
+    final chartProvider = ref.watch(recordingChartProvider);
 
     final selectedProjectCount = selectedProjectIds.length;
 
@@ -349,6 +351,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   onSettings: () => context.go(Routes.settings),
                   onWaveSound: () =>
                       context.go('${Routes.sensordata}?source=home'),
+                  onWaveSoundLongPress: () {
+                    ref.read(recordingChartProvider).toggleOverlayVisibility();
+                  },
+                  isWaveSoundActive: chartProvider.shouldShowOverlay,
                   onShutter: () => ref
                       .read(homeControllerProvider)
                       .handleGoToRecordingTap(
