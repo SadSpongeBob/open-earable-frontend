@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/local_media.dart';
+import 'package:openearable/app/utils/helpers.dart';
 
 class SensorsRecordingController extends ChangeNotifier {
   bool isRecording = false;
@@ -44,7 +44,7 @@ class SensorsRecordingController extends ChangeNotifier {
 
   /// Call when video stops
   Future<void> stopRecording({
-    required int videoStartEpochMs,
+    required DateTime videoStart,
     required String recordingId,
     required String projectId,
     required WidgetRef ref,
@@ -72,26 +72,25 @@ class SensorsRecordingController extends ChangeNotifier {
         sensorsMap[sensorId]!.add(valueMap);
       }
     }
+    final int startEpoch = videoStart.millisecondsSinceEpoch;
     for (final entry in sensorsMap.entries) {
       final sensorName = entry.key;
       final dataList = entry.value;
-
+      final generatedSensorId = Helpers.getSensorDataId();
       final jsonMap = {
-        "name": sensorName,
-        "startEpochMs": videoStartEpochMs,
+        "sourceName": sensorName,
+        "startEpochMs": startEpoch,
         "data": dataList,
       };
 
       final file = media.reccordingSensors(
         projectId,
         recordingId,
-        "$sensorName.json",
+        generatedSensorId,
       );
       await file.writeAsString(
         const JsonEncoder.withIndent("  ").convert(jsonMap),
       );
-
     }
-
   }
 }

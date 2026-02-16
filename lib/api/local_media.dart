@@ -7,6 +7,7 @@ class LocalMedia {
   static const videoName = 'video.mp4';
   static const thumbName = 'thumbnail.jpeg';
   static const metaName = 'meta.json';
+  static const sensorDataName = 'sensors.json';
   static const defaultProjectId = 'default';
 
   final Directory baseDir;
@@ -35,7 +36,7 @@ class LocalMedia {
   File recordingMetaFile(String projectId, String recordingId) =>
       File(p.join(baseDir.path, projectId, recordingId, metaName));
   File reccordingSensors(String projectId, String recordingId, String sensorId) =>
-      File(p.join(baseDir.path, projectId, recordingId, sensorId));
+      File(p.join(baseDir.path, projectId, recordingId, sensorId, sensorDataName));
 
   Directory recordingExportDir(String recordingId) =>
       Directory(p.join(exportDir.path, recordingId));

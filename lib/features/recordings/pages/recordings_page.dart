@@ -13,7 +13,7 @@ import 'package:openearable/app/widgets/devices_popup.dart';
 import '../../../app/routing/routes.dart';
 import '../../home/state/home_provider.dart';
 import '../controllers/recording_controller.dart';
-import '../controllers/sensors_recording_controller.dart';
+import 'package:openearable/features/recordings/controllers/sensors_recording_controller.dart';
 import '../widgets/left_bar.dart';
 
 class RecordingPage extends ConsumerStatefulWidget {
@@ -46,7 +46,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
 
   final GlobalKey bluetoothKey = GlobalKey();
 
-  int? _videoStartEpochMs;
+  DateTime? _videoStartEpoch;
 
   @override
   void initState() {
@@ -82,7 +82,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
           if (hasSensors) {
             try {
               await _sensorsController.stopRecording(
-                videoStartEpochMs: _videoStartEpochMs!,
+                videoStart: _videoStartEpoch!,
                 recordingId: recording.id,
                 projectId: ref.read(homeStateProvider).openProjectId,
                 ref: ref,
@@ -101,7 +101,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
           );
         }
       } else {
-        _videoStartEpochMs = DateTime.now().millisecondsSinceEpoch;
+        _videoStartEpoch = DateTime.now();
         if (hasSensors) {
           await _sensorsController.startRecording();
           wearablesNotifier.attachSensorsRecordingController(
