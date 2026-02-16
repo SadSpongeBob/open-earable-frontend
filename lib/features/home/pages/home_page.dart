@@ -144,6 +144,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final selectionEnabled = isRecordingSelectionMode && !_isChoosingMoveTarget;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Row(
         children: [
           // PROJECTS BAR
@@ -208,10 +209,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                             (p) => p.id == projectId,
                           );
 
-                          showDialog<String>(
-                            context: context,
-                            builder: (_) =>
-                                RenameProjectDialog(initialName: project.name),
+                          RenameProjectDialog.show(
+                            context,
+                            initialName: project.name,
                           ).then((newName) {
                             if (newName != null && newName.trim().isNotEmpty) {
                               controller.renameProject(projectId, newName);

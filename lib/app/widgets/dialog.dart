@@ -10,7 +10,18 @@ Future<T?> showAppDialog<T>(
   return showDialog<T>(
     context: context,
     barrierDismissible: barrierDismissible,
-    builder: (_) => dialog,
+    builder: (ctx) {
+      final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+
+      return AnimatedPadding(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Center(
+          child: Material(color: Colors.transparent, child: dialog),
+        ),
+      );
+    },
   );
 }
 
