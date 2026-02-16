@@ -75,7 +75,7 @@ class SensorRepository {
       final base = samples.first.timestampMs;
       final normalized = samples
           .map((s) => SensorSample(
-        timestampMs: s.timestampMs - base,
+        timestampMs: s.timestampMs - base-700, // 50ms vor dem ersten Sample starten
         x: s.x,
         y: s.y,
         z: s.z,

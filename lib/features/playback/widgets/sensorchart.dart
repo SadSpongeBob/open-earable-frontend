@@ -48,7 +48,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
   @override
   Widget build(BuildContext context) {
     final end = _currentMs;
-    final start = (end - 8000).clamp(0, end); // 3 Sekunden Fenster
+    final start = (end - 7000).clamp(0, end); // 3 Sekunden Fenster
 
     // Sensorwerte nur für den aktuellen Fensterbereich
     final window = widget.samples
