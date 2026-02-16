@@ -4,7 +4,7 @@ class SensorRepository {
   static Future<List<SensorSample>> loadFromFile(String sensortype) async {
     try {
       final filePath =
-          "/data/user/0/com.openearable.openearable/app_flutter/OpenEarable/prj_69925de7611f964e58272fbd/rcd_1f10adb4-e318-65e0-88fa-7f7cf2f097a6/Gyroscope.json";
+          "/data/user/0/com.openearable.openearable/app_flutter/OpenEarable/prj_69925de7611f964e58272fbd/rcd_1f10b5a6-fd1f-6930-9903-fd7cc8487d2c/Accelerometer.json";
       final file = File(filePath);
       final jsonString = await file.readAsString();
       final decoded = jsonDecode(jsonString);

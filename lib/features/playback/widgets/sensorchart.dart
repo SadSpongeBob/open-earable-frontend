@@ -61,7 +61,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
     return Column(
       children: [
         SizedBox(
-          height: 150,
+          height: 200,
           child: Stack(
             children: [
               Container(
