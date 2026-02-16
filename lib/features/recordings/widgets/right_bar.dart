@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/widgets/bluetooth_button.dart';
 import 'package:openearable/app/widgets/image_button.dart';
 
@@ -40,11 +41,11 @@ class HomeRecordingRightBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 100,
-      color: Colors.white,
+      color: AppColors.fifty,
       padding: padding,
       child: Column(
         children: [
-          Btn(
+          _Btn(
             asset: 'assets/buttons/settings_button.png',
             size: 70,
             onTap: onSettings,
@@ -55,19 +56,19 @@ class HomeRecordingRightBar extends StatelessWidget {
           Column(
             children: [
               ImageButton(
-                image: 'assets/buttons/wave_sound.png', 
-                activeImage: 'assets/buttons/wave_sound_on.png', 
+                image: 'assets/buttons/wave_sound.png',
+                activeImage: 'assets/buttons/wave_sound_on.png',
                 onPressed: onWaveSound,
                 onLongPress: onWaveSoundLongPress,
                 isActive: isWaveSoundActive,
-                width: 52, 
-                height: 52, 
+                width: 52,
+                height: 52,
                 semanticLabel: isWaveSoundActive
                     ? 'Hide sensor chart overlay'
                     : 'Show sensor chart overlay',
                 ),
 
-              Btn(
+              _Btn(
                 asset: isRecording
                     ? 'assets/buttons/shutter_on.png'
                     : 'assets/buttons/shutter.png',
@@ -78,7 +79,7 @@ class HomeRecordingRightBar extends StatelessWidget {
               ),
 
               if (showFlipButton)
-                Btn(
+                _Btn(
                   asset: isRecording
                       ? (isPaused
                           ? 'assets/buttons/pause_true.png'
@@ -102,9 +103,8 @@ class HomeRecordingRightBar extends StatelessWidget {
   }
 }
 
-class Btn extends StatelessWidget {
-  const Btn({
-    super.key,
+class _Btn extends StatelessWidget {
+  const _Btn({
     required this.asset,
     required this.onTap,
     required this.semanticLabel,

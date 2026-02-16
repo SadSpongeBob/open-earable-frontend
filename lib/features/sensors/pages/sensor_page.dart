@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/sensors/widgets/sensor_configuration_view.dart';
 import 'package:openearable/app/ui/device/devices_popup_controller.dart';
 import 'package:openearable/app/widgets/devices_popup.dart';
@@ -11,10 +12,7 @@ import '../../../app/routing/routes.dart';
 class SensorPage extends StatefulWidget {
   final bool isRecordingSource;
 
-  const SensorPage({
-    super.key,
-    this.isRecordingSource = false,
-  });
+  const SensorPage({super.key, this.isRecordingSource = false});
 
   @override
   State<SensorPage> createState() => _SensorPageState();
@@ -43,38 +41,36 @@ class _SensorPageState extends State<SensorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Color(0xFFE6E6E6),
-        body: Row(
-          children: [
-            // LEFT SIDE MENU (Configuration Panel)
-            Container(
-              width: 280,
-              padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Color(0xFFF2F2F2),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0xFF8F8F8F),
-                    blurRadius: 30,
-                    offset: Offset(-3, 0),
-                  )
-                ],
-              ),
+    return Scaffold(
+      body: Row(
+        children: [
+          // LEFT SIDE MENU (Configuration Panel)
+          Container(
+            width: 280,
+            padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
+            decoration: BoxDecoration(
+              color: AppColors.fifty,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.twoHundred,
+                  blurRadius: 30,
+                  offset: const Offset(-3, 0),
+                ),
+              ],
+            ),
+            child: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(
                     child: BluetoothButton(
-                      buttonKey: _sensorBluetoothKey, 
+                      buttonKey: _sensorBluetoothKey,
                       onPressed: _onBluetoothPressed,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Expanded(
-                    child: SensorConfigurationView(),
-                  ),
+                  Expanded(child: SensorConfigurationView()),
+                  const SizedBox(height: 10),
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
@@ -107,12 +103,18 @@ class _SensorPageState extends State<SensorPage> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.arrow_back_ios_new_rounded, size: 17),
-                                  const Text(" Go Back", style: GlobalTextStyles.footnoteMedium),
+                                  Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    size: 17,
+                                  ),
+                                  const Text(
+                                    " Go Back",
+                                    style: AppTextStyles.footerMedium,
+                                  ),
                                 ],
                               ),
                             ],
-                          )
+                          ),
                         ),
                       ),
                     ),
@@ -120,28 +122,31 @@ class _SensorPageState extends State<SensorPage> {
                 ],
               ),
             ),
+          ),
 
-            // RIGHT SIDE CONTENT (Charts)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 40),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Sensors",
-                      style: GlobalTextStyles.titleBold,
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: SensorValues(),
-                    ),
-                  ],
+          // RIGHT SIDE CONTENT (Charts)
+          Expanded(
+            child: Scaffold(
+              backgroundColor: AppColors.hundred,
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 40,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text("Sensors", style: AppTextStyles.titleBold),
+                      const SizedBox(height: 10),
+                      Expanded(child: SensorValues()),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

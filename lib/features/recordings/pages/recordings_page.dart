@@ -30,11 +30,12 @@ class RecordingPage extends ConsumerStatefulWidget {
   ConsumerState<RecordingPage> createState() => _RecordingPageState();
 }
 
-final sensorsRecordingProvider = ChangeNotifierProvider<SensorsRecordingController>((ref) {
-  final controller = SensorsRecordingController();
-  ref.keepAlive(); // prevents automatic disposal
-  return controller;
-});
+final sensorsRecordingProvider =
+    ChangeNotifierProvider<SensorsRecordingController>((ref) {
+      final controller = SensorsRecordingController();
+      ref.keepAlive(); // prevents automatic disposal
+      return controller;
+    });
 
 class _RecordingPageState extends ConsumerState<RecordingPage> {
   late final RecordingController _controller;
@@ -77,15 +78,14 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
           ref.read(homeStateProvider).openProjectId,
         );
 
-
-
         if (recording != null && mounted) {
           if (hasSensors) {
             try {
               await _sensorsController.stopRecording(
                 videoStartEpochMs: _videoStartEpochMs!,
-                  recordingId : recording.id, projectId: ref.read(homeStateProvider).openProjectId, ref: ref
-
+                recordingId: recording.id,
+                projectId: ref.read(homeStateProvider).openProjectId,
+                ref: ref,
               );
             } catch (e) {
               debugPrint("Sensor stop failed: $e");
@@ -105,7 +105,9 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
         await _controller.startRecording();
         if (hasSensors) {
           _sensorsController.startRecording();
-          wearablesNotifier.attachSensorsRecordingController(_sensorsController);
+          wearablesNotifier.attachSensorsRecordingController(
+            _sensorsController,
+          );
         }
       }
     } finally {
@@ -145,7 +147,6 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
   }
 
   Widget _buildCameraPreview() {
-
     if (!_controller.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -163,67 +164,67 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final chartProvider = ref.watch(recordingChartProvider);
 
-  return ListenableBuilder(
+    return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) {
-    return SafeArea(
-      child: Row(
-        children: [
-          RecordingLeftBar(onBackToProjects: _navigateToHome),
-      Expanded(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Stack(
-              children: [
-                SizedBox(
-                  width: constraints.maxWidth,
-                  height: constraints.maxHeight,
-                  child: _buildCameraPreview(),
+        return SafeArea(
+          child: Row(
+            children: [
+              RecordingLeftBar(onBackToProjects: _navigateToHome),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Stack(
+                      children: [
+                        SizedBox(
+                          width: constraints.maxWidth,
+                          height: constraints.maxHeight,
+                          child: _buildCameraPreview(),
+                        ),
+                        const VideoSensorOverlay(),
+                      ],
+                    );
+                  },
                 ),
-                const VideoSensorOverlay(),
-              ],
-            );
-          },
-        ),
-      ),
+              ),
 
-          HomeRecordingRightBar(
-            onSettings: () {
-              if (!_controller.isRecording) {
-                context.go(Routes.settings);
-              }
-            },
-            onWaveSound: () => context.go('${Routes.sensordata}?source=recording'),
-            onWaveSoundLongPress: () {
-              ref.read(recordingChartProvider).toggleOverlayVisibility();
-            },
-            isWaveSoundActive: chartProvider.shouldShowOverlay,
-            onShutter: _onShutterPressed,
-            onFlipCamera: _onFlipOrPausePressed,
-            onBluetooth: () {
-              _popupController.toggle(
-                context: context,
-                positionedPopup: const Positioned(
-                  bottom: 30,
-                  right: 165,
-                  child: DevicesPopup(),
-                ),
-              );
-            },
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            isRecording: _controller.isRecording,
-            isPaused: _controller.isPaused,
-            bluetoothKey: bluetoothKey,
+              HomeRecordingRightBar(
+                onSettings: () {
+                  if (!_controller.isRecording) {
+                    context.go(Routes.settings);
+                  }
+                },
+                onWaveSound: () =>
+                    context.go('${Routes.sensordata}?source=recording'),
+                onWaveSoundLongPress: () {
+                  ref.read(recordingChartProvider).toggleOverlayVisibility();
+                },
+                isWaveSoundActive: chartProvider.shouldShowOverlay,
+                onShutter: _onShutterPressed,
+                onFlipCamera: _onFlipOrPausePressed,
+                onBluetooth: () {
+                  _popupController.toggle(
+                    context: context,
+                    positionedPopup: const Positioned(
+                      bottom: 30,
+                      right: 165,
+                      child: DevicesPopup(),
+                    ),
+                  );
+                },
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                isRecording: _controller.isRecording,
+                isPaused: _controller.isPaused,
+                bluetoothKey: bluetoothKey,
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
       },
-  );
+    );
   }
 }

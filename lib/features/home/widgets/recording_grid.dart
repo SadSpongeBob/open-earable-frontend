@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 class RecordingGrid extends StatelessWidget {
   const RecordingGrid({
@@ -81,49 +83,43 @@ class _RecordingTile extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(10),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Container(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey.shade600),
+                          border: Border.all(color: AppColors.sixHundred),
                           image: DecorationImage(
                             image: thumbnail,
                             fit: BoxFit.cover,
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
-            if (showSelectionCircle)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: _SelectionCircle(isChecked: isChecked),
+                      if (showSelectionCircle)
+                        _SelectionCircle(isChecked: isChecked),
+                    ],
+                  ),
+                ),
               ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.footerBold,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -142,12 +138,12 @@ class _SelectionCircle extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(width: 2, color: Colors.grey.shade700),
-        color: isChecked ? (Colors.grey.shade700) : Colors.transparent,
+        border: Border.all(width: 2, color: AppColors.sevenHundred),
+        color: isChecked ? (AppColors.sevenHundred) : Colors.transparent,
       ),
       child: isChecked
           ? const Center(
-              child: Icon(Icons.check, size: 30, color: Colors.white),
+              child: Icon(Icons.check, size: 30, color: AppColors.fifty),
             )
           : null,
     );

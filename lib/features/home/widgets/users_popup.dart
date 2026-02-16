@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:openearable/features/auth/widgets/auth_button.dart';
-import 'package:openearable/features/home/widgets/home_text_field.dart';
+import 'package:openearable/app/widgets/app_button.dart';
+import 'package:openearable/app/widgets/pill_menu.dart';
+import 'package:openearable/app/widgets/input_box.dart';
 
 import '../../../api/models/project/project_role.dart';
 import '../../../api/models/project/project_user.dart';
@@ -13,58 +13,13 @@ import '../controllers/home_controller.dart';
 import '../state/home_state.dart';
 import '../state/home_provider.dart';
 
-enum RoleChoice { viewer, editor }
+enum RoleChoice { editor, viewer }
 
 extension _RoleChoiceX on RoleChoice {
   String get label => this == RoleChoice.editor ? 'Editor' : 'Viewer';
 
-  ProjectRole toProjectRole() =>
-      this == RoleChoice.editor ? Editor(userId: '') : Viewer(userId: '');
-}
-
-class RoleDropdownPill extends StatelessWidget {
-  const RoleDropdownPill({
-    super.key,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final RoleChoice value;
-  final ValueChanged<RoleChoice> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 140,
-      height: 55,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(36),
-          border: Border.all(width: 3, color: AppColors.fieldBorder),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<RoleChoice>(
-            value: value,
-            isExpanded: true,
-            icon: const Icon(Icons.arrow_drop_down),
-            style: AuthTextStyles.fieldInput,
-            items: RoleChoice.values
-                .map(
-                  (r) => DropdownMenuItem<RoleChoice>(
-                value: r,
-                child: Text(r.label),
-              ),
-            )
-                .toList(),
-            onChanged: (v) {
-              if (v != null) onChanged(v);
-            },
-          ),
-        ),
-      ),
-    );
-  }
+  ProjectRoleType toRoleType() =>
+      this == RoleChoice.editor ? ProjectRoleType.editor : ProjectRoleType.viewer;
 }
 
 class UsersPopup extends ConsumerStatefulWidget {
@@ -96,9 +51,9 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
       final myUserId = session.user?.userId;
       if (myUserId == null) return;
 
-      await ref.read(homeControllerProvider).loadUsersForOpenProject(
-        myUserId: myUserId,
-      );
+      await ref
+          .read(homeControllerProvider)
+          .loadUsersForOpenProject(myUserId: myUserId);
     });
   }
 
@@ -121,9 +76,8 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
 
     final users = state.projectUsers;
     final canAdd = _canAdd(state.isUsersLoading);
-
-    // You can decide policy here:
-    final canManage = myUserId != null && controller.canManageUsers(myUserId: myUserId);
+    final canManage = myUserId != null &&
+        users.any((u) => u.userId == myUserId && u.role is Owner);
 
     return Dialog(
       insetPadding: const EdgeInsets.all(18),
@@ -133,7 +87,7 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
         height: 700,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.fifty,
             borderRadius: BorderRadius.circular(24),
           ),
           child: Padding(
@@ -141,68 +95,77 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
             child: Column(
               children: [
                 const SizedBox(height: 6),
-                const Text('Users', style: GlobalTextStyles.cardTitle),
+                const Text('Users', style: AppTextStyles.headerBold),
                 const SizedBox(height: 18),
 
-                // input row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 330,
-                      height: 55,
-                      child: HomeTextField(
-                        controller: _emailController,
-                        hint: 'User Email',
-                        keyboardType: TextInputType.emailAddress,
+                if (canManage) ...[
+                  // input row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 330,
+                        height: 55,
+                        child: InputBox(
+                          controller: _emailController,
+                          hint: 'User Email',
+                          keyboardType: TextInputType.emailAddress,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    RoleDropdownPill(
-                      value: _role,
-                      onChanged: (v) => setState(() => _role = v),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 150,
+                        height: 55,
+                        child: PillMenu<RoleChoice>(
+                          value: _role,
+                          options: RoleChoice.values,
+                          labelOf: (r) => r.label,
+                          onChanged: (v) => setState(() => _role = v),
+                        ),
+                      ),
+                    ],
+                  ),
 
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
 
-                // add button
-                SizedBox(
-                  width: 490,
-                  height: 55,
-                  child: Opacity(
-                    opacity: canAdd ? 1.0 : 0.45,
-                    child: IgnorePointer(
-                      ignoring: !canAdd,
-                      child: AuthButton(
-                        text: 'Add',
-                        onTap: () async {
-                          if (myUserId == null) return;
+                  // add button
+                  SizedBox(
+                    width: 490,
+                    height: 55,
+                    child: Opacity(
+                      opacity: canAdd ? 1.0 : 0.45,
+                      child: IgnorePointer(
+                        ignoring: !canAdd,
+                        child: AppButton.primary(
+                          text: 'Add',
+                          onPressed: () async {
+                            await controller.addUserToOpenProject(
+                              myUserId: myUserId,
+                              emailAddress: _emailController.text,
+                              role: _role.toRoleType(),
+                            );
 
-                          await controller.addUserToOpenProject(
-                            myUserId: myUserId,
-                            emailAddress: _emailController.text,
-                            role: _role.toProjectRole(),
-                          );
-
-                          _emailController.clear();
-                          setState(() => _role = RoleChoice.viewer);
-                        },
+                            _emailController.clear();
+                            setState(() => _role = RoleChoice.viewer);
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
+                ],
 
                 // list
                 Expanded(
                   child: Container(
                     decoration: const BoxDecoration(
                       border: Border(
-                        top: BorderSide(color: Colors.black12, width: 2),
-                        bottom: BorderSide(color: Colors.black12, width: 2),
+                        top: BorderSide(color: AppColors.fourHundred, width: 2),
+                        bottom: BorderSide(
+                          color: AppColors.fourHundred,
+                          width: 2,
+                        ),
                       ),
                     ),
                     child: Padding(
@@ -210,17 +173,17 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                       child: state.isUsersLoading
                           ? const Center(child: CircularProgressIndicator())
                           : _UsersList(
-                        users: users,
-                        myUserId: myUserId,
-                        canManage: canManage,
-                        onRemove: (userId) async {
-                          if (myUserId == null) return;
-                          await controller.removeUserFromOpenProject(
-                            myUserId: myUserId,
-                            userId: userId,
-                          );
-                        },
-                      ),
+                              users: users,
+                              myUserId: myUserId,
+                              canManage: canManage,
+                              onRemove: (userId) async {
+                                if (myUserId == null) return;
+                                await controller.removeUserFromOpenProject(
+                                  myUserId: myUserId,
+                                  userId: userId,
+                                );
+                              },
+                            ),
                     ),
                   ),
                 ),
@@ -228,16 +191,9 @@ class _UsersPopupState extends ConsumerState<UsersPopup> {
                 const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
-                  child: TextButton(
+                  child: AppButton.ghost(
+                    text: 'Go Back',
                     onPressed: () => Navigator.of(context).pop(),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      textStyle: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    child: const Text('‹ Go Back'),
                   ),
                 ),
               ],
@@ -268,7 +224,7 @@ class _UsersList extends StatelessWidget {
       return const Center(
         child: Text(
           'No users in this project yet',
-          style: TextStyle(color: Colors.black54),
+          style: AppTextStyles.footerMedium,
         ),
       );
     }
@@ -302,7 +258,6 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Adjust this field name if your model uses a different one:
     final isMe = myUserId != null && user.userId == myUserId;
 
     final showRemove = canManage && !isMe;
@@ -314,17 +269,16 @@ class _UserCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
-          color: Colors.white,
+          color: AppColors.fifty,
         ),
         child: Row(
           children: [
             CircleAvatar(
+              backgroundColor: AppColors.fifty,
               radius: 26,
-              backgroundImage:
-              user.pictureUrl == null ? null : NetworkImage(user.pictureUrl!),
               child: user.pictureUrl == null
-                  ? const Icon(Icons.person, size: 28)
-                  : null,
+                  ? const Icon(Icons.person, size: 40, color: AppColors.primary)
+                  : Image.network(user.pictureUrl!, width: 40, height: 40),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -337,7 +291,7 @@ class _UserCard extends StatelessWidget {
                         child: Text(
                           user.name,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
+                          style: AppTextStyles.footerBold,
                         ),
                       ),
                       if (isMe) ...[
@@ -348,15 +302,12 @@ class _UserCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black12,
+                            color: AppColors.twoHundred,
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: const Text(
                             'You',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                            ),
+                            style: AppTextStyles.footerBold,
                           ),
                         ),
                       ],
@@ -365,13 +316,13 @@ class _UserCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     user.emailAddress,
-                    style: const TextStyle(color: Colors.black54),
+                    style: AppTextStyles.footerMedium,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _roleLabel(user.role),
-                    style: const TextStyle(color: Colors.black54),
+                    user.role.label,
+                    style: AppTextStyles.footerMedium,
                   ),
                 ],
               ),
@@ -385,11 +336,5 @@ class _UserCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _roleLabel(ProjectRole role) {
-    if (role is Owner) return 'Owner';
-    if (role is Editor) return 'Editor';
-    return 'Viewer';
   }
 }

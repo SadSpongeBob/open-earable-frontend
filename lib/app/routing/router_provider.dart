@@ -90,7 +90,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               body: Center(
                 child: Text(
                   "Sensor data are missing. Please go back.", 
-                  style: GlobalTextStyles.subHeader,
+                  style: AppTextStyles.subheaderRegular,
                 )
               ),
             );

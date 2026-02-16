@@ -46,7 +46,7 @@ class SensorValues extends ConsumerWidget {
       padding: EdgeInsets.all(10),
       child: charts.isEmpty
         ? Center(
-          child: Text("No sensors available", style: GlobalTextStyles.subHeader),
+          child: Text("No sensors available", style: AppTextStyles.subheaderRegular),
         )
         : ListView(
           children: charts,
@@ -59,7 +59,7 @@ class SensorValues extends ConsumerWidget {
       return Center(
         child: Text(
           "No sensors available",
-          style: GlobalTextStyles.subHeader,
+          style: AppTextStyles.subheaderRegular,
         ),
       );
     }

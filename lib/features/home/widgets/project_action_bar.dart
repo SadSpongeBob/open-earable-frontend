@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 
 class ProjectSelectionActionBar extends StatelessWidget {
   const ProjectSelectionActionBar({
@@ -22,15 +24,17 @@ class ProjectSelectionActionBar extends StatelessWidget {
 
     return Container(
       height: 52,
-      color: Colors.white,
+      color: AppColors.fifty,
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Row(
         children: [
           TextButton(
             onPressed: selectedCount == 0 ? null : onDelete,
-            child: const Text(
+            child: Text(
               'Delete',
-              style: TextStyle(color: Colors.red, fontSize: 16),
+              style: AppTextStyles.footerBold.copyWith(
+                color: AppColors.primary,
+              ),
             ),
           ),
 
@@ -40,7 +44,7 @@ class ProjectSelectionActionBar extends StatelessWidget {
             onPressed: selectedCount == 0 ? null : onDuplicate,
             child: const Text(
               'Duplicate',
-              style: TextStyle(color: Colors.black, fontSize: 16),
+              style: AppTextStyles.footerMedium,
             ),
           ),
 
@@ -50,7 +54,7 @@ class ProjectSelectionActionBar extends StatelessWidget {
               onPressed: onRename,
               child: const Text(
                 'Rename',
-                style: TextStyle(color: Colors.black, fontSize: 16),
+                style: AppTextStyles.footerMedium,
               ),
             ),
           ],
@@ -61,7 +65,7 @@ class ProjectSelectionActionBar extends StatelessWidget {
             onPressed: onDone,
             child: const Text(
               'Done',
-              style: TextStyle(color: Colors.black, fontSize: 16),
+              style: AppTextStyles.footerMedium,
             ),
           ),
         ],

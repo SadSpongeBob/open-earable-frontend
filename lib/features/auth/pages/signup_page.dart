@@ -3,15 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
 import 'package:openearable/app/routing/routes.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/app/utils/validators.dart';
 import '../../../app/theme/text_styles.dart';
-import '../widgets/auth_button.dart';
-import '../widgets/auth_card.dart';
+import '../../../app/widgets/user_card.dart';
 import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_seperator.dart';
-import '../widgets/text_field.dart';
+import '../../../app/widgets/input_box.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
@@ -60,9 +60,9 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     ref.listen<AuthState>(sessionProvider, (prev, next) {
       final msg = next.error;
       if (msg != null && msg.isNotEmpty && msg != prev?.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     });
 
@@ -74,95 +74,102 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: AuthCard(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/images/app_logo.png', width: 90, height: 110),
-                const SizedBox(height: 20),
+        child: SafeArea(
+          child: UserCard(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/app_logo.png',
+                    width: 90,
+                    height: 110,
+                  ),
+                  const SizedBox(height: 20),
 
-                const Text(
-                  "Create your account",
-                  textAlign: TextAlign.center,
-                  style: AuthTextStyles.title,
-                ),
+                  const Text(
+                    "Create your account",
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.titleBold,
+                  ),
 
-                const SizedBox(height: 35),
+                  const SizedBox(height: 35),
 
-                AuthTextField(
-                  controller: _namecontroller,
-                  hint: "Name",
-                  validator: Validators.name,
-                  keyboardType: TextInputType.name,
-                ),
+                  InputBox(
+                    controller: _namecontroller,
+                    hint: "Name",
+                    validator: Validators.name,
+                    keyboardType: TextInputType.name,
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                AuthTextField(
-                  controller: _emailController,
-                  hint: "Email Address",
-                  validator: Validators.email,
-                  keyboardType: TextInputType.emailAddress,
-                ),
+                  InputBox(
+                    controller: _emailController,
+                    hint: "Email Address",
+                    validator: Validators.email,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                AuthTextField(
-                  controller: _pwController,
-                  hint: "Password",
-                  validator: Validators.password,
-                  obscureText: !_showPassword,
-                  suffixIcon: Transform.translate(
-                    offset: const Offset(-20, 0),
-                    child: IconButton(
-                      icon: Icon(
-                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                  InputBox(
+                    controller: _pwController,
+                    hint: "Password",
+                    validator: Validators.password,
+                    obscureText: !_showPassword,
+                    suffixIcon: Transform.translate(
+                      offset: const Offset(-20, 0),
+                      child: IconButton(
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
                       ),
-                      onPressed: () =>
-                          setState(() => _showPassword = !_showPassword),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                AuthButton(
-                  text: "Sign up",
-                  loading: loading,
-                  enabled: _isFormFilled && !loading,
-                  onTap: _handleSignup,
-                ),
+                  AppButton.primary(
+                    text: "Sign Up",
+                    onPressed: _isFormFilled ? _handleSignup : null,
+                    isLoading: loading,
+                  ),
 
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Already have an account? ",
-                      style: AuthTextStyles.body,
-                    ),
-                    GestureDetector(
-                      onTap: () => context.go(Routes.login),
-                      child: Text("Log in", style: AuthTextStyles.link),
-                    ),
-                  ],
-                ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Already have an account? ",
+                        style: AppTextStyles.footerRegular,
+                      ),
+                      GestureDetector(
+                        onTap: () => context.go(Routes.login),
+                        child: Text("Log in", style: AppTextStyles.footerBold),
+                      ),
+                    ],
+                  ),
 
-                const AuthSeparator(),
+                  const AuthSeparator(),
 
-                AuthFooterLink(
-                  text: "Continue as Guest",
-                  bold: true,
-                  onTap: () async {
-                    await ref.read(authControllerProvider).guestLogin();
-                    context.go(Routes.home);
-                  },
-                ),
-              ],
+                  AuthFooterLink(
+                    text: "Continue as Guest",
+                    bold: true,
+                    onTap: () async {
+                      await ref.read(authControllerProvider).guestLogin();
+                      context.go(Routes.home);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -173,10 +180,12 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   Future<void> _handleSignup() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    await ref.read(authControllerProvider).signup(
-      name: _namecontroller.text.trim(),
-      email: _emailController.text.trim(),
-      password: _pwController.text.trim(),
-    );
+    await ref
+        .read(authControllerProvider)
+        .signup(
+          name: _namecontroller.text.trim(),
+          email: _emailController.text.trim(),
+          password: _pwController.text.trim(),
+        );
   }
 }

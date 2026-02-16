@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/features/sensors/state/sensor_configuration_storage.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
 class SaveConfigRow extends ConsumerStatefulWidget {
   final String deviceId;
-  
+
   const SaveConfigRow({super.key, required this.deviceId});
 
   @override
@@ -18,7 +20,9 @@ class _SaveConfigRowState extends ConsumerState<SaveConfigRow> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = ref.watch(sensorConfigurationProviderFamily(widget.deviceId));
+    final provider = ref.watch(
+      sensorConfigurationProviderFamily(widget.deviceId),
+    );
     final storage = ref.read(sensorConfigurationStorageProvider);
 
     return ListenableBuilder(
@@ -39,41 +43,35 @@ class _SaveConfigRowState extends ConsumerState<SaveConfigRow> {
             onTapOutside: (event) => FocusScope.of(context).unfocus(),
             decoration: InputDecoration(
               hintText: 'Save as...',
-              hintStyle: GlobalTextStyles.footnote.copyWith(color: Color(0xFF6F6F6F)),
+              hintStyle: AppTextStyles.footerRegular.copyWith(
+                color: AppColors.sevenHundred,
+              ),
             ),
-            style: GlobalTextStyles.footnote,
+            style: AppTextStyles.footerRegular,
           ),
           trailing: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFF2F2F2),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.fifty),
             onPressed: () async {
               Map<String, String> config = provider.toJson();
 
               if (_configName.isNotEmpty) {
-                await storage.saveConfiguration(
-                  _configName.trim(),
-                  config,
-                );
+                await storage.saveConfiguration(_configName.trim(), config);
               } else {
                 showDialog(
                   context: context,
                   builder: (context) {
                     return AlertDialog(
                       title: Text(
-                        "Configuration Name Required", 
-                        style: GlobalTextStyles.subHeaderMedium,
+                        "Configuration Name Required",
+                        style: AppTextStyles.subheaderMedium,
                       ),
                       content: Text(
                         "Please enter a name for the configuration.",
-                        style: GlobalTextStyles.text,
+                        style: AppTextStyles.textRegular,
                       ),
                       actions: [
-                        TextButton(
-                          child: Text(
-                            "OK", 
-                            style: GlobalTextStyles.subHeader.copyWith(color: Color(0XFF6E6E6E)),
-                          ),
+                        AppButton.ghost(
+                          text: 'Ok',
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
@@ -82,10 +80,7 @@ class _SaveConfigRowState extends ConsumerState<SaveConfigRow> {
                 );
               }
             },
-            child: Text(
-              "Save", 
-              style: GlobalTextStyles.footnote,
-            ),
+            child: Text("Save", style: AppTextStyles.footerRegular),
           ),
         );
       },

@@ -2,25 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/app/constants/colors.dart';
+
+import 'package:openearable/api/local_media.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
-import 'package:openearable/features/home/widgets/project_bar.dart';
+import 'package:openearable/features/home/widgets/project_grid.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
-import 'package:openearable/features/home/widgets/delete_project_dialog.dart';
 import 'package:openearable/app/ui/device/devices_popup_controller.dart';
 import 'package:openearable/app/widgets/devices_popup.dart';
+import 'package:openearable/features/home/widgets/delete_confirm_dialog.dart';
+
+import '../../../api/models/project/project_metadata.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 import '../controllers/home_controller.dart';
+import '../widgets/project_action_bar.dart';
+import '../widgets/recording_action_bar.dart';
 import '../widgets/rename_project_dialog.dart';
 import '../../auth/state/session_provider.dart';
-import '../widgets/project_action_bar.dart';
 import '../widgets/users_button.dart';
 import '../widgets/users_popup.dart';
+import '../widgets/move_recordings_modal.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -32,6 +39,8 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   final DevicesPopupController _popupController = DevicesPopupController();
   final GlobalKey bluetoothKey = GlobalKey();
+  bool _isChoosingMoveTarget = false;
+  Set<String> _recordingIdsToMove = const <String>{};
 
   @override
   void initState() {
@@ -45,6 +54,20 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.dispose();
   }
 
+  void _exitMoveMode() {
+    if (!_isChoosingMoveTarget) return;
+    setState(() {
+      _isChoosingMoveTarget = false;
+      _recordingIdsToMove = const <String>{};
+    });
+  }
+
+  bool _isLocalProject(ProjectMetadata? p, String idFallback) {
+    if (idFallback == LocalMedia.defaultProjectId) return true;
+    if (p == null) return false;
+    return p.projectSource == ProjectSource.local;
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
@@ -53,118 +76,254 @@ class _HomePageState extends ConsumerState<HomePage> {
       ref.read(toastProvider.notifier).state = null;
     });
 
-    final state = ref.watch(homeStateProvider);
+    final projects = ref.watch(homeStateProvider.select((s) => s.projects));
+    final openProjectId = ref.watch(
+      homeStateProvider.select((s) => s.openProjectId),
+    );
+
+    final isProjectSelectionMode = ref.watch(
+      homeStateProvider.select((s) => s.isProjectSelectionMode),
+    );
+    final selectedProjectIds = ref.watch(
+      homeStateProvider.select((s) => s.selectedProjectIds),
+    );
+
+    final recordings = ref.watch(homeStateProvider.select((s) => s.recordings));
+    final isRecordingSelectionMode = ref.watch(
+      homeStateProvider.select((s) => s.isRecordingSelectionMode),
+    );
+    final selectedRecordingIds = ref.watch(
+      homeStateProvider.select((s) => s.selectedRecordingIds),
+    );
+
     final controller = ref.read(homeControllerProvider);
     final session = ref.watch(sessionProvider);
     final chartProvider = ref.watch(recordingChartProvider);
 
-    final selectedCount = state.selectedProjectIds.length;
+    final selectedProjectCount = selectedProjectIds.length;
+
+    final openMeta = projects
+        .where((p) => p.id == openProjectId)
+        .cast<ProjectMetadata?>()
+        .toList()
+        .firstOrNull;
+
+    final isLocalOpenProject = _isLocalProject(openMeta, openProjectId);
 
     final showUsersButton =
-        session.isAuthenticated && state.openProjectId != 'default';
+        session.isAuthenticated &&
+        !isLocalOpenProject &&
+        openProjectId != LocalMedia.defaultProjectId &&
+        !_isChoosingMoveTarget;
+
+    Future<void> handlePickMoveTarget(ProjectMetadata target) async {
+      final targetIsLocal = _isLocalProject(target, target.id);
+      final sourceIsLocal = _isLocalProject(openMeta, openProjectId);
+
+      if (sourceIsLocal != targetIsLocal) {
+        ref.read(toastProvider.notifier).state = const ToastEvent.error(
+          'You can only move local→local or cloud→cloud',
+        );
+        return;
+      }
+
+      if (target.id == openProjectId) {
+        ref.read(toastProvider.notifier).state = const ToastEvent.error(
+          'Choose a different project',
+        );
+        return;
+      }
+
+      final ids = _recordingIdsToMove;
+      _exitMoveMode();
+
+      await controller.moveRecordings(ids, targetProjectId: target.id);
+
+      if (!mounted) return;
+      controller.exitRecordingSelectionMode();
+    }
+
+    final selectionEnabled = isRecordingSelectionMode && !_isChoosingMoveTarget;
 
     return Scaffold(
-      body: SafeArea(
-        child: Row(
-          children: [
-            // PROJECTS BAR
-            SizedBox(
-              width: 500,
+      resizeToAvoidBottomInset: false,
+      body: Row(
+        children: [
+          // PROJECTS BAR
+          SizedBox(
+            width: 500,
+            child: SafeArea(
               child: Stack(
                 children: [
                   Positioned.fill(
                     child: ProjectBar(
-                      projects: state.projects,
-                      openProjectId: state.openProjectId,
-                      isSelectionMode: state.isSelectionMode,
-                      selectedProjectIds: state.selectedProjectIds,
+                      projects: projects,
+                      openProjectId: openProjectId,
+                      isSelectionMode: isProjectSelectionMode,
+                      selectedProjectIds: selectedProjectIds,
                       onAddProject: () async {
                         final name = await AddProjectDialog.show(context);
                         if (name == null) return;
                         await controller.createProject(name);
                       },
-                      onTapProject: (item) =>
-                          controller.handleProjectTap(item.id),
+                      onTapProject: (item) {
+                        if (_isChoosingMoveTarget) {
+                          handlePickMoveTarget(item);
+                        } else {
+                          controller.handleProjectTap(item.id);
+                        }
+                      },
                       onLongPressProject: (item) =>
                           controller.handleProjectLongPress(item.id),
                     ),
                   ),
 
-                  if (state.isSelectionMode)
+                  if (isProjectSelectionMode)
                     Positioned(
                       left: 0,
                       right: 0,
                       bottom: 0,
                       child: ProjectSelectionActionBar(
-                        selectedCount: selectedCount,
+                        selectedCount: selectedProjectCount,
                         onDelete: () {
-                          if (selectedCount == 0) return;
+                          if (selectedProjectCount == 0) return;
 
-                          final projectIds = state.selectedProjectIds;
-                          DeleteProjectDialog.show(
+                          final projectIds = selectedProjectIds;
+                          DeleteConfirmDialog.show(
                             context,
                             onDelete: () async {
                               await controller.deleteProjects(projectIds);
-                              controller.exitSelectionMode();
+                              if (!mounted) return;
+                              controller.exitProjectSelectionMode();
                             },
+                            title:
+                                'Do you really want to \ndelete these projects?',
                           );
                         },
                         onDuplicate: () {
-                          if (selectedCount == 0) return;
-                          controller.duplicateProjects(
-                            state.selectedProjectIds,
-                          );
+                          if (selectedProjectCount == 0) return;
+                          controller.duplicateProjects(selectedProjectIds);
                         },
                         onRename: () {
-                          if (selectedCount != 1) return;
-                          final projectId = state.selectedProjectIds.first;
-                          final project = state.projects.firstWhere(
+                          if (selectedProjectCount != 1) return;
+                          final projectId = selectedProjectIds.first;
+                          final project = projects.firstWhere(
                             (p) => p.id == projectId,
                           );
 
-                          showDialog<String>(
-                            context: context,
-                            builder: (_) =>
-                                RenameProjectDialog(initialName: project.name),
+                          RenameProjectDialog.show(
+                            context,
+                            initialName: project.name,
                           ).then((newName) {
                             if (newName != null && newName.trim().isNotEmpty) {
                               controller.renameProject(projectId, newName);
                             }
                           });
                         },
-                        onDone: controller.exitSelectionMode,
+                        onDone: controller.exitProjectSelectionMode,
                       ),
                     ),
                 ],
               ),
             ),
+          ),
 
-            // RECORDINGS GRID
-            Expanded(
+          // RECORDINGS GRID
+          Expanded(
+            child: SafeArea(
               child: Stack(
                 children: [
                   Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       image: DecorationImage(
                         image: AssetImage('assets/images/background.png'),
                         fit: BoxFit.cover,
                       ),
                     ),
-                    child: RecordingGrid(
-                      recordings: state.videos,
-                      isSelectionMode: false,
-                      selectedRecordingIds: const <String>{},
-                      onTapRecording: (item) async {
-                        if (item.isUploading) return;
-                        context.go(Routes.playback(item.isCloud, item.id));
-                      },
-                      onLongPressRecording: (item) {},
+                    child: RepaintBoundary(
+                      child: RecordingGrid(
+                        recordings: recordings,
+                        isSelectionMode: selectionEnabled,
+                        selectedRecordingIds: selectedRecordingIds,
+                        onTapRecording: (item) {
+                          if (_isChoosingMoveTarget) {
+                            _exitMoveMode();
+                            return;
+                          }
+                          if (item.isUploading) return;
+
+                          if (selectionEnabled) {
+                            controller.handleRecordingTap(item.id);
+                            return;
+                          }
+
+                          context.go(Routes.playback(item.isCloud, item.id));
+                        },
+                        onLongPressRecording: (item) {
+                          if (_isChoosingMoveTarget) return;
+                          controller.handleRecordingLongPress(item.id);
+                        },
+                      ),
                     ),
                   ),
 
+                  if (selectionEnabled)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: RecordingSelectionActionBar(
+                        selectedCount: selectedRecordingIds.length,
+                        onDelete: () {
+                          DeleteConfirmDialog.show(
+                            context,
+                            onDelete: () async {
+                              await controller.deleteRecordings(
+                                selectedRecordingIds,
+                              );
+                              if (!mounted) return;
+                              controller.exitRecordingSelectionMode();
+                            },
+                            title:
+                                'Do you really want to\ndelete these recordings?',
+                          );
+                        },
+                        onDuplicate: () {
+                          controller.duplicateRecordings(selectedRecordingIds);
+                        },
+                        onMove: () {
+                          setState(() {
+                            _isChoosingMoveTarget = true;
+                            _recordingIdsToMove = Set<String>.from(
+                              selectedRecordingIds,
+                            );
+                          });
+                        },
+                        onDone: controller.exitRecordingSelectionMode,
+                      ),
+                    ),
+
+                  // MOVE MODE OVERLAY
+                  if (_isChoosingMoveTarget)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _exitMoveMode,
+                        child: Container(
+                          color: AppColors.nineHundred.withValues(alpha: 0.35),
+                          child: Center(
+                            child: GestureDetector(
+                              onTap: () {},
+                              child: const MoveRecordingsModal(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
                   if (showUsersButton)
                     Positioned(
-                      bottom: 20,
+                      bottom: isRecordingSelectionMode ? 20 + 52 + 10 : 20,
                       right: 24,
                       child: UsersButton(
                         onTap: () {
@@ -179,21 +338,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ],
               ),
             ),
+          ),
 
-            // RIGHT BAR
-            HomeRecordingRightBar(
+          // RIGHT BAR
+          AbsorbPointer(
+            absorbing: _isChoosingMoveTarget,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: _isChoosingMoveTarget ? 0.4 : 1.0,
+              child: SafeArea(
+                child: HomeRecordingRightBar(
                   onSettings: () => context.go(Routes.settings),
-                  onWaveSound: () => context.go('${Routes.sensordata}?source=home'),
+                  onWaveSound: () =>
+                      context.go('${Routes.sensordata}?source=home'),
                   onWaveSoundLongPress: () {
                     ref.read(recordingChartProvider).toggleOverlayVisibility();
                   },
                   isWaveSoundActive: chartProvider.shouldShowOverlay,
-                  onShutter: () => context.go(Routes.recording),
+                  onShutter: () => ref
+                      .read(homeControllerProvider)
+                      .handleGoToRecordingTap(
+                        goToRecording: () => context.go(Routes.recording),
+                      ),
                   onBluetooth: () {
                     _popupController.toggle(
                       context: context,
                       positionedPopup: const Positioned(
-                        bottom: 30,
+                        bottom: 40,
                         right: 165,
                         child: DevicesPopup(),
                       ),
@@ -204,10 +375,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                   isPaused: false,
                   showFlipButton: false,
                   bluetoothKey: bluetoothKey,
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+      backgroundColor: AppColors.fifty,
     );
   }
+}
+
+extension _FirstOrNullX<T> on List<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }

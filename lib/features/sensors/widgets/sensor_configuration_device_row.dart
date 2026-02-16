@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/sensors/state/sensor_configuration_storage.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/features/sensors/widgets/save_config_row.dart';
@@ -46,7 +47,7 @@ class _SensorConfigurationDeviceRowState
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Color(0xFFF2F2F2),
+      color: AppColors.fifty,
       elevation: 4,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -184,9 +185,9 @@ class _SensorConfigurationDeviceRowState
       width: MediaQuery.of(context).size.width,
       child: TabBar.secondary(
         controller: _tabController,
-        labelStyle: GlobalTextStyles.footnoteMedium,
-        unselectedLabelStyle: GlobalTextStyles.footnoteMedium,
-        unselectedLabelColor: Color(0xFF6E6E6E),
+        labelStyle: AppTextStyles.footerMedium,
+        unselectedLabelStyle: AppTextStyles.footerMedium,
+        unselectedLabelColor: AppColors.sixHundred,
         tabs: const [
           Tab(text: 'New'),
           Tab(text: 'Saved'),
