@@ -189,12 +189,12 @@ class _UploadStatusIndicator extends StatelessWidget {
       icon = const SizedBox(
         width: 20,
         height: 20,
-        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
+        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.blue),
       );
     } else if (isUploaded) {
-      icon = const Icon(Icons.check_circle, color: Colors.green, size: 22);
+      icon = const Icon(Icons.check_circle, color: AppColors.green, size: 22);
     } else if (isUploadFailed) {
-      icon = const Icon(Icons.error, color: Colors.red, size: 22);
+      icon = const Icon(Icons.error, color: AppColors.primary, size: 22);
     } else {
       return const SizedBox.shrink();
     }
