@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import '../controllers/sensor_repository.dart';
 
 class SensorChartWidget extends StatefulWidget {
@@ -28,7 +27,6 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
   void initState() {
     super.initState();
 
-    // Standardmäßig alle Achsen aktiv
     _axisEnabled = {
       "X": true,
       "Y": true,
@@ -53,24 +51,12 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
 
   @override
   Widget build(BuildContext context) {
-   // Offset, um Video vor Sensoren zu halten
     final end = _currentMs;
-    final start = (end - 7000).clamp(0, end); // 7 Sekunden Fenster
-
-    debugPrint("⏱ Video-Position: $_currentMs ms, Fenster: $start - $end");
-    debugPrint("🔹 Anzahl Samples insgesamt: ${widget.samples.length}");
-    debugPrint("🔹 Erste Sample: ${widget.samples.isNotEmpty ? widget.samples.first : 'none'}");
-    debugPrint("🔹 Letzte Sample: ${widget.samples.isNotEmpty ? widget.samples.last : 'none'}");
+    final start = (end - 6000).clamp(0, end);
 
     final window = widget.samples
         .where((s) => s.timestampMs >= start && s.timestampMs <= end)
         .toList();
-
-    debugPrint("📊 Anzahl Samples im Fenster: ${window.length}");
-    if (window.isNotEmpty) {
-      debugPrint("📍 Fenster erster Sample: ${window.first}");
-      debugPrint("📍 Fenster letzter Sample: ${window.last}");
-    }
 
     return Column(
       children: [
@@ -96,11 +82,18 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
         Expanded(
           child: Stack(
             children: [
-              // Hintergrund Grid
+              // Semi-transparent Hintergrund
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
               ),
               CustomPaint(
@@ -112,15 +105,18 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
                 ),
                 child: Container(),
               ),
-              // Time axis bottom
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 0,
+                bottom: 4,
                 child: Text(
                   "Time: ${(_currentMs / 1000).toStringAsFixed(2)} s",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
               ),
             ],
@@ -133,13 +129,13 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
   Color _axisColor(String axis) {
     switch (axis.toLowerCase()) {
       case 'x':
-        return Colors.red;
+        return Colors.redAccent.withOpacity(0.9);
       case 'y':
-        return Colors.green;
+        return Colors.greenAccent.withOpacity(0.9);
       case 'z':
-        return Colors.blue;
+        return Colors.blueAccent.withOpacity(0.9);
       default:
-        return Colors.teal;
+        return Colors.tealAccent.withOpacity(0.9);
     }
   }
 }
@@ -161,8 +157,9 @@ class _ChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // Grid
     final paintGrid = Paint()
-      ..color = Colors.grey.withOpacity(0.3)
-      ..strokeWidth = 1;
+      ..color = Colors.grey.withOpacity(0.2)
+      ..strokeWidth = 0.7;
+
     for (int i = 0; i < 5; i++) {
       final y = size.height * i / 4;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paintGrid);
@@ -196,11 +193,10 @@ class _ChartPainter extends CustomPainter {
     double paddedMinV = minV - (maxV - minV) * padding;
     double paddedMaxV = maxV + (maxV - minV) * padding;
 
-    // Zeichne Linien
     void drawLine(double Function(SensorSample) selector, Color color) {
-      final p = Paint()
+      final paintLine = Paint()
         ..color = color
-        ..strokeWidth = 2.5
+        ..strokeWidth = 3
         ..style = PaintingStyle.stroke
         ..isAntiAlias = true;
 
@@ -209,17 +205,21 @@ class _ChartPainter extends CustomPainter {
         final s = samples[i];
         final t = (s.timestampMs - startMs) / (endMs - startMs);
         final x = t * size.width;
-        final y = size.height - ((selector(s) - paddedMinV) / (paddedMaxV - paddedMinV)) * size.height;
+        final y = size.height -
+            ((selector(s) - paddedMinV) / (paddedMaxV - paddedMinV)) *
+                size.height;
 
-        if (i == 0) path.moveTo(x, y);
-        else path.lineTo(x, y);
+        if (i == 0)
+          path.moveTo(x, y);
+        else
+          path.lineTo(x, y);
       }
 
-      canvas.drawPath(path, p);
+      canvas.drawPath(path, paintLine);
     }
 
     if (axisEnabled["X"] == true) drawLine((s) => s.x, Colors.red);
-    if (axisEnabled["Y"] == true) drawLine((s) => s.y, Colors.green);
+    if (axisEnabled["Y"] == true) drawLine((s) => s.y, Colors.black);
     if (axisEnabled["Z"] == true) drawLine((s) => s.z, Colors.blue);
   }
 

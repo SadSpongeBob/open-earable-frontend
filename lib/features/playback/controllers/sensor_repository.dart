@@ -12,7 +12,7 @@ class SensorRepository {
       // Pfad zum OpenEarable Recording
       final dir = await getApplicationDocumentsDirectory();
       final filePath =
-          "/data/user/0/com.openearable.openearable/app_flutter/OpenEarable/prj_69925de7611f964e58272fbd/test/Gyroscope.json";
+          "/data/user/0/com.openearable.openearable/app_flutter/OpenEarable/prj_69925de7611f964e58272fbd/rcd_1f10adb4-e318-65e0-88fa-7f7cf2f097a6/Gyroscope.json";
       final file = File(filePath);
 
       debugPrint("📂 Prüfe Datei: $filePath");
@@ -75,7 +75,7 @@ class SensorRepository {
       final base = samples.first.timestampMs;
       final normalized = samples
           .map((s) => SensorSample(
-        timestampMs: s.timestampMs - base-700, // 50ms vor dem ersten Sample starten
+        timestampMs: s.timestampMs - base-600, // 50ms vor dem ersten Sample starten
         x: s.x,
         y: s.y,
         z: s.z,
