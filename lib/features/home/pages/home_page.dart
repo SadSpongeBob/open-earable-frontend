@@ -127,22 +127,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         !_isChoosingMoveTarget;
 
     Future<void> handlePickMoveTarget(ProjectMetadata target) async {
-      final targetIsLocal = _isLocalProject(target, target.id);
-      final sourceIsLocal = _isLocalProject(openMeta, openProjectId);
-
-      if (sourceIsLocal != targetIsLocal) {
-        ref.read(toastProvider.notifier).state = const ToastEvent.error(
-          'You can only move local→local or cloud→cloud',
-        );
-        return;
-      }
-
-      if (target.id == openProjectId) {
-        ref.read(toastProvider.notifier).state = const ToastEvent.error(
-          'Choose a different project',
-        );
-        return;
-      }
 
       final ids = _recordingIdsToMove;
       _exitMoveMode();
