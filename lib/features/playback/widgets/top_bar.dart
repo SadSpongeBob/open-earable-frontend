@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/recording.dart';
-import 'package:openearable/api/local_media.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
@@ -14,8 +13,6 @@ import 'package:openearable/features/playback/widgets/speed_badge.dart';
 import 'package:video_player/video_player.dart';
 import '../../../app/routing/routes.dart';
 import 'rename_dialog.dart';
-import '../state/sensor_providers.dart';
-import '../controllers/playback_controller.dart' as pc;
 import 'select_sensors_dialog.dart';
 
 class TopBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
@@ -73,6 +70,7 @@ class _TopBarState extends ConsumerState<TopBar> {
     });
 
     final playbackState = ref.watch(playbackProvider(current.id));
+    final availableSensors = ref.watch(playbackProvider(current.id).select((s) => s.availableSensors));
     final playbackNotifier = ref.read(playbackProvider(current.id).notifier);
 
     final controller = ref.read(playbackControllerProvider);
@@ -142,7 +140,8 @@ class _TopBarState extends ConsumerState<TopBar> {
                         icon: const Icon(Icons.arrow_back_ios),
                         onPressed: () async {
                           await widget.vc.pause();
-                          unawaited(controller.stopAndUpload(current));
+                          // fire-and-forget stop/upload (do not await)
+                          controller.stopAndUpload(current);
                           if (context.mounted) context.go(Routes.home);
                         },
                         color: AppColors.primary,
@@ -150,41 +149,23 @@ class _TopBarState extends ConsumerState<TopBar> {
                       ),
                       IconButton(
                         icon: Image.asset(
-                          'assets/buttons/wave_sound_on.png',
+                          playbackState.selectedSensors.isEmpty || !playbackState.showSensorChart
+                              ? 'assets/buttons/wave_sound.png'
+                              : 'assets/buttons/wave_sound_on.png',
                           width: 26,
                           height: 26,
                         ),
                         onPressed: () async {
-                          final controller = ref.read(playbackControllerProvider);
-                          // fetch sensor entries (handles local and cloud)
-                          final entries = await controller.fetchAvailableSensors(current);
-
-                          // if cloud, download all sensors to app dir (so provider can open them)
-                          if (current.isCloud) {
-                            await controller.downloadAllSensorsToAppDir(current);
-                          }
-
-                          // Build label/value pairs (label: name, value: sensorId)
-                          final labels = entries.map((e) => LabelValue(e.name, e.sensorId)).toList();
-
-                          // open dialog and update selection immediately when user changes it
+                          if (!context.mounted) return;
                           final result = await SelectSensorsDialog.show(
                             context,
-                            available: labels,
+                            available: availableSensors,
                             initialSelected: playbackState.selectedSensors,
-                            onChanged: (selected) {
-                              playbackNotifier.setSelectedSensors(selected);
-                            },
+                            onChanged: (selected) => playbackNotifier.setSelectedSensors(selected),
                           );
-
-                          if (result != null && result.isNotEmpty) {
+                          if (result != null) {
                             playbackNotifier.setSelectedSensors(result);
-                            // refresh provider to read downloaded file (app dir)
-                            final selected = result.first;
-                            final projId = current.projectId ?? LocalMedia.defaultProjectId;
-                            final _refreshed = ref.refresh(sensorDataProvider(SensorRequest(projectId: projId, recordingId: current.id, sensorId: selected)));
                           }
-
                         },
                         onLongPress: () => playbackNotifier.toggleShowSensorChart(),
                         splashRadius: 20,

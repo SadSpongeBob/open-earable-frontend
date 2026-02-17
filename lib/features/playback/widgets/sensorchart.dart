@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../controllers/sensor_chart_controller.dart';
-import '../controllers/sensor_repository.dart';
+import '../../../api/services/recording/sensor_repository.dart';
 import '../controllers/chart_data.dart';
 import 'chart_painter.dart';
 

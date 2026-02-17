@@ -1,4 +1,4 @@
-import 'sensor_repository.dart';
+import '../../../api/services/recording/sensor_repository.dart';
 
 class SensorChartController {
   final List<SensorSample> samples;
@@ -23,7 +23,6 @@ class SensorChartController {
         return [];
     }
   }
-
   List<double> smooth(List<double> values, int window) {
     if (values.length <= window) return List.from(values);
     final out = <double>[];

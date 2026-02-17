@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/api/services/user/user_preference_storage.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/theme/text_styles.dart';
@@ -10,7 +11,6 @@ import 'package:openearable/app/ui/toast_controller.dart';
 import 'package:openearable/app/ui/toast_event.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/widgets/app_button.dart';
-import 'package:openearable/api/local_media.dart';
 
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/state/network_status.dart';
@@ -18,7 +18,6 @@ import 'package:openearable/features/home/state/network_status.dart';
 import '../controllers/playback_controller.dart';
 import '../widgets/top_bar.dart';
 import '../widgets/video_card.dart';
-import '../state/sensor_providers.dart';
 import '../state/playback_state.dart';
 
 class PlaybackPage extends ConsumerStatefulWidget {
@@ -119,62 +118,45 @@ class _PlaybackVideoScaffold extends ConsumerWidget {
     final speedKey = GlobalKey();
 
     // Selected Sensor
-    final String? selectedSensor =
-    playbackState.selectedSensors.isNotEmpty
+    final Sensor? selectedSensor = playbackState.selectedSensors.isNotEmpty
         ? playbackState.selectedSensors.first
         : null;
-
-    // Build SensorRequest
-    final SensorRequest? sensorRequest =
-    selectedSensor == null
-        ? null
-        : SensorRequest(
-      projectId:
-      recording.projectId ?? LocalMedia.defaultProjectId,
-      recordingId: recording.id,
-      sensorId: selectedSensor,
-    );
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: AppColors.twoHundred,
 
-      // ✅ TopBar
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(88),
         child: videoAsync.when(
           loading: () => const SizedBox(height: 88),
-          error: (_, __) => const SizedBox(height: 88),
-          data: (vc) => TopBar(
-            vc: vc,
-            speedKey: speedKey,
-            recording: recording,
-          ),
+          error: (_, _) => const SizedBox(height: 88),
+          data: (vc) =>
+              TopBar(vc: vc, speedKey: speedKey, recording: recording),
         ),
       ),
 
-      // ✅ Body
+
       body: SafeArea(
         child: videoAsync.when(
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary),
           ),
 
-          error: (e, __) => Center(
+          error: (e, _) => Center(
             child: Text(
               "Failed to load video: $e",
               style: AppTextStyles.subheaderMedium,
             ),
           ),
 
-          data: (vc) => Padding(
-            padding: const EdgeInsets.all(20),
+          data: (vc) => Center(
             child: Column(
               children: [
                 Expanded(
                   child: VideoCard(
                     controller: vc,
-                    sensorRequest: sensorRequest,
+                    sensorPath: selectedSensor?.localPath,
                     showSensorChart: playbackState.showSensorChart,
                   ),
                 ),
@@ -186,7 +168,6 @@ class _PlaybackVideoScaffold extends ConsumerWidget {
     );
   }
 }
-
 
 class _FailedLoadScreen extends ConsumerWidget {
   const _FailedLoadScreen({
