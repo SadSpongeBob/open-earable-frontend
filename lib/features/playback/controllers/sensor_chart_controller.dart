@@ -1,4 +1,4 @@
-import 'sensor_repository.dart';
+import '../../../api/services/recording/sensor_repository.dart';
 
 class SensorChartController {
   final List<SensorSample> samples;

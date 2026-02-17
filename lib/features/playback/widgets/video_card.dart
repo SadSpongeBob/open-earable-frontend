@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:openearable/features/playback/controllers/sensor_repository.dart';
+import 'package:openearable/api/services/recording/sensor_repository.dart';
 import 'package:openearable/features/playback/widgets/sensorchart.dart';
 import 'package:video_player/video_player.dart';
 

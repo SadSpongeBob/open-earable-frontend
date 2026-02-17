@@ -1,4 +1,4 @@
-import 'sensor_repository.dart';
+import '../../../api/services/recording/sensor_repository.dart';
 
 /// Prepared data for the chart: resampled timestamps and axis series.
 class ChartData {
