@@ -168,7 +168,14 @@ class _TopBarState extends ConsumerState<TopBar> {
                         onSpeedChanged: playbackNotifier.setSpeed,
                       ),
                       const SizedBox(width: 10),
-                      Text(current.name, style: AppTextStyles.footerRegular),
+                      SizedBox(
+                        width: 300,
+                        child: Text(
+                          current.name,
+                          style: AppTextStyles.footerRegular,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                 ),
