@@ -275,10 +275,13 @@ class _UserCard extends StatelessWidget {
           children: [
             CircleAvatar(
               backgroundColor: AppColors.fifty,
+              backgroundImage: user.pictureUrl != null
+                  ? NetworkImage(user.pictureUrl!)
+                  : null,
               radius: 26,
               child: user.pictureUrl == null
                   ? const Icon(Icons.person, size: 40, color: AppColors.primary)
-                  : Image.network(user.pictureUrl!, width: 40, height: 40),
+                  : null,
             ),
             const SizedBox(width: 12),
             Expanded(
