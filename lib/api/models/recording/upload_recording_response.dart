@@ -26,8 +26,8 @@ class UploadRecordingResponse {
       json['videoUpload'] as Map<String, dynamic>,
     );
 
-    final sensorUploadsRaw = json['sensorUploads'] as List<dynamic>?;
-    final sensorUploads = (sensorUploadsRaw ?? [])
+    final sensorUploadsRaw = json['sensorUploads'] as List<dynamic>;
+    final sensorUploads = (sensorUploadsRaw)
         .map((e) => SensorUploadInfo.fromJson(e as Map<String, dynamic>))
         .toList();
 
@@ -63,28 +63,14 @@ class UploadInfo {
   });
 
   factory UploadInfo.fromJson(Map<String, dynamic> json) {
-    final filename = json['filename'] as String?;
-    final key = json['key'] as String?;
-    final uploadUrl = json['uploadUrl'] as String?;
+    final filename = json['filename'] as String;
+    final key = json['key'] as String;
+    final uploadUrl = json['uploadUrl'] as String;
 
-    // tolerant timestamp parsing: may be String, int (ms), or missing
-    final tsRaw = json['timestamp'];
-    DateTime timestamp;
-    if (tsRaw is String && tsRaw.isNotEmpty) {
-      timestamp = DateTime.parse(tsRaw).toUtc();
-    } else if (tsRaw is int) {
-      timestamp = DateTime.fromMillisecondsSinceEpoch(tsRaw, isUtc: true);
-    } else {
-      timestamp = DateTime.now().toUtc();
-    }
+    final tsRaw = json['timestamp'] as String;
+    final timestamp = DateTime.parse(tsRaw).toUtc();
 
-    final headers = (json['requiredHeaders'] as Map<String, dynamic>?)
-        ?.cast<String, String>()
-        ?? <String, String>{};
-
-    if (filename == null || key == null || uploadUrl == null) {
-      throw FormatException('Missing upload info fields');
-    }
+    final headers = Map<String, String>.from(json['requiredHeaders'] as Map);
 
     return UploadInfo(
       filename: filename,
@@ -112,22 +98,19 @@ class SensorUploadInfo {
   });
 
   factory SensorUploadInfo.fromJson(Map<String, dynamic> json) {
-    final sensorId = json['sensorId'] as String?;
-    final sensorIndex = json['sensorIndex'] as int?;
-    final name = json['name'] as String?;
+    final sensorId = json['sensorId'] as String;
+    final sensorIndex = json['sensorIndex'] as int;
+    final name = json['name'] as String;
 
-    final typeRaw = (json['type'] ?? json['sensorType']) as String?;
+    final typeRaw = json['type'] as String;
     SensorType type;
     try {
-      type = SensorType.fromString(typeRaw ?? 'HEART_RATE');
+      type = SensorType.fromString(typeRaw);
     } catch (_) {
       type = SensorType.heartRate;
     }
 
-    final sensorJson = json['sensor'] as Map<String, dynamic>?;
-    if (sensorId == null || sensorIndex == null || name == null || sensorJson == null) {
-      throw FormatException('Invalid sensor upload info');
-    }
+    final sensorJson = json['sensor'] as Map<String, dynamic>;
 
     final sensor = UploadInfo.fromJson(sensorJson);
 
@@ -150,9 +133,7 @@ class ThumbnailUploadInfo {
   factory ThumbnailUploadInfo.fromJson(Map<String, dynamic> json) {
     return ThumbnailUploadInfo(
       uploadUrl: json['uploadUrl'] as String,
-      requiredHeaders: (json['requiredHeaders'] as Map<String, dynamic>?)
-          ?.cast<String, String>()
-          ?? <String, String>{},
+      requiredHeaders: Map<String, String>.from(json['requiredHeaders'] as Map),
     );
   }
 }
