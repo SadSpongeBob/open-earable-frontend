@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/recording/recording.dart';
@@ -59,7 +59,6 @@ class UploadController {
     if (authState.isGuest) return;
 
     ref.read(networkRefreshTriggerProvider.notifier).state++;
-
     final status = await waitForFirstData(
       ref,
       networkStatusProvider,
@@ -94,6 +93,10 @@ class UploadController {
 
     homeStateNotifier.removeRecording(recordingId);
     homeStateNotifier.addRecording(uploaded);
+    homeStateNotifier.replaceRecording(
+      oldId: recordingId,
+      newRecording: uploaded,
+    );
 
     try {
       recordingService.deleteLocalRecording(

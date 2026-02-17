@@ -164,6 +164,31 @@ class HomeStateNotifier extends StateNotifier<HomeState> {
     );
   }
 
+  void replaceRecording({
+    required String oldId,
+    required Recording newRecording,
+  }) {
+    final updated = [
+      for (final recording in state.recordings)
+        if (recording.id == oldId) newRecording else recording,
+    ];
+
+    final nextSelected = Set<String>.from(state.selectedRecordingIds)
+      ..remove(oldId)
+      ..add(newRecording.id);
+
+    final shouldClearSelected =
+        state.selectedRecordingId != null && state.selectedRecordingId == oldId;
+
+    state = state.copyWith(
+      recordings: updated,
+      selectedRecordingId: shouldClearSelected
+          ? newRecording.id
+          : state.selectedRecordingId,
+      selectedRecordingIds: nextSelected,
+    );
+  }
+
   void removeRecording(String id) {
     final updated = state.recordings.where((r) => !(r.id == id)).toList();
 
