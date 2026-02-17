@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:openearable/api/local_media.dart';
 
 class SensorRepository {
   static Future<List<SensorSample>> loadFromFilePath(String filePath) async {
@@ -37,16 +36,6 @@ class SensorRepository {
           .toList();
     } catch (e) {
       if (kDebugMode) debugPrint('SensorRepository.loadFromFilePath failed: $e');
-      return [];
-    }
-  }
-  static Future<List<SensorSample>> loadFromLocalMedia(
-      LocalMedia localMedia, String projectId, String recordingId, String sensorId) async {
-    try {
-      final file = localMedia.reccordingSensors(projectId, recordingId, sensorId);
-      return await loadFromFilePath(file.path);
-    } catch (e) {
-      if (kDebugMode) debugPrint('SensorRepository.loadFromLocalMedia failed: $e');
       return [];
     }
   }

@@ -152,7 +152,9 @@ class _TopBarState extends ConsumerState<TopBar> {
                           height: 26,
                         ),
                         onPressed: () async {
-                          final available = controller.getAvailableSensors(current);
+                          final available = await controller
+                              .getAvailableSensors(current);
+                          if (!context.mounted) return;
                           // open dialog and update selection immediately when user changes it
                           final result = await SelectSensorsDialog.show(
                             context,

@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:openearable/api/models/recording/sensor.dart';
 
 class PlaybackState {
   final bool isMuted;
   final double speed;
-  final List<String> selectedSensors;
+  final List<Sensor> selectedSensors;
   final bool showSensorChart;
 
   const PlaybackState({
@@ -25,7 +26,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   void setSpeed(double s) =>
       state = PlaybackState(isMuted: state.isMuted, speed: s.clamp(0.25, 2.0), selectedSensors: state.selectedSensors, showSensorChart: state.showSensorChart);
 
-  void setSelectedSensors(List<String> sensors) =>
+  void setSelectedSensors(List<Sensor> sensors) =>
       state = PlaybackState(isMuted: state.isMuted, speed: state.speed, selectedSensors: List.unmodifiable(sensors), showSensorChart: state.showSensorChart);
 
   void toggleShowSensorChart() =>

@@ -7,6 +7,7 @@ import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
 import 'package:openearable/api/models/project/project_role.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/api/services/project/project_service.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/services/s3/s3_service.dart';
@@ -15,7 +16,6 @@ import 'package:openearable/app/ui/toast_event.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/recordings/controllers/upload_controller.dart';
-import 'package:path/path.dart' as p;
 import 'package:video_player/video_player.dart';
 
 final videoPlayerControllerProvider = FutureProvider.autoDispose
@@ -220,34 +220,25 @@ class PlaybackController {
       }
     }
   }
-  List<String> getAvailableSensors(Recording rec) {
+
+  Future<List<Sensor>> getAvailableSensors(Recording rec) async {
     if (rec.isCloud) return [];
 
     final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
     final recordingId = rec.id;
 
-    final recordingDir = localMedia.recordingDir(projectId, recordingId);
-    if (!recordingDir.existsSync()) return [];
+    final sensors = await recordingService.getLocalRecordingSensors(
+      projectId,
+      recordingId,
+    );
 
-    final sensorFiles = recordingDir
-        .listSync(recursive: true)
-        .whereType<File>()
-    // Datei muss sensorDataName heißen
-        .where((f) => p.basename(f.path) == LocalMedia.sensorDataName)
-    // Parent Folder muss sns_xxx sein
-        .where((f) => p.basename(f.parent.path).startsWith("sns_"))
-        .toList();
-
-    debugPrint("Found sensor files:");
-    for (final f in sensorFiles) {
-      debugPrint("  ${f.path}");
+    if (kDebugMode) {
+      debugPrint("Found sensors:");
+      for (final f in sensors) {
+        debugPrint("  ${f.localPath}");
+      }
     }
 
-    return sensorFiles
-        .map((f) => p.basename(f.parent.path))
-        .toList();
+    return sensors;
   }
-
-
-
 }
