@@ -8,6 +8,7 @@ import '../../../api/models/project/project_role.dart';
 import '../../../api/models/project/project_user.dart';
 import '../../../app/constants/colors.dart';
 import '../../../app/theme/text_styles.dart';
+import '../../../app/widgets/in_line_menu.dart';
 import '../../auth/state/session_provider.dart';
 import '../controllers/home_controller.dart';
 import '../state/home_state.dart';
@@ -243,7 +244,7 @@ class _UsersList extends StatelessWidget {
   }
 }
 
-class _UserCard extends StatelessWidget {
+class _UserCard extends ConsumerWidget {
   const _UserCard({
     required this.user,
     required this.myUserId,
@@ -257,10 +258,15 @@ class _UserCard extends StatelessWidget {
   final Future<void> Function(String userId) onRemove;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isMe = myUserId != null && user.userId == myUserId;
 
     final showRemove = canManage && !isMe;
+
+    final showRoleDropdown =
+        canManage && !isMe && user.role is! Owner;
+
+    final controller = ref.read(homeControllerProvider);
 
     return Material(
       elevation: 1,
@@ -323,7 +329,25 @@ class _UserCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
-                  Text(
+
+                  showRoleDropdown
+                      ? InlineMenu<ProjectRoleType>(
+                    value: user.role is Editor ? ProjectRoleType.editor : ProjectRoleType.viewer,
+                    options: const [
+                      ProjectRoleType.viewer,
+                      ProjectRoleType.editor,
+                    ],
+                    labelOf: (r) => r.label,
+                    menuWidth : 100,
+                    onChanged: (next) async {
+                      await controller.updateUserRoleForOpenProject(
+                        myUserId: myUserId,
+                        userId: user.userId,
+                        role: next,
+                      );
+                    },
+                  )
+                      : Text(
                     user.role.label,
                     style: AppTextStyles.footerMedium,
                   ),
