@@ -8,6 +8,7 @@ import '../../../api/models/project/project_role.dart';
 import '../../../api/models/project/project_user.dart';
 import '../../../app/constants/colors.dart';
 import '../../../app/theme/text_styles.dart';
+import '../../../app/widgets/in_line_menu.dart';
 import '../../auth/state/session_provider.dart';
 import '../controllers/home_controller.dart';
 import '../state/home_state.dart';
@@ -327,26 +328,21 @@ class _UserCard extends ConsumerWidget {
                   const SizedBox(height: 6),
 
                   showRoleDropdown
-                      ? SizedBox(
-                    width: 170,
-                    height: 55,
-                    child: PillMenu<ProjectRoleType>(
-                      value: user.role is Editor
-                          ? ProjectRoleType.editor
-                          : ProjectRoleType.viewer,
-                      options: const [
-                        ProjectRoleType.viewer,
-                        ProjectRoleType.editor,
-                      ],
-                      labelOf: (r) => r.label,
-                      onChanged: (next) async {
-                        await controller.updateUserRoleForOpenProject(
-                          myUserId: myUserId,
-                          userId: user.userId,
-                          role: next,
-                        );
-                      },
-                    ),
+                      ? InlineMenu<ProjectRoleType>(
+                    value: user.role is Editor ? ProjectRoleType.editor : ProjectRoleType.viewer,
+                    options: const [
+                      ProjectRoleType.viewer,
+                      ProjectRoleType.editor,
+                    ],
+                    labelOf: (r) => r.label,
+                    menuWidth : 100,
+                    onChanged: (next) async {
+                      await controller.updateUserRoleForOpenProject(
+                        myUserId: myUserId,
+                        userId: user.userId,
+                        role: next,
+                      );
+                    },
                   )
                       : Text(
                     user.role.label,
