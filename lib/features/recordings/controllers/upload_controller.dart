@@ -138,21 +138,22 @@ class UploadController {
       return null;
     }
 
-    final name = meta['name'] as String?;
+    final name = (meta['name'] as String?)?.trim();
     final timestampRaw = meta['timestamp'] as String?;
     if (name == null || name.isEmpty) return null;
 
     final ts =
         DateTime.tryParse(timestampRaw ?? '')?.toUtc() ??
-        DateTime.now().toUtc();
+            await _fallbackTimestampUtc(videoFile);
 
-    final sensors = await recordingService.getLocalRecordingSensors(
-      projectId,
-      recordingId,
-    );
     String? recordingIdForLog;
 
     try {
+      final sensors = await recordingService.getLocalRecordingSensors(
+        projectId,
+        recordingId,
+      );
+
       final thumbnail = localMedia.thumbnailFile(projectId, recordingId);
       final thumbnailExists = await thumbnail.exists();
 
@@ -191,7 +192,7 @@ class UploadController {
           uploadResp.thumbnailUpload!,
           recordingId,
           projectId,
-          uploadResp.recordingId,
+          recordingIdForLog,
         );
       }
 
@@ -215,6 +216,13 @@ class UploadController {
       }
       return null;
     }
+  }
+
+  Future<DateTime> _fallbackTimestampUtc(File file) async {
+    final stat = await file.stat();
+    final modified = stat.modified.toUtc();
+    final changed = stat.changed.toUtc();
+    return changed.isBefore(modified) ? changed : modified;
   }
 
   Future<void> _uploadSensors(
@@ -274,16 +282,16 @@ class UploadController {
 
   Future<SensorUpload> _mapToUpload(Sensor sensor) async {
     final file = File(sensor.localPath);
-    final safeName = sensor.name.isEmpty ? "Sensor" : sensor.name;
 
     return SensorUpload(
       sensorIndex: sensor.sensorIndex,
-      name: safeName,
+      name: sensor.name,
+      // no sensor type information provided -> setting heartRate as default
       type: SensorType.heartRate,
       file: RecordingFile(
         filename: file.uri.pathSegments.isNotEmpty
             ? file.uri.pathSegments.last
-            : "unknown.json",
+            : LocalMedia.sensorDataName,
         contentType: ContentType.json,
         sizeBytes: await file.length(),
         timestamp: sensor.timeStamp,
