@@ -46,6 +46,7 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
         },
         childBuilder: (context, isOpen) {
           return CircleAvatar(
+            key: ValueKey(url),
             radius: 50,
             backgroundColor: AppColors.primary,
             backgroundImage: hasImage
@@ -71,13 +72,15 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
 
       await ref.read(settingsControllerProvider).uploadAvatar(file);
 
+      await widget.refreshUser();
+
       if (mounted) {
         ref.read(toastProvider.notifier).state = 
             const ToastEvent.success("Profile photo updated");
       }
     } catch (e) {
       if (mounted) {
-        ref.read(toastProvider.notifier).state = const ToastEvent.success("Upload failed");
+        ref.read(toastProvider.notifier).state = const ToastEvent.error("Upload failed");
       }
     } finally {
       if (mounted) setState(() => _uploading = false);
@@ -89,6 +92,8 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
     try {
       await ref.read(settingsControllerProvider).removeAvatar();
 
+      await widget.refreshUser();
+
       if (mounted) {
         ref.read(toastProvider.notifier).state = 
             const ToastEvent.success("Profile photo removed");
@@ -96,7 +101,7 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
     } catch (e) {
       if (mounted) {
         ref.read(toastProvider.notifier).state = 
-            const ToastEvent.success("Failed to remove photo");
+            const ToastEvent.error("Failed to remove photo");
       }
     } finally {
       if (mounted) setState(() => _uploading = false);
