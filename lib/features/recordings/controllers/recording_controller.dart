@@ -155,6 +155,7 @@ class RecordingController extends ChangeNotifier {
     final meta = {
       "name": recordingId,
       "timestamp": (timestamp).toIso8601String(),
+      "uploadStatus": UploadStatus.pending.json
     };
 
     await metaFile.writeAsString(
