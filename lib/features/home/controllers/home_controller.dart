@@ -875,7 +875,10 @@ class HomeController {
     if (recordingIds.isEmpty) return;
 
     final sourceProjectId = state.openProjectId;
-    if (targetProjectId == sourceProjectId) return;
+    if (sourceProjectId == targetProjectId) {
+      _toast(const ToastEvent.error('Choose a different target project'));
+      return;
+    }
 
     final localIds = <String>[];
     final cloudIds = <String>[];
@@ -891,28 +894,26 @@ class HomeController {
       }
     }
 
-    final targetMeta = _findById(targetProjectId);
+    if (targetProjectId != LocalMedia.defaultProjectId) {
+      final targetMeta = _findById(targetProjectId);
 
-    final targetAllowsLocal =
-        targetProjectId == LocalMedia.defaultProjectId ||
-        (targetMeta != null && targetMeta.projectSource == ProjectSource.local);
+      final targetIsLocal = targetMeta != null && targetMeta.projectSource == ProjectSource.local;
+      final targetIsCloud = targetMeta != null && targetMeta.projectSource == ProjectSource.cloud;
 
-    final targetAllowsCloud =
-        targetProjectId == LocalMedia.defaultProjectId ||
-        (targetMeta != null && targetMeta.projectSource == ProjectSource.cloud);
+      if (!targetIsLocal && !targetIsCloud) {
+        _toast(const ToastEvent.error('Choose a valid target project'));
+        return;
+      }
 
-    if (!targetAllowsLocal && localIds.isNotEmpty) {
-      _toast(
-        const ToastEvent.error('You can only move local→local or cloud→cloud'),
-      );
-      return;
-    }
+      if (localIds.isNotEmpty && !targetIsLocal) {
+        _toast(const ToastEvent.error('Local recordings can only be moved to local projects.'));
+        return;
+      }
 
-    if (!targetAllowsCloud && cloudIds.isNotEmpty) {
-      _toast(
-        const ToastEvent.error('You can only move local→local or cloud→cloud'),
-      );
-      return;
+      if (cloudIds.isNotEmpty && !targetIsCloud) {
+        _toast(const ToastEvent.error('Cloud recordings can only be moved to cloud projects.'));
+        return;
+      }
     }
 
     var successCount = 0;
@@ -951,19 +952,19 @@ class HomeController {
       // ---- Cloud move ----
       final authState = _ref.read(sessionProvider);
       if (cloudIds.isNotEmpty) {
-        final myUserId = authState.user?.userId;
-        if (myUserId == null) {
-          _toast(const ToastEvent.error('No permission'));
-          return;
-        }
+        if (targetProjectId != LocalMedia.defaultProjectId) {
+          final myUserId = authState.user?.userId;
+          if (myUserId == null) {
+            _toast(const ToastEvent.error('No permission'));
+            return;
+          }
 
-        final canMove = await canMoveToCloudProject(
-          targetProjectId: targetProjectId,
-          myUserId: myUserId,
-        );
+          final canMove = await canMoveToCloudProject(
+            targetProjectId: targetProjectId,
+            myUserId: myUserId,
+          );
 
-        if (!canMove) {
-          return;
+          if (!canMove) return;
         }
 
         try {
