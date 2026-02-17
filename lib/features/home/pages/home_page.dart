@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,7 @@ import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
+import 'package:openearable/features/recordings/controllers/upload_controller.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/home/widgets/project_grid.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
@@ -45,7 +48,14 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(homeControllerProvider).loadProjects());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_init());
+    });
+  }
+
+  Future<void> _init() async {
+    await ref.read(homeControllerProvider).loadProjects();
+    unawaited(ref.read(uploadControllerProvider).tryUploads());
   }
 
   @override

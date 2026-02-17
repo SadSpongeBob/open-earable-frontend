@@ -101,6 +101,13 @@ enum UploadStatus {
       _ => throw ArgumentError.value(value, 'value', 'Invalid UploadStatus'),
     };
   }
+
+  String get json => switch (this) {
+    completed => 'COMPLETED',
+    failed => 'FAILED',
+    uploading => 'UPLOADING',
+    pending => 'PENDING',
+  };
 }
 
 enum RecordingSource { local, cloud }
@@ -110,11 +117,11 @@ extension RecordingX on Recording {
 
   bool get isCloud => source == RecordingSource.cloud;
 
-  bool get isUploading =>
-      source == RecordingSource.local && uploadStatus == UploadStatus.uploading;
+  bool get isUploading => uploadStatus == UploadStatus.uploading;
 
-  bool get canRetryUpload =>
-      source == RecordingSource.local && uploadStatus == UploadStatus.failed;
+  bool get isUploaded => uploadStatus == UploadStatus.completed;
+
+  bool get isUploadFailed => uploadStatus == UploadStatus.failed;
 
   ImageProvider get thumbnailProvider {
     if (localThumbnailPath != null) {
