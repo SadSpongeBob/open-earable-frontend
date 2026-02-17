@@ -34,12 +34,15 @@ class UserService {
     return response.data['data'];
   }
 
-  Future<Response> completeUpload(String key) async {
-    return await _dio.put(
-      UserEndpoints.photoComplete(key),
-      data: {"key": key},
-    );
-  }
+ Future<User> completeUpload(String key) async {
+  final res = await _dio.put(
+    UserEndpoints.photoComplete(key),
+    data: {"key": key},
+  );
+
+  final data = res.asMap();
+  return User.fromJson(data);
+}
 
   Future<Response> removeAvatar() async {
     return await _dio.delete(UserEndpoints.photo);

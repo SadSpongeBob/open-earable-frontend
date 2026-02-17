@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,6 +35,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
   bool _dirty = false;
   bool _saving = false;
   bool _initialized = false;
+  File? _pendingAvatar;
 
   @override
   void initState() {
@@ -71,6 +73,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
     final session = ref.watch(sessionProvider);
     final user = ref.watch(userProvider);
     final busy = _saving || _loading || session.isLoading;
+    
 
     return Scaffold(
       appBar: SettingsAppBar(
@@ -146,6 +149,13 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                 const SizedBox(height: 10),
                                 SettingsAvatar(
                                   avatarUrl: u?.photoUrl,
+                                  localFile: _pendingAvatar,
+                                  onImageSelected: (file) {
+                                    setState(() {
+                                      _pendingAvatar = file;
+                                      _dirty = true;
+                                    });
+                                  },
                                   refreshUser: () async => ref
                                       .read(settingsControllerProvider)
                                       .refreshUser(),
@@ -274,6 +284,11 @@ class _SettingsState extends ConsumerState<SettingsPage> {
             password: pw.isEmpty ? null : pw,
           );
 
+      if (_pendingAvatar != null) {
+        await ref.read(settingsControllerProvider).uploadAvatar(_pendingAvatar!);
+        _pendingAvatar = null;
+      }
+
       if (!mounted) return;
       ref.read(settingsControllerProvider).refreshUser();
 
@@ -283,11 +298,15 @@ class _SettingsState extends ConsumerState<SettingsPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Profile updated')));
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to update account')));
+      ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: ${e.toString()}'),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 8),
+      ),
+    );
     } finally {
       if (mounted) {
         setState(() {

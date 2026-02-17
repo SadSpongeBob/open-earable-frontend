@@ -25,34 +25,43 @@ class SettingsController {
     await ref.read(userProvider.future);
   }
 
-  Future<void> uploadAvatar(File file) async {
-    final userService = ref.read(userServiceProvider);
-    final s3Service = ref.read(s3ServiceProvider);
+Future<void> uploadAvatar(File file) async {
+  final userService = ref.read(userServiceProvider);
+  final s3Service = ref.read(s3ServiceProvider);
 
-    final ext = file.path.split('.').last.toUpperCase();
-    final contentType = (ext == 'PNG') ? 'PNG' : 'JPEG';
+  final ext = file.path.split('.').last.toUpperCase();
+  final contentType = (ext == 'PNG') ? 'PNG' : 'JPEG';
 
-    final data = await userService.requestUploadPermission(contentType);
+  Map<String, dynamic> data;
+  try {
+    data = await userService.requestUploadPermission(contentType);
+  } catch (e) {
+    throw Exception("STAGE 1 FAIL (Permission): $e");
+  }
 
-    final String uploadUrl = data['uploadUrl'];
-    final String key = data['key'];
-    final Map<String, String> headers =
-        Map<String, String>.from(data['requiredHeaders']);
+  final String uploadUrl = data['uploadUrl'];
+  final String key = data['key'];
+  final Map<String, String> headers =
+      Map<String, String>.from(data['requiredHeaders']);
 
+  try {
     await s3Service.uploadFile(
       putUrl: uploadUrl,
       file: file,
       headers: headers,
     );
-
-    final response = await userService.completeUpload(key);
-
-    if (response.statusCode != 200) {
-      throw Exception("Upload handshake failed");
-    }
-
-    await refreshUser();
+  } catch (e) {
+    throw Exception("STAGE 2 FAIL (S3 Put): $e");
   }
+
+  try {
+    final updatedUser = await userService.completeUpload(key);
+    ref.read(sessionProvider.notifier).setUser(updatedUser);
+  } catch (e) {
+    throw Exception("STAGE 3 FAIL (Complete): $e");
+  }
+}
+
 
   Future<void> removeAvatar() async {
     final userService = ref.read(userServiceProvider);

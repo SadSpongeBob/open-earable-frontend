@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/app/widgets/pill_menu.dart';
-import 'package:openearable/app/ui/toast_controller.dart';
-import 'package:openearable/app/ui/toast_event.dart';
 import 'package:openearable/app/constants/colors.dart';
-import 'package:openearable/features/settings/controllers/settings_controller.dart';
 
 class SettingsAvatar extends ConsumerStatefulWidget {
   final String? avatarUrl;
-  final Future<void> Function() refreshUser;
+  final File? localFile;
+  final Function(File?) onImageSelected;
 
   const SettingsAvatar({
     super.key,
     required this.avatarUrl,
-    required this.refreshUser,
+    required this.localFile,
+    required this.onImageSelected,
+    required Future<void> Function() refreshUser,
   });
 
   @override
@@ -23,88 +23,57 @@ class SettingsAvatar extends ConsumerStatefulWidget {
 }
 
 class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
-  bool _uploading = false;
   final ImagePicker _picker = ImagePicker();
 
   @override
   Widget build(BuildContext context) {
-    final url = widget.avatarUrl;
-    final bool hasImage = url != null && url.isNotEmpty;
+    final bool hasRemoteImage = widget.avatarUrl != null && widget.avatarUrl!.isNotEmpty;
+    final bool hasLocalImage = widget.localFile != null;
+    
+    ImageProvider imageProvider;
+    if (hasLocalImage) {
+      imageProvider = FileImage(widget.localFile!);
+    } else if (hasRemoteImage) {
+      imageProvider = NetworkImage("${widget.avatarUrl}?cb=${DateTime.now().millisecondsSinceEpoch}");
+    } else {
+      imageProvider = const AssetImage("assets/images/user.png");
+    }
 
-    return IgnorePointer(
-      ignoring: _uploading,
-      child: PillMenuAnchor<String>(
-        value: _uploading ? null : 'avatar_menu',
-        options: hasImage ? const ['Upload', 'Remove'] : const ['Upload'],
-        labelOf: (opt) => opt,
-        onChanged: (opt) async {
-          if (opt == 'Upload') {
-            await _pickAndUploadImage();
-          } else if (opt == 'Remove') {
-            await _removeAvatar();
+    return PillMenuAnchor<String>(
+      value: 'avatar', 
+      options: (hasRemoteImage || hasLocalImage) ? const ['Upload', 'Remove'] : const ['Upload'],
+      labelOf: (opt) => opt,
+      onChanged: (opt) async {
+        if (opt == 'Upload') {
+          final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+          if (pickedFile != null) {
+            widget.onImageSelected(File(pickedFile.path));
           }
-        },
-        childBuilder: (context, isOpen) {
-          return CircleAvatar(
-            key: ValueKey(url),
-            radius: 50,
-            backgroundColor: AppColors.primary,
-            backgroundImage: hasImage
-                ? NetworkImage(url)
-                : const AssetImage("assets/images/user.png") as ImageProvider,
-            child: _uploading
-                ? const CircularProgressIndicator(strokeWidth: 3)
-                : null,
-          );
-        },
-      ),
+        } else if (opt == 'Remove') {
+          widget.onImageSelected(null);
+        }
+      },
+      childBuilder: (context, isOpen) {
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: AppColors.primary,
+              backgroundImage: imageProvider,
+            ),
+            if (hasLocalImage)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(Icons.cloud_upload, color: Colors.white, size: 20),
+              ),
+          ],
+        );
+      },
     );
-  }
-
-  Future<void> _pickAndUploadImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile == null) return;
-
-    setState(() => _uploading = true);
-
-    try {
-      final file = File(pickedFile.path);
-
-      await ref.read(settingsControllerProvider).uploadAvatar(file);
-
-      await widget.refreshUser();
-
-      if (mounted) {
-        ref.read(toastProvider.notifier).state = 
-            const ToastEvent.success("Profile photo updated");
-      }
-    } catch (e) {
-      if (mounted) {
-        ref.read(toastProvider.notifier).state = const ToastEvent.error("Upload failed");
-      }
-    } finally {
-      if (mounted) setState(() => _uploading = false);
-    }
-  }
-
-  Future<void> _removeAvatar() async {
-    setState(() => _uploading = true);
-    try {
-      await ref.read(settingsControllerProvider).removeAvatar();
-
-      await widget.refreshUser();
-
-      if (mounted) {
-        ref.read(toastProvider.notifier).state = 
-            const ToastEvent.success("Profile photo removed");
-      }
-    } catch (e) {
-      if (mounted) {
-        ref.read(toastProvider.notifier).state = 
-            const ToastEvent.error("Failed to remove photo");
-      }
-    } finally {
-      if (mounted) setState(() => _uploading = false);
-    }
   }
 }
