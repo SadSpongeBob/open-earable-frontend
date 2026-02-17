@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/api/services/user/user_preference_storage.dart';
+import 'package:openearable/app/routing/routes.dart';
+import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/app/ui/popup_toast.dart';
 import 'package:openearable/app/ui/toast_controller.dart';
 import 'package:openearable/app/ui/toast_event.dart';
+import 'package:openearable/app/constants/colors.dart';
+import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/api/local_media.dart';
 
 import 'package:openearable/features/home/state/home_provider.dart';
+import 'package:openearable/features/home/state/network_status.dart';
 
 import '../controllers/playback_controller.dart';
 import '../widgets/top_bar.dart';
@@ -47,45 +54,189 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
           (r) => r.id == widget.recordingId && r.source == widget.source,
           orElse: () => throw Exception('Recording not found'),
         );
-    final playbackState = ref.watch(playbackProvider(rec.id));
-    final videoAsync = ref.watch(videoPlayerControllerProvider(rec));
+
+    final net = ref.watch(networkStatusProvider);
+    final wifiOnlyAsync = ref.watch(wifiOnlyProvider);
+
+    if (rec.isCloud) {
+      final status = net.asData?.value;
+      if (status == NetworkStatus.offline) {
+        return Scaffold(
+          backgroundColor: AppColors.twoHundred,
+          body: _FailedLoadScreen(
+            errorMessage:
+                "You are offline. Connect to the internet to play this video.",
+            recording: rec,
+          ),
+        );
+      }
+
+      return wifiOnlyAsync.when(
+        loading: () => const Scaffold(
+          backgroundColor: AppColors.twoHundred,
+          body: Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        ),
+        error: (_, _) => Scaffold(
+          backgroundColor: AppColors.twoHundred,
+          body: _FailedLoadScreen(
+            errorMessage: "Failed to load preferences.",
+            recording: rec,
+          ),
+        ),
+        data: (wifiOnly) {
+          if (status != null && !status.shouldUpload(wifiOnly)) {
+            return Scaffold(
+              backgroundColor: AppColors.twoHundred,
+              body: _FailedLoadScreen(
+                errorMessage:
+                    "You are using mobile data. Either switch to wifi or change your preferences in settings.",
+                recording: rec,
+              ),
+            );
+          }
+
+          return _PlaybackVideoScaffold(recording: rec);
+        },
+      );
+    }
+
+    return _PlaybackVideoScaffold(recording: rec);
+  }
+}
+
+class _PlaybackVideoScaffold extends ConsumerWidget {
+  const _PlaybackVideoScaffold({required this.recording});
+
+  final Recording recording;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playbackState = ref.watch(playbackProvider(recording.id));
+    final videoAsync = ref.watch(videoPlayerControllerProvider(recording));
 
     final speedKey = GlobalKey();
-    final String? selectedSensor = playbackState.selectedSensors.isNotEmpty
+
+    // Selected Sensor
+    final String? selectedSensor =
+    playbackState.selectedSensors.isNotEmpty
         ? playbackState.selectedSensors.first
         : null;
 
-    final SensorRequest? sensorRequest = selectedSensor == null
+    // Build SensorRequest
+    final SensorRequest? sensorRequest =
+    selectedSensor == null
         ? null
         : SensorRequest(
-            projectId: rec.projectId ?? LocalMedia.defaultProjectId,
-            recordingId: rec.id,
-            sensorId: selectedSensor,
-          );
+      projectId:
+      recording.projectId ?? LocalMedia.defaultProjectId,
+      recordingId: recording.id,
+      sensorId: selectedSensor,
+    );
 
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      resizeToAvoidBottomInset: false,
+      backgroundColor: AppColors.twoHundred,
+
+      // ✅ TopBar
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(88),
+        child: videoAsync.when(
+          loading: () => const SizedBox(height: 88),
+          error: (_, __) => const SizedBox(height: 88),
+          data: (vc) => TopBar(
+            vc: vc,
+            speedKey: speedKey,
+            recording: recording,
+          ),
+        ),
+      ),
+
+      // ✅ Body
       body: SafeArea(
+        child: videoAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+
+          error: (e, __) => Center(
+            child: Text(
+              "Failed to load video: $e",
+              style: AppTextStyles.subheaderMedium,
+            ),
+          ),
+
+          data: (vc) => Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Expanded(
+                  child: VideoCard(
+                    controller: vc,
+                    sensorRequest: sensorRequest,
+                    showSensorChart: playbackState.showSensorChart,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+class _FailedLoadScreen extends ConsumerWidget {
+  const _FailedLoadScreen({
+    required this.errorMessage,
+    required this.recording,
+  });
+
+  final String errorMessage;
+  final Recording recording;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SafeArea(
+      child: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            PreferredSize(
-              preferredSize: const Size.fromHeight(88),
-              child: videoAsync.when(
-                loading: () => const SizedBox(height: 88),
-                error: (_, __) => const SizedBox(height: 88),
-                data: (vc) => TopBar(vc: vc, speedKey: speedKey, recording: rec),
+            SizedBox(
+              width: 400,
+              child: Text(
+                errorMessage,
+                style: AppTextStyles.subheaderMedium,
+                textAlign: TextAlign.center,
               ),
             ),
-            Expanded(
-              child: videoAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, __) => Center(child: Text("Failed to load video: $e")),
-                data: (vc) => Column(
-                  children: [
-                    Expanded(child: VideoCard(controller: vc, sensorRequest: sensorRequest, showSensorChart: playbackState.showSensorChart)),
-                  ],
-                ),
-
+            const SizedBox(height: 32),
+            SizedBox(
+              width: 340,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AppButton.danger(
+                    text: 'Go Back',
+                    onPressed: () => context.go(Routes.home),
+                    fullWidth: false,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: AppButton.primary(
+                      text: 'Retry',
+                      onPressed: () {
+                        ref.invalidate(networkStatusProvider);
+                        ref.invalidate(
+                          videoPlayerControllerProvider(recording),
+                        );
+                      },
+                      fullWidth: true,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

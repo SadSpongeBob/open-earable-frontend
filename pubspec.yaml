@@ -30,6 +30,8 @@ environment:
 dependencies:
   file_picker: ^10.3.10
   image: ^4.0.21
+  connectivity_plus: ^5.0.2
+
   video_thumbnail: ^0.5.3
   uuid: ^4.4.2
   path: ^1.9.0
@@ -61,7 +63,7 @@ dependencies:
   # Bluetooth connection packages
   open_earable_flutter: ^2.3.0
   flutter_blue_plus: ^2.0.0
-  geolocator: ^14.0.2 
+  geolocator: ^14.0.2
 
   # Sensor charts packages
   fl_chart: ^1.0.0

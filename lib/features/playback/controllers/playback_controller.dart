@@ -157,41 +157,7 @@ class PlaybackController {
 
     final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
 
-    homeStateNotifier.updateRecording(
-      id: rec.id,
-      uploadStatus: UploadStatus.pending,
-    );
-
-    final ok = await uploadController.uploadRecording(
-      recordingId: rec.id,
-      projectId: projectId,
-    );
-
-    if (ok) {
-      homeStateNotifier.updateRecording(
-        id: rec.id,
-        uploadStatus: UploadStatus.completed,
-      );
-
-      try {
-        final dir = localMedia.recordingDir(projectId, rec.id);
-        if (await dir.exists()) {
-          await dir.delete(recursive: true);
-        }
-      } catch (_) {
-        if (kDebugMode) {
-          debugPrint(
-            "CLEANUP FAILED: recording with recordingId: ${rec.id}, (upload completed)",
-          );
-        }
-        // TODO: Add meta.json status for late cleanup
-      }
-    } else {
-      homeStateNotifier.updateRecording(
-        id: rec.id,
-        uploadStatus: UploadStatus.failed,
-      );
-    }
+    uploadController.uploadAndForget(rec.id, projectId);
   }
 
   Future<void> renameRecording(Recording rec, String newName) async {

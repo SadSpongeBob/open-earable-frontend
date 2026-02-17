@@ -9,6 +9,7 @@ import 'package:openearable/app/ui/toast_controller.dart';
 import 'package:openearable/app/ui/toast_event.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
+import 'package:openearable/features/home/state/network_status.dart';
 
 class AuthController {
   final AuthService _authService;
@@ -17,6 +18,7 @@ class AuthController {
   final UserService _userService;
   final HomeStateNotifier _homeState;
   final StateController<ToastEvent?> _toast;
+  final Ref _ref;
 
   AuthController(
       this._authService,
@@ -25,12 +27,25 @@ class AuthController {
       this._session,
       this._homeState,
       this._toast,
+      this._ref,
       );
 
   Future<void> bootstrap() async {
     _session.setLoading();
+
     try {
       if (await _guestStorage.isGuest()) {
+        _session.setGuest();
+        return;
+      }
+
+      final status = await waitForFirstData(
+        _ref,
+        networkStatusProvider,
+        timeout: const Duration(seconds: 2),
+      ).catchError((_) => NetworkStatus.offline);
+
+      if (status.isOffline) {
         _session.setGuest();
         return;
       }
@@ -109,5 +124,6 @@ final authControllerProvider = Provider<AuthController>((ref) {
     session,
     homeState,
     toast,
+    ref,
   );
 });
