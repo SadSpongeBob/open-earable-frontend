@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class SensorRepository {
   static Future<List<SensorSample>> loadFromFilePath(String filePath) async {
@@ -16,30 +17,36 @@ class SensorRepository {
         final dx = (item['axis0'] as num).toDouble();
         final dy = (item['axis1'] as num).toDouble();
         final dz = (item['axis2'] as num).toDouble();
-        return SensorSample(
-          timestampMs: ts,
-          x: dx,
-          y: dy,
-          z: dz,
-        );
+        return SensorSample(timestampMs: ts, x: dx, y: dy, z: dz);
       }).toList();
       if (samples.isEmpty) return [];
       final base = samples.first.timestampMs;
       const magicOffset = 700;
       return samples
-          .map((s) => SensorSample(
-                timestampMs: s.timestampMs - base - magicOffset,
-                x: s.x,
-                y: s.y,
-                z: s.z,
-              ))
+          .map(
+            (s) => SensorSample(
+              timestampMs: s.timestampMs - base - magicOffset,
+              x: s.x,
+              y: s.y,
+              z: s.z,
+            ),
+          )
           .toList();
     } catch (e) {
-      if (kDebugMode) debugPrint('SensorRepository.loadFromFilePath failed: $e');
+      if (kDebugMode) {
+        debugPrint('SensorRepository.loadFromFilePath failed: $e');
+      }
       return [];
     }
   }
 }
+
+final sensorSampleProvider = FutureProvider.family<List<SensorSample>, String>((
+  ref,
+  filePath,
+) async {
+  return SensorRepository.loadFromFilePath(filePath);
+});
 
 class SensorSample {
   final int timestampMs;

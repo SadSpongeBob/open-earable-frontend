@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/features/playback/controllers/sensor_repository.dart';
 import 'package:openearable/features/playback/widgets/sensorchart.dart';
 import 'package:video_player/video_player.dart';
-
-import '../state/sensor_providers.dart';
 
 class VideoCard extends StatelessWidget {
   final VideoPlayerController controller;
@@ -34,8 +33,8 @@ class VideoCard extends StatelessWidget {
           bottom: 20,
           height: 200,
           child: Consumer(
-            builder: (context, ref2, _) {
-              final sensorAsync = ref2.watch(sensorDataProvider(sensorPath!));
+            builder: (context, ref, _) {
+              final sensorAsync = ref.watch(sensorSampleProvider(sensorPath!));
               return sensorAsync.when(
                 loading: () => Container(),
                 error: (e, _) => Container(),
