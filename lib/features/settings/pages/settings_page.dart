@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -38,6 +39,8 @@ class _SettingsState extends ConsumerState<SettingsPage> {
   bool _dirty = false;
   bool _saving = false;
   bool _initialized = false;
+  bool _removeAvatarPending = false;
+  File? _pendingAvatar;
 
   @override
   void initState() {
@@ -81,6 +84,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
     final session = ref.watch(sessionProvider);
     final user = ref.watch(userProvider);
     final busy = _saving || _loading || session.isLoading;
+    
 
     return Scaffold(
       appBar: SettingsAppBar(
@@ -156,6 +160,15 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                 const SizedBox(height: 10),
                                 SettingsAvatar(
                                   avatarUrl: u?.photoUrl,
+                                  localFile: _pendingAvatar,
+                                  removed: _removeAvatarPending,
+                                  onImageSelected: (file) {
+                                    setState(() {
+                                      _pendingAvatar = file;
+                                      _removeAvatarPending = file == null;
+                                      _dirty = true;
+                                    });
+                                  },
                                   refreshUser: () async => ref
                                       .read(settingsControllerProvider)
                                       .refreshUser(),
@@ -276,6 +289,8 @@ class _SettingsState extends ConsumerState<SettingsPage> {
       final email = _emailController.text.trim();
       final pw = _pwController.text.trim();
 
+      final settingsController = ref.read(settingsControllerProvider);
+
       await ref
           .read(authServiceProvider)
           .updateUser(
@@ -283,13 +298,22 @@ class _SettingsState extends ConsumerState<SettingsPage> {
             emailAddress: email,
             password: pw.isEmpty ? null : pw,
           );
+    
+      if (_pendingAvatar != null) {
+        await settingsController.uploadAvatar(_pendingAvatar!);
+      } else if (_removeAvatarPending) {
+        await settingsController.removeAvatar();
+      }
 
       if (!mounted) return;
-      ref.read(settingsControllerProvider).refreshUser();
 
+      _pendingAvatar = null;
+       _removeAvatarPending = false;
       _pwController.clear();
       setState(() => _dirty = false);
 
+      await settingsController.refreshUser();
+      
       ref.read(toastProvider.notifier).state =
       const ToastEvent.success('Profile updated');
     } catch (_) {

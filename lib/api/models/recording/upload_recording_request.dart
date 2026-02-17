@@ -93,6 +93,19 @@ enum ContentType {
   json,
   binary;
 
+  factory ContentType.fromString(String value) {
+    return switch (value) {
+      'MP4' => mp4,
+      'WEBM' => webm,
+      'JPG' => jpeg,
+      'JPEG' => jpeg,
+      'PNG' => png,
+      'JSON' => json,
+      'BINARY' => binary,
+      _ => throw ArgumentError.value(value, 'value', 'Invalid ContentType'),
+    };
+  }
+
   String get jsonRepresentation {
     return switch (this) {
       ContentType.mp4 => 'MP4',

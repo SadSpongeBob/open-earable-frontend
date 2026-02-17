@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
 import 'package:openearable/app/constants/colors.dart';
-import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 
