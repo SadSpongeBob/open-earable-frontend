@@ -1,7 +1,12 @@
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/client_dio.dart';
+import 'package:openearable/api/models/recording/upload_recording_request.dart';
 import 'package:openearable/api/services/s3/s3_service.dart';
+import 'package:openearable/app/ui/toast_controller.dart';
+import 'package:openearable/app/ui/toast_event.dart';
 import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/auth/state/user_provider.dart';
@@ -12,6 +17,7 @@ final settingsControllerProvider = Provider<SettingsController>((ref) {
 
 class SettingsController {
   SettingsController(this.ref);
+
   final Ref ref;
 
   Future<void> deleteAccount() async {
@@ -25,50 +31,44 @@ class SettingsController {
     await ref.read(userProvider.future);
   }
 
-Future<void> uploadAvatar(File file) async {
-  final userService = ref.read(userServiceProvider);
-  final s3Service = ref.read(s3ServiceProvider);
+  Future<void> uploadAvatar(File file) async {
+    final userService = ref.read(userServiceProvider);
+    final s3Service = ref.read(s3ServiceProvider);
 
-  final ext = file.path.split('.').last.toUpperCase();
-  final contentType = (ext == 'PNG') ? 'PNG' : 'JPEG';
+    try {
+      if (!await file.exists()) {
+        throw const FileSystemException('Avatar file not found');
+      }
 
-  Map<String, dynamic> data;
-  try {
-    data = await userService.requestUploadPermission(contentType);
-  } catch (e) {
-    throw Exception("STAGE 1 FAIL (Permission): $e");
+      final ext = file.path.split('.').last.toUpperCase();
+      final contentType = ContentType.fromString(ext);
+      final data = await userService.requestUploadPermission(contentType);
+
+      await s3Service.uploadFile(
+        putUrl: data.uploadUrl,
+        file: file,
+        headers: data.requiredHeaders,
+      );
+
+      final updatedUser = await userService.completeUpload(data.key);
+      ref.read(sessionProvider.notifier).setUser(updatedUser);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint("Uploading avatar for user failed: $e");
+      }
+      emitToast(ref, ToastEvent.error("Photo upload failed"));
+    }
   }
-
-  final String uploadUrl = data['uploadUrl'];
-  final String key = data['key'];
-  final Map<String, String> headers =
-      Map<String, String>.from(data['requiredHeaders']);
-
-  try {
-    await s3Service.uploadFile(
-      putUrl: uploadUrl,
-      file: file,
-      headers: headers,
-    );
-  } catch (e) {
-    throw Exception("STAGE 2 FAIL (S3 Put): $e");
-  }
-
-  try {
-    final updatedUser = await userService.completeUpload(key);
-    ref.read(sessionProvider.notifier).setUser(updatedUser);
-  } catch (e) {
-    throw Exception("STAGE 3 FAIL (Complete): $e");
-  }
-}
-
 
   Future<void> removeAvatar() async {
     final userService = ref.read(userServiceProvider);
-    final response = await userService.removeAvatar();
-
-    if (response.statusCode != 204) {
-      throw Exception("Failed to remove photo");
+    try {
+      await userService.removeAvatar();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint("Photo deletion failed: $e");
+      }
+      emitToast(ref, ToastEvent.error("Failed to remove photo"));
     }
 
     await refreshUser();

@@ -34,7 +34,7 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
     if (hasLocalImage) {
       imageProvider = FileImage(widget.localFile!);
     } else if (hasRemoteImage) {
-      imageProvider = NetworkImage("${widget.avatarUrl}?cb=${DateTime.now().millisecondsSinceEpoch}");
+      imageProvider = NetworkImage(widget.avatarUrl!);
     } else {
       imageProvider = const AssetImage("assets/images/user.png");
     }

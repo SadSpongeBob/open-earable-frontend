@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:openearable/api/interceptors/map_response.dart';
 import 'package:openearable/api/models/auth/user.dart';
+import 'package:openearable/api/models/recording/upload_recording_request.dart';
+import 'package:openearable/api/models/user/upload_photo_response.dart';
 import 'package:openearable/api/services/user/user_endpoints.dart';
-
-
 
 class UserService {
   final Dio _dio;
@@ -27,24 +27,27 @@ class UserService {
     await _dio.delete(UserEndpoints.baseUrl);
   }
 
-  Future<Map<String, dynamic>> requestUploadPermission(String contentType) async {
-    final response = await _dio.post(UserEndpoints.photo, data: {
-      "contentType": contentType,
-    });
-    return response.data['data'];
+  Future<UploadPhotoResponse> requestUploadPermission(
+    ContentType contentType,
+  ) async {
+    final response = await _dio.post(
+      UserEndpoints.photo,
+      data: {"contentType": contentType.jsonRepresentation},
+    );
+    return UploadPhotoResponse.fromJson(response.asMap());
   }
 
- Future<User> completeUpload(String key) async {
-  final res = await _dio.put(
-    UserEndpoints.photoComplete(key),
-    data: {"key": key},
-  );
+  Future<User> completeUpload(String key) async {
+    final res = await _dio.put(
+      UserEndpoints.photoComplete,
+      data: {"key": key},
+    );
 
-  final data = res.asMap();
-  return User.fromJson(data);
-}
+    final data = res.asMap();
+    return User.fromJson(data);
+  }
 
-  Future<Response> removeAvatar() async {
-    return await _dio.delete(UserEndpoints.photo);
+  Future<void> removeAvatar() async {
+    await _dio.delete(UserEndpoints.photo);
   }
 }
