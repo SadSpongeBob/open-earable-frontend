@@ -43,10 +43,12 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
     } else {
       imageProvider = const AssetImage("assets/images/user.png");
     }
-    
+
     return PillMenuAnchor<String>(
       value: 'avatar', 
-      options: (hasRemoteImage || hasLocalImage) ? const ['Upload', 'Remove'] : const ['Upload'],
+      options: (hasLocalImage || (hasRemoteImage && !widget.removed))
+              ? const ['Upload', 'Remove'] 
+              : const ['Upload'],
       labelOf: (opt) => opt,
       onChanged: (opt) async {
         if (opt == 'Upload') {
