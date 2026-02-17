@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:openearable/api/local_media.dart';
@@ -24,12 +25,12 @@ class UploadController {
   final HomeStateNotifier homeStateNotifier;
 
   UploadController(
-      this.ref,
-      this.localMedia,
-      this.recordingService,
-      this.s3Service,
-      this.homeStateNotifier,
-      );
+    this.ref,
+    this.localMedia,
+    this.recordingService,
+    this.s3Service,
+    this.homeStateNotifier,
+  );
 
   Future<void> tryUploads() async {
     final projects = ref
@@ -67,7 +68,9 @@ class UploadController {
     ).catchError((_) => NetworkStatus.offline);
 
     if (status.isOffline ||
-        !status.shouldUpload(await ref.read(userPreferenceStorage).isWifiOnly())) {
+        !status.shouldUpload(
+          await ref.read(userPreferenceStorage).isWifiOnly(),
+        )) {
       return;
     }
 
@@ -97,14 +100,23 @@ class UploadController {
         projectId: projectId,
         recordingId: recordingId,
       );
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint("CLEANUP FAILED: recordingId: $recordingId, error: $e");
+      }
       try {
         recordingService.updateLocalUploadStatus(
           projectId,
           recordingId,
           UploadStatus.failed,
         );
-      } catch (_) {}
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint(
+            "UPDATE STATUS FAILED: recordingId: $recordingId, error: $e",
+          );
+        }
+      }
     }
   }
 
@@ -130,9 +142,15 @@ class UploadController {
     final timestampRaw = meta['timestamp'] as String?;
     if (name == null || name.isEmpty) return null;
 
-    final ts = DateTime.tryParse(timestampRaw ?? '')?.toUtc() ?? DateTime.now().toUtc();
+    final ts =
+        DateTime.tryParse(timestampRaw ?? '')?.toUtc() ??
+        DateTime.now().toUtc();
 
-    final sensors = await recordingService.getLocalRecordingSensors(projectId, recordingId);
+    final sensors = await recordingService.getLocalRecordingSensors(
+      projectId,
+      recordingId,
+    );
+    String? recordingIdForLog;
 
     try {
       final thumbnail = localMedia.thumbnailFile(projectId, recordingId);
@@ -152,6 +170,7 @@ class UploadController {
       );
 
       final uploadResp = await recordingService.startUpload(req);
+      recordingIdForLog = uploadResp.recordingId;
 
       await _uploadSensors(sensors, uploadResp.sensorUploads);
 
@@ -177,17 +196,31 @@ class UploadController {
       }
 
       return await recordingService.completeUpload(uploadResp.recordingId);
-    } on DioException catch (_) {
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          "Upload failed local=$recordingId project=$projectId remote=$recordingIdForLog",
+        );
+        debugPrint("Status: ${e.response?.statusCode}");
+        debugPrint("Body: ${e.response?.data}");
+        debugPrint("Error: $e");
+      }
       return null;
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          "Upload failed local=$recordingId project=$projectId remote=$recordingIdForLog",
+        );
+        debugPrint("Error: $e");
+      }
       return null;
     }
   }
 
   Future<void> _uploadSensors(
-      List<Sensor> sensors,
-      List<SensorUploadInfo> sensorUploads,
-      ) async {
+    List<Sensor> sensors,
+    List<SensorUploadInfo> sensorUploads,
+  ) async {
     final Map<int, UploadInfo> lookup = {
       for (final u in sensorUploads) u.sensorIndex: u.sensor,
     };
@@ -195,9 +228,19 @@ class UploadController {
     await Future.wait(
       sensors.map((s) async {
         final upload = lookup[s.sensorIndex];
-        if (upload == null) throw StateError("Missing upload info for sensorIndex=${s.sensorIndex}");
+        if (upload == null) {
+          throw StateError(
+            "Missing upload info for sensorIndex=${s.sensorIndex}",
+          );
+        }
+
         final file = File(s.localPath);
-        if (!await file.exists()) return;
+        if (!await file.exists()) {
+          throw StateError(
+            "Missing sensor file for sensor with sensorId=${s.sensorId}, filePath=${s.localPath}",
+          );
+        }
+
         await s3Service.uploadFile(
           putUrl: upload.uploadUrl,
           file: file,
@@ -208,19 +251,25 @@ class UploadController {
   }
 
   Future<void> _tryThumbnailUpload(
-      File thumbnail,
-      ThumbnailUploadInfo thumbnailUpload,
-      String recordingId,
-      String projectId,
-      String? recordingIdForLog,
-      ) async {
+    File thumbnail,
+    ThumbnailUploadInfo thumbnailUpload,
+    String recordingId,
+    String projectId,
+    String? recordingIdForLog,
+  ) async {
     try {
       await s3Service.uploadFile(
         putUrl: thumbnailUpload.uploadUrl,
         file: thumbnail,
         headers: thumbnailUpload.requiredHeaders,
       );
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          "Thumbnail upload failed for local=$recordingId project=$projectId remote=$recordingIdForLog: $e",
+        );
+      }
+    }
   }
 
   Future<SensorUpload> _mapToUpload(Sensor sensor) async {
@@ -232,7 +281,9 @@ class UploadController {
       name: safeName,
       type: SensorType.heartRate,
       file: RecordingFile(
-        filename: file.uri.pathSegments.isNotEmpty ? file.uri.pathSegments.last : "unknown.json",
+        filename: file.uri.pathSegments.isNotEmpty
+            ? file.uri.pathSegments.last
+            : "unknown.json",
         contentType: ContentType.json,
         sizeBytes: await file.length(),
         timestamp: sensor.timeStamp,
