@@ -16,3 +16,9 @@ class UserPreferenceStorage {
 }
 
 final userPreferenceStorage = Provider<UserPreferenceStorage>((ref) => UserPreferenceStorage());
+
+final wifiOnlyProvider = FutureProvider<bool>((ref) async {
+  final storage = ref.read(userPreferenceStorage);
+  return storage.isWifiOnly();
+});
+
