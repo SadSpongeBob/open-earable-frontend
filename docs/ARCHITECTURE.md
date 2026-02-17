@@ -7,42 +7,32 @@ you are just in the right place!
 ## Project Structure
 
 This project uses feature based structure.
-All source code is under `lib/`. Use directory based routing 
-under `src/app/`.
+All source code is under `lib/`.
 
 ```pgsql
-src/
+lib/
 ├── api/                      # API client & service modules
 |   ├──interceptors           # Interceptors
 |   |   └── interceptor_name.dart
 │   ├── services/
 │   │   └── service/          # One folder per domain
 │   │       └── service_name.dart
-│   └── client.dart           # Dio config
+│   └── client_dio.dart       # Dio config
 │
-├── app/                      # Pages
-│   ├── app                   # Contains application pages
-│   |   └── screen/
-│   |       └── screen_name.dart
-│   └── auth                  # Contains auth-specific pages
-│       └── screen/
-│           └── screen_name.dart
-│
-├── widgets/                  # Reusable UI components
-│   └── widget/               # Each component as a folder
+├── features/
+|   └── feature/
+|       ├── controllers/
+|       ├── pages/
+|       ├── state/
+|       └── widgets/
+|
+├── app/                    # Reusable globals
+|   ├── constants/           # Static config and design tokens
+|   ├── routing/
+|   ├── ui/
+|   ├── utils/               # Generic helpers and utilities
+│   └── widgets/
 │       └── widget_name.dart  # Component file
-│
-├── constants/                # Static config and design tokens
-│   ├── colors.dart
-│   ├── text_styles.dart
-│   └── spacing.dart
-│
-├── utils/                    # Generic helpers and utilities
-|   ├── validators.dart
-│   └── date_format.dart
-│
-├── models/                   # Global or shared classes/models
-|   └── user.dart
 ```
 
 ## Code Map
@@ -57,17 +47,9 @@ src/
       These services should contain every endpoint defined in the backend
       and have their own callable functions under the directory.
 
-- `app/`
+- `features/`
 
   Contains all the pages inside the application.
-    - `app/`
-
-      This is the main directory for the pages inside the application.
-      These pages defined should only be available once after an authentication into
-      the app.
-    - `auth/`
-
-      This directory contains only the pages necessary for authentication.
 
 - `widgets/`
 
