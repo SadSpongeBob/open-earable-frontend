@@ -16,6 +16,7 @@ import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/recordings/controllers/upload_controller.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
 final videoPlayerControllerProvider = FutureProvider.autoDispose
@@ -69,6 +70,15 @@ final playbackControllerProvider = Provider<PlaybackController>((ref) {
     toast: toast,
   );
 });
+
+/// Lightweight descriptor used by UI/popup.
+class SensorEntry {
+  final String sensorId;
+  final String name;
+  final String? url; // if cloud
+
+  SensorEntry({required this.sensorId, required this.name, this.url});
+}
 
 class PlaybackController {
   PlaybackController({
@@ -195,7 +205,9 @@ class PlaybackController {
 
       await s3Service.downloadToFile(
         getUrl: r.videoUrl,
-        filePath: localMedia.videoExportFile(r.recordingId).path,
+        filePath: localMedia
+            .videoExportFile(r.recordingId)
+            .path,
       );
 
       for (final sensor in r.sensors) {
@@ -220,6 +232,7 @@ class PlaybackController {
       }
     }
   }
+
   List<String> getAvailableSensors(Recording rec) {
     if (rec.isCloud) return [];
 
@@ -248,6 +261,60 @@ class PlaybackController {
         .toList();
   }
 
+  /// Fetch sensors for a recording (cloud or local) — returns detailed entries.
+  Future<List<SensorEntry>> fetchAvailableSensors(Recording rec) async {
+    if (rec.isCloud) {
+      try {
+        final r = await recordingService.getRecording(rec.id);
+        return r.sensors
+            .map((s) => SensorEntry(sensorId: s.sensorId, name: s.name, url: s.url))
+            .toList();
+      } catch (e) {
+        if (kDebugMode) debugPrint('fetchAvailableSensors cloud failed: $e');
+        return [];
+      }
+    }
 
+    // local
+    try {
+      final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
+      final sensors = await recordingService.getLocalRecordingSensors(projectId, rec.id);
+      return sensors.map((s) => SensorEntry(sensorId: s.sensorId, name: s.name, url: null)).toList();
+    } catch (e) {
+      if (kDebugMode) debugPrint('fetchAvailableSensors local failed: $e');
+      return [];
+    }
+  }
+
+  /// Downloads all sensors for a cloud recording into the app documents
+  /// directory under OpenEarable/downloads/{recordingId}/ and returns a map
+  /// sensorId -> downloaded file path. Local recordings are ignored.
+  Future<Map<String, String>> downloadAllSensorsToAppDir(Recording rec) async {
+    final result = <String, String>{};
+    if (!rec.isCloud) return result;
+
+    try {
+      final remote = await recordingService.getRecording(rec.id);
+      final appDir = await getApplicationDocumentsDirectory();
+      final downloadDir = Directory(p.join(appDir.path, 'OpenEarable', 'downloads', rec.id));
+      await downloadDir.create(recursive: true);
+
+      for (final s in remote.sensors) {
+        final url = s.url; // non-nullable in model
+        if (url.isEmpty) continue;
+        final outPath = p.join(downloadDir.path, '${s.sensorId}.json');
+        try {
+          await s3Service.downloadToFile(getUrl: url, filePath: outPath);
+          result[s.sensorId] = outPath;
+        } catch (e) {
+          if (kDebugMode) debugPrint('downloadAllSensors: failed ${s.sensorId} -> $e');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('downloadAllSensors: failed for recording ${rec.id}: $e');
+    }
+
+    return result;
+  }
 
 }

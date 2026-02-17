@@ -3,9 +3,14 @@ import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/app/widgets/dialog.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+class LabelValue {
+  final String label;
+  final String value;
+  LabelValue(this.label, this.value);
+}
 
 class SelectSensorsDialog extends StatefulWidget {
-  final List<String> available;
+  final List<LabelValue> available;
   final List<String> initialSelected;
   final void Function(List<String>)? onChanged;
   const SelectSensorsDialog({
@@ -17,7 +22,7 @@ class SelectSensorsDialog extends StatefulWidget {
 
   static Future<List<String>?> show(
     BuildContext context, {
-    List<String>? available,
+    List<LabelValue>? available,
     List<String>? initialSelected,
     void Function(List<String>)? onChanged,
   }) {
@@ -41,7 +46,6 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
   @override
   void initState() {
     super.initState();
-    // If there was an initial selection, pick the first element
     if (widget.initialSelected.isNotEmpty) {
       _selected = widget.initialSelected.first;
     }
@@ -49,11 +53,9 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
 
   void _onSelect(String? value) {
     setState(() => _selected = value);
-    // notify immediately that selection changed
     if (widget.onChanged != null) {
       widget.onChanged!(_selected == null ? [] : [_selected!]);
     }
-    // close the dialog immediately with the selection
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) Navigator.of(context).pop(_selected == null ? <String>[] : <String>[_selected!]);
     });
@@ -80,10 +82,10 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
           itemCount: avail.length,
           separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (c, i) {
-            final name = avail[i];
+            final item = avail[i];
             return RadioListTile<String>(
-              title: Text(name, style: AppTextStyles.textMedium),
-              value: name,
+              title: Text(item.label, style: AppTextStyles.textMedium),
+              value: item.value,
               groupValue: _selected,
               onChanged: _onSelect,
             );
