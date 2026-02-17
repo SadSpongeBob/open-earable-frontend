@@ -2,8 +2,6 @@ Table of Contents
 
 - [File Naming Conventions](#file-naming-conventions)
 - [Component Guidelines](#component-guidelines)
-- [Styling](#styling)
-- [Icons](#icons)
 - [API Layer](#api-layer)
 - [Testing](#testing)
 - [Formatting](#formatting)
@@ -21,22 +19,13 @@ The classes inside files will follow the `CamelCase`: `class ButtonWidget()..`
 
 - Keep components small and focused (one responsibility).
 
-## Styling
-
-// TODO
-
-## Icons
-
-- Import icons as `.svg` files
-- Import them under the same path as in figma.
-
 ## API Layer
 
 - Each server declared in the backend should have its own `@/lib/api/services/service_folder/`
     - In `@/service_folder/service_endpoints.dart` URIs of the 
     endpoints of that service should be declared.
     - In `@/service_folder/service_name.dart` should the endpoint calls happen.
-- Use `dio` configured under `@/lib/api/client.dart`
+- Use `dio` configured under `@/lib/api/client_dio.dart`
 
 ## Testing
 
@@ -44,7 +33,7 @@ The classes inside files will follow the `CamelCase`: `class ButtonWidget()..`
 - Service and components should be `unit tested`
     - Mock other dependencies
     - Test in isolation
-    - Given a value should return an expected value (When-Then)
+    - Given a value should return an expected value (Given-When-Then)
 - Pages should be `integration tested`
     - Mock external dependencies such as an external post call
     - Test how the components and services integrate with each other
@@ -61,7 +50,7 @@ The classes inside files will follow the `CamelCase`: `class ButtonWidget()..`
 ## Formatting
 
 - **Dart Format** is used for consistent formatting. This is the default
-  formatter included in ide. Just don't forget to use it after changes.
+  formatter included in IDE. Just don't forget to use it after changes.
 
 ## Git
 
