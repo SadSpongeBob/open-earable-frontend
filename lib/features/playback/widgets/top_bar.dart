@@ -146,7 +146,7 @@ class _TopBarState extends ConsumerState<TopBar> {
                       ),
                       IconButton(
                         icon: Image.asset(
-                          'assets/buttons/wave-sound.png',
+                          'assets/buttons/wave_sound_on.png',
                           width: 26,
                           height: 26,
                         ),
@@ -168,7 +168,14 @@ class _TopBarState extends ConsumerState<TopBar> {
                         onSpeedChanged: playbackNotifier.setSpeed,
                       ),
                       const SizedBox(width: 10),
-                      Text(current.name, style: AppTextStyles.footerRegular),
+                      SizedBox(
+                        width: 300,
+                        child: Text(
+                          current.name,
+                          style: AppTextStyles.footerRegular,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                 ),

@@ -4,7 +4,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:openearable/api/local_media.dart';
-import 'package:openearable/api/models/auth/auth_state.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/services/project/project_service.dart';
@@ -27,7 +26,6 @@ final homeControllerProvider = Provider<HomeController>((ref) {
   final userService = ref.read(userServiceProvider);
   final recordingService = ref.read(recordingServiceProvider);
   final homeState = ref.read(homeStateProvider.notifier);
-  final authState = ref.watch(sessionProvider);
   final localMedia = ref.read(localMediaProvider);
 
   void toast(ToastEvent event) => emitToast(ref, event);
@@ -37,9 +35,9 @@ final homeControllerProvider = Provider<HomeController>((ref) {
     userService: userService,
     recordingService: recordingService,
     homeState: homeState,
-    authState: authState,
     toast: toast,
     localMedia: localMedia,
+    ref: ref,
   );
 });
 
@@ -49,21 +47,21 @@ class HomeController {
     required UserService userService,
     required RecordingService recordingService,
     required HomeStateNotifier homeState,
-    required AuthState authState,
     required ToastSink toast,
     required LocalMedia localMedia,
-  })  : _projectService = projectService,
-        _recordingService = recordingService,
-        _state = homeState,
-        _authState = authState,
-        _toast = toast,
-        _localMedia = localMedia;
+    required Ref ref,
+  }) : _projectService = projectService,
+       _recordingService = recordingService,
+       _state = homeState,
+       _localMedia = localMedia,
+       _ref = ref,
+       _toast = toast;
 
   final ProjectService _projectService;
   final RecordingService _recordingService;
   final HomeStateNotifier _state;
-  final AuthState _authState;
   final ToastSink _toast;
+  final Ref _ref;
   final LocalMedia _localMedia;
 
   HomeState get state => _state.current;
@@ -108,7 +106,8 @@ class HomeController {
   }
 
   List<ProjectMetadata> _withDefault(List<ProjectMetadata> projects) {
-    final ProjectMetadata defaultItem = _authState.isGuest
+    final authState = _ref.read(sessionProvider);
+    final ProjectMetadata defaultItem = authState.isGuest
         ? ProjectMetadata.local(LocalMedia.defaultProjectId, 'Default')
         : ProjectMetadata.cloud(LocalMedia.defaultProjectId, 'Default');
 
@@ -119,14 +118,17 @@ class HomeController {
   }
 
   List<ProjectMetadata> _mergeProjects(
-      List<ProjectMetadata> local,
-      List<ProjectMetadata> cloud,
-      ) {
+    List<ProjectMetadata> local,
+    List<ProjectMetadata> cloud,
+  ) {
     final cloudIds = cloud.map((c) => c.id).toSet();
     return [...local.where((l) => !cloudIds.contains(l.id)), ...cloud];
   }
 
-  List<Recording> _mergeRecordings(List<Recording> local, List<Recording> cloud) {
+  List<Recording> _mergeRecordings(
+    List<Recording> local,
+    List<Recording> cloud,
+  ) {
     return [...local, ...cloud];
   }
 
@@ -141,9 +143,10 @@ class HomeController {
 
   bool _recordingNameExists(String name) {
     final normalized = name.trim().toLowerCase();
-    return state.recordings.any((r) => r.name.trim().toLowerCase() == normalized);
+    return state.recordings.any(
+      (r) => r.name.trim().toLowerCase() == normalized,
+    );
   }
-
 
   String _duplicateRecordingName(String name) {
     final base = '$name (Copy)';
@@ -155,9 +158,11 @@ class HomeController {
     }
     return candidate;
   }
+
   Future<ProjectRole?> _getMyRoleForProject(String projectId) async {
-    if (_authState.isGuest) return null;
-    final myUserId = _authState.user?.userId;
+    final authState = _ref.read(sessionProvider);
+    if (authState.isGuest) return null;
+    final myUserId = authState.user?.userId;
     if (myUserId == null) return null;
 
     try {
@@ -175,13 +180,17 @@ class HomeController {
     if (project.id == LocalMedia.defaultProjectId) return true;
 
     if (project.projectSource == ProjectSource.local) return true;
-    if (_authState.isGuest) return true;
 
-    final myUserId = _authState.user!.userId;
+    final authState = _ref.read(sessionProvider);
+    if (authState.isGuest) return true;
+
+    final myUserId = authState.user!.userId;
 
     if (state.projectUsers.isEmpty) {
       try {
-        final users = await _projectService.getProjectUsers(state.openProjectId);
+        final users = await _projectService.getProjectUsers(
+          state.openProjectId,
+        );
         _state.setProjectUsers(users);
       } catch (_) {
         return false;
@@ -232,6 +241,7 @@ class HomeController {
       return false;
     }
   }
+
   Future<bool> canAddRecordingToOpenProject() async {
     final project = _findById(state.openProjectId);
     if (project == null) return false;
@@ -239,9 +249,10 @@ class HomeController {
     if (project.id == LocalMedia.defaultProjectId) return true;
     if (project.projectSource == ProjectSource.local) return true;
 
-    if (_authState.isGuest) return true;
+    final authState = _ref.read(sessionProvider);
+    if (authState.isGuest) return true;
 
-    final myUserId = _authState.user?.userId;
+    final myUserId = authState.user?.userId;
     if (myUserId == null) return false;
 
     try {
@@ -257,7 +268,6 @@ class HomeController {
     }
   }
 
-
   Future<void> _refreshOpenProjectRecordings() async {
     await openProject(state.openProjectId);
   }
@@ -269,12 +279,13 @@ class HomeController {
   Future<void> loadProjects() async {
     if (state.areProjectsLoaded) return;
 
+    final authState = _ref.read(sessionProvider);
     _state.setLoading(true);
     try {
       final localProjects = await _projectService.getLocalProjects();
 
       final List<ProjectMetadata> merged;
-      if (!_authState.isGuest) {
+      if (!authState.isGuest) {
         final remoteProjects = await _projectService.getProjects();
         merged = _mergeProjects(localProjects, remoteProjects);
       } else {
@@ -285,10 +296,13 @@ class HomeController {
       _state.setProjects(projects);
 
       final currentOpenId = state.openProjectId;
-      final openStillValid = currentOpenId == LocalMedia.defaultProjectId ||
+      final openStillValid =
+          currentOpenId == LocalMedia.defaultProjectId ||
           _projectExists(currentOpenId, projects);
 
-      await openProject(openStillValid ? currentOpenId : LocalMedia.defaultProjectId);
+      await openProject(
+        openStillValid ? currentOpenId : LocalMedia.defaultProjectId,
+      );
 
       _state.setProjectsLoaded(true);
     } on DioException catch (e) {
@@ -307,22 +321,16 @@ class HomeController {
       return;
     }
 
-    final isDefault = projectId == LocalMedia.defaultProjectId;
     final hasCloud = project.projectSource == ProjectSource.cloud;
 
     try {
-      final localRecordings =
-      await _recordingService.getLocalProjectRecordings(projectId);
+      final localRecordings = await _recordingService.getLocalProjectRecordings(
+        projectId,
+      );
 
       final List<Recording> recordings;
       if (hasCloud) {
-        final List<Recording> cloud;
-        if (isDefault) {
-          cloud = await _recordingService.getRecordings();
-        } else {
-          cloud = (await _projectService.getProject(projectId)).recordings;
-        }
-        recordings = _mergeRecordings(localRecordings, cloud);
+        recordings = await _loadCloudRecordings(localRecordings, projectId);
       } else {
         recordings = localRecordings;
       }
@@ -330,10 +338,28 @@ class HomeController {
       _state.clearUsersPopupState();
       _state.setOpenProject(projectId: projectId, recordings: recordings);
     } on DioException catch (e) {
-      _error(e, userMessage: 'Failed to load project with id $projectId');
+      _error(e, userMessage: 'Failed to load project');
     } catch (e) {
-      _error(e, userMessage: 'Failed to load project with id $projectId');
+      _error(e, userMessage: 'Failed to load project');
     }
+  }
+
+  Future<List<Recording>> _loadCloudRecordings(
+    List<Recording> localRecordings,
+    String projectId,
+  ) async {
+    final isDefault = projectId == LocalMedia.defaultProjectId;
+    final List<Recording> cloud;
+    if (isDefault) {
+      try {
+        cloud = await _recordingService.getRecordings();
+      } catch (_) {
+        return localRecordings;
+      }
+    } else {
+      cloud = (await _projectService.getProject(projectId)).recordings;
+    }
+    return _mergeRecordings(localRecordings, cloud);
   }
 
   Future<void> handleProjectTap(String projectId) async {
@@ -366,10 +392,11 @@ class HomeController {
       return;
     }
 
+    final authState = _ref.read(sessionProvider);
     _state.setLoading(true);
     try {
       final ProjectMetadata created;
-      if (_authState.isGuest) {
+      if (authState.isGuest) {
         created = await _projectService.createLocalProject(name: trimmed);
       } else {
         created = (await _projectService.createProject(trimmed)).toMetadata();
@@ -402,9 +429,10 @@ class HomeController {
       return;
     }
 
+    final authState = _ref.read(sessionProvider);
     if (projectId != LocalMedia.defaultProjectId &&
         project.projectSource == ProjectSource.cloud &&
-        !_authState.isGuest) {
+        !authState.isGuest) {
       final role = await _getMyRoleForProject(projectId);
       if (role == null) {
         _toast(const ToastEvent.error('No permission'));
@@ -456,8 +484,10 @@ class HomeController {
           continue;
         }
 
+        final authState = _ref.read(sessionProvider);
         try {
-          if (project.projectSource == ProjectSource.cloud && !_authState.isGuest) {
+          if (project.projectSource == ProjectSource.cloud &&
+              !authState.isGuest) {
             final role = await _getMyRoleForProject(projectId);
             if (role == null) {
               _toast(const ToastEvent.error('No permission'));
@@ -499,7 +529,9 @@ class HomeController {
         _state.clearError();
         _success(successCount == 1 ? 'Project deleted' : 'Projects deleted');
       } else {
-        _toast(ToastEvent.error('Deleted $successCount, failed ${failed.length}'));
+        _toast(
+          ToastEvent.error('Deleted $successCount, failed ${failed.length}'),
+        );
       }
     } finally {
       _state.setLoading(false);
@@ -567,15 +599,18 @@ class HomeController {
 
       if (failed.isEmpty) {
         _state.clearError();
-        _success(successCount == 1 ? 'Project duplicated' : 'Projects duplicated');
+        _success(
+          successCount == 1 ? 'Project duplicated' : 'Projects duplicated',
+        );
       } else {
-        _toast(ToastEvent.error('Duplicated $successCount, failed ${failed.length}'));
+        _toast(
+          ToastEvent.error('Duplicated $successCount, failed ${failed.length}'),
+        );
       }
     } finally {
       _state.setLoading(false);
     }
   }
-
 
   // ----------------
   // Project Selection UI state
@@ -583,7 +618,8 @@ class HomeController {
 
   void enterSelectionMode({String? initialProjectId}) {
     final ids = <String>{};
-    if (initialProjectId != null && initialProjectId != LocalMedia.defaultProjectId) {
+    if (initialProjectId != null &&
+        initialProjectId != LocalMedia.defaultProjectId) {
       ids.add(initialProjectId);
     }
     _state.setProjectSelection(ids);
@@ -625,7 +661,6 @@ class HomeController {
     }
     _state.setRecordingSelection(next);
   }
-
 
   Future<void> handleRecordingLongPress(String recordingId) async {
     if (!await _canManageRecordingsAsync()) {
@@ -715,9 +750,13 @@ class HomeController {
       _state.clearRecordingSelection();
 
       if (failed.isEmpty) {
-        _success(successCount == 1 ? 'Recording deleted' : 'Recordings deleted');
+        _success(
+          successCount == 1 ? 'Recording deleted' : 'Recordings deleted',
+        );
       } else {
-        _toast(ToastEvent.error('Deleted $successCount, failed ${failed.length}'));
+        _toast(
+          ToastEvent.error('Deleted $successCount, failed ${failed.length}'),
+        );
       }
     } finally {
       _state.setLoading(false);
@@ -791,7 +830,9 @@ class HomeController {
 
           if (duplicated.isEmpty) {
             failed.addAll(cloudIds);
-            _toast(const ToastEvent.error('No recordings duplicated from cloud'));
+            _toast(
+              const ToastEvent.error('No recordings duplicated from cloud'),
+            );
           } else {
             successCount += duplicated.length;
           }
@@ -814,9 +855,13 @@ class HomeController {
       _state.clearRecordingSelection();
 
       if (failed.isEmpty) {
-        _success(successCount == 1 ? 'Recording duplicated' : 'Recordings duplicated');
+        _success(
+          successCount == 1 ? 'Recording duplicated' : 'Recordings duplicated',
+        );
       } else {
-        _toast(ToastEvent.error('Duplicated $successCount, failed ${failed.length}'));
+        _toast(
+          ToastEvent.error('Duplicated $successCount, failed ${failed.length}'),
+        );
       }
     } finally {
       _state.setLoading(false);
@@ -824,13 +869,16 @@ class HomeController {
   }
 
   Future<void> moveRecordings(
-      Set<String> recordingIds, {
-        required String targetProjectId,
-      }) async {
+    Set<String> recordingIds, {
+    required String targetProjectId,
+  }) async {
     if (recordingIds.isEmpty) return;
 
     final sourceProjectId = state.openProjectId;
-    if (targetProjectId == sourceProjectId) return;
+    if (sourceProjectId == targetProjectId) {
+      _toast(const ToastEvent.error('Choose a different target project'));
+      return;
+    }
 
     final localIds = <String>[];
     final cloudIds = <String>[];
@@ -846,22 +894,26 @@ class HomeController {
       }
     }
 
-    final targetMeta = _findById(targetProjectId);
+    if (targetProjectId != LocalMedia.defaultProjectId) {
+      final targetMeta = _findById(targetProjectId);
 
-    final targetAllowsLocal = targetProjectId == LocalMedia.defaultProjectId ||
-        (targetMeta != null && targetMeta.projectSource == ProjectSource.local);
+      final targetIsLocal = targetMeta != null && targetMeta.projectSource == ProjectSource.local;
+      final targetIsCloud = targetMeta != null && targetMeta.projectSource == ProjectSource.cloud;
 
-    final targetAllowsCloud = targetProjectId == LocalMedia.defaultProjectId ||
-        (targetMeta != null && targetMeta.projectSource == ProjectSource.cloud);
+      if (!targetIsLocal && !targetIsCloud) {
+        _toast(const ToastEvent.error('Choose a valid target project'));
+        return;
+      }
 
-    if (!targetAllowsLocal && localIds.isNotEmpty) {
-      _toast(const ToastEvent.error('You can only move local→local or cloud→cloud'));
-      return;
-    }
+      if (localIds.isNotEmpty && !targetIsLocal) {
+        _toast(const ToastEvent.error('Local recordings can only be moved to local projects.'));
+        return;
+      }
 
-    if (!targetAllowsCloud && cloudIds.isNotEmpty) {
-      _toast(const ToastEvent.error('You can only move local→local or cloud→cloud'));
-      return;
+      if (cloudIds.isNotEmpty && !targetIsCloud) {
+        _toast(const ToastEvent.error('Cloud recordings can only be moved to cloud projects.'));
+        return;
+      }
     }
 
     var successCount = 0;
@@ -898,27 +950,29 @@ class HomeController {
       }
 
       // ---- Cloud move ----
+      final authState = _ref.read(sessionProvider);
       if (cloudIds.isNotEmpty) {
-        final myUserId = _authState.user?.userId;
-        if (myUserId == null) {
-          _toast(const ToastEvent.error('No permission'));
-          return;
-        }
+        if (targetProjectId != LocalMedia.defaultProjectId) {
+          final myUserId = authState.user?.userId;
+          if (myUserId == null) {
+            _toast(const ToastEvent.error('No permission'));
+            return;
+          }
 
-        final canMove = await canMoveToCloudProject(
-          targetProjectId: targetProjectId,
-          myUserId: myUserId,
-        );
+          final canMove = await canMoveToCloudProject(
+            targetProjectId: targetProjectId,
+            myUserId: myUserId,
+          );
 
-        if (!canMove) {
-          return;
+          if (!canMove) return;
         }
 
         try {
           await _projectService.moveRecordings(
             recordingIds: cloudIds,
-            targetProjectId:
-            targetProjectId == LocalMedia.defaultProjectId ? null : targetProjectId,
+            targetProjectId: targetProjectId == LocalMedia.defaultProjectId
+                ? null
+                : targetProjectId,
           );
           successCount += cloudIds.length;
         } on DioException catch (e) {
@@ -945,7 +999,9 @@ class HomeController {
           _success(successCount == 1 ? 'Recording moved' : 'Recordings moved');
         }
       } else {
-        _toast(ToastEvent.error('Moved $successCount, failed ${failed.length}'));
+        _toast(
+          ToastEvent.error('Moved $successCount, failed ${failed.length}'),
+        );
       }
     }
   }
@@ -1062,7 +1118,11 @@ class HomeController {
   }) async {
     final can = await canAddRecordingToOpenProject();
     if (!can) {
-      _toast(const ToastEvent.error('No permission to add a recording in this project'));
+      _toast(
+        const ToastEvent.error(
+          'No permission to add a recording in this project',
+        ),
+      );
       return;
     }
     goToRecording();

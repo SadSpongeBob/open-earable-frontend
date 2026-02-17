@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,7 @@ import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
+import 'package:openearable/features/recordings/controllers/upload_controller.dart';
 import 'package:openearable/features/recordings/widgets/right_bar.dart';
 import 'package:openearable/features/home/widgets/project_grid.dart';
 import 'package:openearable/features/home/widgets/add_project_dialog.dart';
@@ -15,6 +18,7 @@ import 'package:openearable/app/widgets/devices_popup.dart';
 import 'package:openearable/features/home/widgets/delete_confirm_dialog.dart';
 
 import '../../../api/models/project/project_metadata.dart';
+import 'package:openearable/features/sensors/state/sensor_state.dart';
 import '../../../app/routing/routes.dart';
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
@@ -44,7 +48,14 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(homeControllerProvider).loadProjects());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_init());
+    });
+  }
+
+  Future<void> _init() async {
+    await ref.read(homeControllerProvider).loadProjects();
+    unawaited(ref.read(uploadControllerProvider).tryUploads());
   }
 
   @override
@@ -97,6 +108,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final controller = ref.read(homeControllerProvider);
     final session = ref.watch(sessionProvider);
+    final chartProvider = ref.watch(recordingChartProvider);
 
     final selectedProjectCount = selectedProjectIds.length;
 
@@ -115,22 +127,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         !_isChoosingMoveTarget;
 
     Future<void> handlePickMoveTarget(ProjectMetadata target) async {
-      final targetIsLocal = _isLocalProject(target, target.id);
-      final sourceIsLocal = _isLocalProject(openMeta, openProjectId);
-
-      if (sourceIsLocal != targetIsLocal) {
-        ref.read(toastProvider.notifier).state = const ToastEvent.error(
-          'You can only move local→local or cloud→cloud',
-        );
-        return;
-      }
-
-      if (target.id == openProjectId) {
-        ref.read(toastProvider.notifier).state = const ToastEvent.error(
-          'Choose a different project',
-        );
-        return;
-      }
 
       final ids = _recordingIdsToMove;
       _exitMoveMode();
@@ -349,6 +345,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   onSettings: () => context.go(Routes.settings),
                   onWaveSound: () =>
                       context.go('${Routes.sensordata}?source=home'),
+                  onWaveSoundLongPress: () {
+                    ref.read(recordingChartProvider).toggleOverlayVisibility();
+                  },
+                  isWaveSoundActive: chartProvider.shouldShowOverlay,
                   onShutter: () => ref
                       .read(homeControllerProvider)
                       .handleGoToRecordingTap(

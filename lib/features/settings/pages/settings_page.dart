@@ -313,7 +313,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
       setState(() => _dirty = false);
 
       await settingsController.refreshUser();
-
+      
       ref.read(toastProvider.notifier).state =
       const ToastEvent.success('Profile updated');
     } catch (_) {
@@ -335,9 +335,8 @@ class _SettingsState extends ConsumerState<SettingsPage> {
       await ref.read(settingsControllerProvider).deleteAccount();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to delete account')));
+      ref.read(toastProvider.notifier).state =
+      const ToastEvent.error('Failed to delete account');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

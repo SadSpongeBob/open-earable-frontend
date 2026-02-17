@@ -6,9 +6,12 @@ import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/app/routing/routes.dart';
 import 'package:openearable/app/utils/validators.dart';
 import 'package:openearable/app/widgets/app_button.dart';
+import 'package:openearable/app/widgets/alert_dialog.dart';
 import '../../../app/theme/text_styles.dart';
+import '../../../app/ui/popup_toast.dart';
+import '../../../app/ui/toast_controller.dart';
+import '../../../app/ui/toast_event.dart';
 import '../../../app/widgets/user_card.dart';
-import '../widgets/auth_footer_link.dart';
 import '../../../app/widgets/input_box.dart';
 
 class RequestResetPage extends ConsumerStatefulWidget {
@@ -41,6 +44,12 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<ToastEvent?>(toastProvider, (prev, next) {
+      if (next == null) return;
+      PopupToast.show(context, message: next.message);
+      ref.read(toastProvider.notifier).state = null;
+    });
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -94,11 +103,11 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
                     isLoading: _loading,
                   ),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 16),
 
-                  AuthFooterLink(
-                    text: "< Back to Log In",
-                    onTap: () => context.go(Routes.login),
+                  AppButton.secondary(
+                    text: "Back to Log In",
+                    onPressed: () => context.go(Routes.login),
                   ),
                 ],
               ),
@@ -121,29 +130,17 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
 
       if (!mounted) return;
 
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Reset Link Sent'),
-          content: Text(
-            'If an account with $email exists, a password reset link has been sent to that address.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+      await AppAlertDialog.show(
+        context,
+        title: 'Reset request',
+        message: 'Password reset link has been sent to your email address!',
       );
 
-      if (!mounted) return;
       context.go(Routes.login);
     } on DioException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Request failed')));
+      ref.read(toastProvider.notifier).state =
+          ToastEvent.error(e.message ?? 'Request failed');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

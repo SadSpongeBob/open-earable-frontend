@@ -64,6 +64,7 @@ class SensorUpload {
   };
 }
 
+@Deprecated("Sensor type is not supported by sensors library")
 enum SensorType {
   heartRate,
   thermometer;

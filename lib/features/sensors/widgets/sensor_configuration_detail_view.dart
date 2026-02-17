@@ -21,94 +21,109 @@ class SensorConfigurationDetailView extends ConsumerWidget {
       sensorConfigurationProviderFamily(deviceId),
     );
 
-    return ListView(
-      children: [
-        if (sensorConfiguration is ConfigurableSensorConfiguration)
-          ...(sensorConfiguration as ConfigurableSensorConfiguration)
-              .availableOptions
-              .map((option) {
-                return ListTile(
-                  leading: Icon(Icons.bluetooth, color: AppColors.nineHundred),
-                  title: Text(option.name, style: AppTextStyles.textRegular),
-                  trailing: Switch(
-                    value: sensorConfigNotifier
-                        .getSelectedConfigurationOptions(sensorConfiguration)
-                        .contains(option),
-                    onChanged: (value) {
-                      if (value) {
-                        sensorConfigNotifier.addSensorConfigurationOption(
-                          sensorConfiguration,
-                          option,
-                        );
-                      } else {
-                        sensorConfigNotifier.removeSensorConfigurationOption(
-                          sensorConfiguration,
-                          option,
-                        );
-                      }
-                    },
-                  ),
-                );
-              }),
-        ListTile(
-          leading: Icon(Icons.speed_outlined, color: AppColors.nineHundred),
-          title: Text("Sampling Rate", style: AppTextStyles.textRegular),
-          trailing: Material(
-            child: DropdownButton<SensorConfigurationValue>(
-              value: sensorConfigNotifier.getSelectedConfigurationValue(
-                sensorConfiguration,
-              ),
-              items: sensorConfigNotifier
-                  .getSensorConfigurationValues(
-                    sensorConfiguration,
-                    distinct: true,
-                  )
-                  .where((value) {
-                    if (value is SensorFrequencyConfigurationValue) {
-                      return value.frequencyHz >= 0.1 ||
-                          value.frequencyHz == 0 ||
-                          sensorConfigNotifier.getSelectedConfigurationValue(
-                                sensorConfiguration,
-                              ) ==
-                              value;
-                    }
-                    return true;
-                  })
-                  .map((value) {
-                    if (value is SensorFrequencyConfigurationValue) {
-                      return DropdownMenuItem<SensorConfigurationValue>(
-                        value: value,
-                        child: Text(
-                          value.frequencyHz.toStringAsFixed(2),
-                          style: AppTextStyles.textRegular.copyWith(
-                            color: AppColors.sixHundred,
-                          ),
-                        ),
-                      );
-                    }
-                    return DropdownMenuItem<SensorConfigurationValue>(
-                      value: value,
-                      child: Text(
-                        value.key,
-                        style: AppTextStyles.textRegular.copyWith(
-                          color: AppColors.sixHundred,
-                        ),
+    return ListenableBuilder(
+      listenable: sensorConfigNotifier,
+      builder: (context, _) {
+        return ListView(
+          children: [
+            if (sensorConfiguration is ConfigurableSensorConfiguration)
+              ...(sensorConfiguration as ConfigurableSensorConfiguration)
+                  .availableOptions
+                  .map((option) {
+                    return ListTile(
+                      leading: Icon(
+                        Icons.bluetooth,
+                        color: AppColors.nineHundred,
+                      ),
+                      title: Text(
+                        option.name,
+                        style: AppTextStyles.textRegular,
+                      ),
+                      trailing: Switch(
+                        value: sensorConfigNotifier
+                            .getSelectedConfigurationOptions(
+                              sensorConfiguration,
+                            )
+                            .contains(option),
+                        onChanged: (value) {
+                          if (value) {
+                            sensorConfigNotifier.addSensorConfigurationOption(
+                              sensorConfiguration,
+                              option,
+                            );
+                          } else {
+                            sensorConfigNotifier
+                                .removeSensorConfigurationOption(
+                                  sensorConfiguration,
+                                  option,
+                                );
+                          }
+                        },
                       ),
                     );
-                  })
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  sensorConfigNotifier.addSensorConfiguration(
+                  }),
+            ListTile(
+              leading: Icon(Icons.speed_outlined, color: AppColors.nineHundred),
+              title: Text("Sampling Rate", style: AppTextStyles.textRegular),
+              trailing: Material(
+                child: DropdownButton<SensorConfigurationValue>(
+                  value: sensorConfigNotifier.getSelectedConfigurationValue(
                     sensorConfiguration,
-                    value,
-                  );
-                }
-              },
+                  ),
+                  items: sensorConfigNotifier
+                      .getSensorConfigurationValues(
+                        sensorConfiguration,
+                        distinct: true,
+                      )
+                      .where((value) {
+                        if (value is SensorFrequencyConfigurationValue) {
+                          return value.frequencyHz >= 0.1 ||
+                              value.frequencyHz == 0 ||
+                              sensorConfigNotifier
+                                      .getSelectedConfigurationValue(
+                                        sensorConfiguration,
+                                      ) ==
+                                  value;
+                        }
+                        return true;
+                      })
+                      .map((value) {
+                        if (value is SensorFrequencyConfigurationValue) {
+                          return DropdownMenuItem<SensorConfigurationValue>(
+                            value: value,
+                            child: Text(
+                              value.frequencyHz.toStringAsFixed(2),
+                              style: AppTextStyles.textRegular.copyWith(
+                                color: AppColors.sixHundred,
+                              ),
+                            ),
+                          );
+                        }
+                        return DropdownMenuItem<SensorConfigurationValue>(
+                          value: value,
+                          child: Text(
+                            value.key,
+                            style: AppTextStyles.textRegular.copyWith(
+                              color: AppColors.sixHundred,
+                            ),
+                          ),
+                        );
+                      })
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      sensorConfigNotifier.addSensorConfiguration(
+                        sensorConfiguration,
+                        value,
+                      );
+                    }
+                  },
+                ),
+              ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

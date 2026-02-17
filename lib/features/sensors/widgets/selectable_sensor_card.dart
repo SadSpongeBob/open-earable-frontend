@@ -60,7 +60,7 @@ class SelectableSensorCard extends ConsumerWidget {
                   Checkbox(
                     value: isSelected,
                     onChanged: (_) {
-                      ref.read(recordingChartProvider).selectChart(chartId);
+                      ref.read(recordingChartProvider).toggleChart(chartId);
                     },
                   ),
                 ],
