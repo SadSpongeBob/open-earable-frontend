@@ -73,7 +73,7 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.black54,
+                  color: AppColors.nineHundred,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(Icons.cloud_upload, color: Colors.white, size: 20),
