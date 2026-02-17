@@ -8,12 +8,14 @@ import 'package:openearable/app/constants/colors.dart';
 class SettingsAvatar extends ConsumerStatefulWidget {
   final String? avatarUrl;
   final File? localFile;
+  final bool removed;
   final Function(File?) onImageSelected;
 
   const SettingsAvatar({
     super.key,
     required this.avatarUrl,
     required this.localFile,
+    required this.removed,
     required this.onImageSelected,
     required Future<void> Function() refreshUser,
   });
@@ -31,14 +33,17 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
     final bool hasLocalImage = widget.localFile != null;
     
     ImageProvider imageProvider;
+
     if (hasLocalImage) {
       imageProvider = FileImage(widget.localFile!);
+    } else if (widget.removed) {
+      imageProvider = const AssetImage("assets/images/user.png");
     } else if (hasRemoteImage) {
       imageProvider = NetworkImage(widget.avatarUrl!);
     } else {
       imageProvider = const AssetImage("assets/images/user.png");
     }
-
+    
     return PillMenuAnchor<String>(
       value: 'avatar', 
       options: (hasRemoteImage || hasLocalImage) ? const ['Upload', 'Remove'] : const ['Upload'],

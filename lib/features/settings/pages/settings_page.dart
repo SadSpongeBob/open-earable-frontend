@@ -18,6 +18,10 @@ import '../../../app/widgets/user_card.dart';
 import '../../../app/widgets/input_box.dart';
 import '../widgets/settings_app_bar.dart';
 
+import '../../../app/ui/popup_toast.dart';
+import '../../../app/ui/toast_controller.dart';
+import '../../../app/ui/toast_event.dart';
+
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -35,6 +39,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
   bool _dirty = false;
   bool _saving = false;
   bool _initialized = false;
+  bool _removeAvatarPending = false;
   File? _pendingAvatar;
 
   @override
@@ -70,6 +75,12 @@ class _SettingsState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<ToastEvent?>(toastProvider, (prev, next) {
+      if (next == null) return;
+      PopupToast.show(context, message: next.message);
+      ref.read(toastProvider.notifier).state = null;
+    });
+
     final session = ref.watch(sessionProvider);
     final user = ref.watch(userProvider);
     final busy = _saving || _loading || session.isLoading;
@@ -150,9 +161,11 @@ class _SettingsState extends ConsumerState<SettingsPage> {
                                 SettingsAvatar(
                                   avatarUrl: u?.photoUrl,
                                   localFile: _pendingAvatar,
+                                  removed: _removeAvatarPending,
                                   onImageSelected: (file) {
                                     setState(() {
                                       _pendingAvatar = file;
+                                      _removeAvatarPending = file == null;
                                       _dirty = true;
                                     });
                                   },
@@ -276,6 +289,8 @@ class _SettingsState extends ConsumerState<SettingsPage> {
       final email = _emailController.text.trim();
       final pw = _pwController.text.trim();
 
+      final settingsController = ref.read(settingsControllerProvider);
+
       await ref
           .read(authServiceProvider)
           .updateUser(
@@ -283,30 +298,28 @@ class _SettingsState extends ConsumerState<SettingsPage> {
             emailAddress: email,
             password: pw.isEmpty ? null : pw,
           );
-
+    
       if (_pendingAvatar != null) {
-        await ref.read(settingsControllerProvider).uploadAvatar(_pendingAvatar!);
-        _pendingAvatar = null;
+        await settingsController.uploadAvatar(_pendingAvatar!);
+      } else if (_removeAvatarPending) {
+        await settingsController.removeAvatar();
       }
 
       if (!mounted) return;
-      ref.read(settingsControllerProvider).refreshUser();
 
+      _pendingAvatar = null;
+       _removeAvatarPending = false;
       _pwController.clear();
       setState(() => _dirty = false);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Profile updated')));
-    } catch (e) {
+      await settingsController.refreshUser();
+
+      ref.read(toastProvider.notifier).state =
+      const ToastEvent.success('Profile updated');
+    } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error: ${e.toString()}'),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 8),
-      ),
-    );
+      ref.read(toastProvider.notifier).state =
+      const ToastEvent.error('Failed to update account');
     } finally {
       if (mounted) {
         setState(() {
