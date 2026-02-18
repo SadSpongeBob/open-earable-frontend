@@ -17,55 +17,39 @@ class PlaybackState {
   });
 
   String get speedString => "${speed}x";
+
+  PlaybackState copyWith({
+    bool? isMuted,
+    double? speed,
+    List<Sensor>? selectedSensors,
+    bool? showSensorChart,
+    List<Sensor>? availableSensors,
+  }) {
+    return PlaybackState(
+      isMuted: isMuted ?? this.isMuted,
+      speed: speed ?? this.speed,
+      selectedSensors: selectedSensors ?? this.selectedSensors,
+      showSensorChart: showSensorChart ?? this.showSensorChart,
+      availableSensors: availableSensors ?? this.availableSensors,
+    );
+  }
 }
 
 class PlaybackNotifier extends StateNotifier<PlaybackState> {
   PlaybackNotifier() : super(const PlaybackState());
 
-  void toggleMute() =>
-      state = PlaybackState(
-        isMuted: !state.isMuted,
-        speed: state.speed,
-        selectedSensors: state.selectedSensors,
-        showSensorChart: state.showSensorChart,
-        availableSensors: state.availableSensors,
-      );
+  void toggleMute() => state = state.copyWith(isMuted: !state.isMuted);
 
-  void setSpeed(double s) =>
-      state = PlaybackState(
-        isMuted: state.isMuted,
-        speed: s.clamp(0.25, 2.0),
-        selectedSensors: state.selectedSensors,
-        showSensorChart: state.showSensorChart,
-        availableSensors: state.availableSensors,
-      );
+  void setSpeed(double s) => state = state.copyWith(speed: s.clamp(0.25, 2.0));
 
   void setSelectedSensors(List<Sensor> sensors) =>
-      state = PlaybackState(
-        isMuted: state.isMuted,
-        speed: state.speed,
-        selectedSensors: List.unmodifiable(sensors),
-        showSensorChart: state.showSensorChart,
-        availableSensors: state.availableSensors,
-      );
+      state = state.copyWith(selectedSensors: List.unmodifiable(sensors));
 
   void toggleShowSensorChart() =>
-      state = PlaybackState(
-        isMuted: state.isMuted,
-        speed: state.speed,
-        selectedSensors: state.selectedSensors,
-        showSensorChart: !state.showSensorChart,
-        availableSensors: state.availableSensors,
-      );
+      state = state.copyWith(showSensorChart: !state.showSensorChart);
 
   void setAvailableSensors(List<Sensor> sensors) =>
-      state = PlaybackState(
-        isMuted: state.isMuted,
-        speed: state.speed,
-        selectedSensors: state.selectedSensors,
-        showSensorChart: state.showSensorChart,
-        availableSensors: List.unmodifiable(sensors),
-      );
+      state = state.copyWith(availableSensors: List.unmodifiable(sensors));
 }
 
 final playbackProvider = StateNotifierProvider.autoDispose
