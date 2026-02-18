@@ -32,6 +32,25 @@ import '../widgets/users_button.dart';
 import '../widgets/users_popup.dart';
 import '../widgets/move_recordings_modal.dart';
 
+/// Home Page of the OpenEarable app.
+///
+/// Displays the user's projects and recordings in a two-panel layout:
+/// - **Left Panel (Projects Bar)**: Lists all projects, allows adding, selecting,
+///   duplicating, renaming, and deleting projects.
+/// - **Center Panel (Recordings Grid)**: Shows recordings of the currently open
+///   project. Supports selection mode for deletion, duplication, or moving recordings.
+/// - **Right Panel (Recording Controls)**: Provides Navigation to Settings,
+///   Sensor, Recording Pages, and Bluetooth device management.
+///
+/// Features include:
+/// - Project and recording selection modes with contextual action bars.
+/// - Move mode for transferring recordings between projects.
+/// - Guest and authenticated user support with conditional UI elements.
+/// - Toast notifications for user feedback on actions (e.g., deletion, duplication).
+/// - Background image and custom UI for a polished visual layout.
+/// - Integration with `HomeController` and `UploadController` for project and
+///   recording management.
+/// - Bluetooth devices popup for recording input configuration.
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -40,9 +59,16 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  // --- Form Controllers ---
   final DevicesPopupController _popupController = DevicesPopupController();
   final GlobalKey bluetoothKey = GlobalKey();
+
+  // --- UI State ---
+
+   /// True if the user is currently choosing a target project to move recordings to
   bool _isChoosingMoveTarget = false;
+
+  /// Holds the IDs of recordings selected for moving between projects
   Set<String> _recordingIdsToMove = const <String>{};
 
   @override

@@ -2,6 +2,15 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+/// Action bar displayed when one or more recordings are selected.
+///
+/// Provides options for:
+/// - Deleting selected recordings
+/// - Duplicating selected recordings
+/// - Moving selected recordings to another folder
+/// - Completing selection mode ("Done")
+///
+/// Applies a blurred translucent background for visual emphasis.
 class RecordingSelectionActionBar extends StatelessWidget {
   const RecordingSelectionActionBar({
     super.key,
@@ -12,10 +21,19 @@ class RecordingSelectionActionBar extends StatelessWidget {
     required this.onDone,
   });
 
+  /// Number of recordings currently selected.
   final int selectedCount;
+
+  /// Callback when "Delete" is tapped.
   final VoidCallback onDelete;
+
+  /// Callback when "Duplicate" is tapped.
   final VoidCallback onDuplicate;
+
+  /// Callback when "Move" is tapped.
   final VoidCallback onMove;
+
+  /// Callback when "Done" is tapped to exit selection mode.
   final VoidCallback onDone;
 
   @override

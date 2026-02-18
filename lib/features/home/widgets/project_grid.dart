@@ -4,6 +4,13 @@ import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+/// Sidebar grid displaying all projects and an 'Add Project' tile.
+///
+/// Supports:
+/// - Opening a project on tap
+/// - Entering selection mode via long press
+/// - Multi-selection with visual check indicators
+/// - Highlighting the currently open project
 class ProjectBar extends StatelessWidget {
   const ProjectBar({
     super.key,
@@ -16,14 +23,27 @@ class ProjectBar extends StatelessWidget {
     this.onLongPressProject,
   });
 
+  /// List of available projects to display.
   final List<ProjectMetadata> projects;
+
+  /// ID of the currently open project (used for highlighting).
   final String openProjectId;
 
+  /// Whether the UI is in selection mode.
+  /// When true, selectable projects show a selection circle overlay.
   final bool isSelectionMode;
+
+  /// Set of project IDs that are currently selected.
   final Set<String> selectedProjectIds;
 
+  /// Callback triggered when the add project tile is tapped.
   final VoidCallback? onAddProject;
+
+  /// Callback triggered when a project tile is tapped.
   final ValueChanged<ProjectMetadata>? onTapProject;
+
+  /// Callback triggered when a project tile is long-pressed
+  /// (typically used to enter selection mode).
   final ValueChanged<ProjectMetadata>? onLongPressProject;
 
   @override
