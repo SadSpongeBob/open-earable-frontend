@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
@@ -49,8 +50,13 @@ final videoPlayerControllerProvider = FutureProvider.autoDispose
         ref
             .read(playbackProvider(recording.id).notifier)
             .setAvailableSensors(sensors);
-      } catch (_) {
-        // ignore errors, don't block video play
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint(
+            "Sensor initialization failed for recordingId=${recording.id}, error=$e",
+          );
+        }
+        emitToast(ref, ToastEvent.error("Sensors could not be initialized"));
       }
 
       await vc.play();
@@ -250,6 +256,11 @@ class PlaybackController {
           try {
             await s3Service.downloadToFile(getUrl: entry.url, filePath: outFile.path);
           } catch (e) {
+            if (kDebugMode) {
+              debugPrint(
+                "Sensor download failed for sensorName=${entry.name}, sensorId=${entry.sensorId}, error=$e",
+              );
+            }
             continue;
           }
           out.add(Sensor(
