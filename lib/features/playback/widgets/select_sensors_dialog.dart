@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/app/widgets/app_button.dart';
@@ -54,7 +55,6 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
     if (widget.onChanged != null) {
       widget.onChanged!(_selected == null ? [] : [_selected!]);
     }
-    // close the dialog immediately with the selection
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         Navigator.of(
@@ -78,20 +78,38 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
         ],
       );
     } else {
-      body = SizedBox(
-        height: 240,
+      /// Each item is 56px high, plus 8px padding.
+      /// We want to show at most 4 items without scrolling.
+      /// thand the widget will not have a fixed size the size will be
+      /// determined by the content, but we want to limit it to a max height of
+      /// 240px (4 items * 56px + 8px padding)
+      /// to avoid it taking too much space if there are many sensors.
+      /// TODO : change this if you have a better idea
+      ///
+      const double itemHeight = 56.0;
+      const double maxHeight = 240.0;
+      final double desiredHeight = math.min(maxHeight, avail.length * itemHeight + 8);
+
+      body = ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: desiredHeight),
         child: RadioGroup<Sensor>(
           groupValue: _selected,
           onChanged: _onSelect,
           child: ListView.separated(
+            shrinkWrap: true,
+            physics: const AlwaysScrollableScrollPhysics(),
             itemCount: avail.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, i) {
               final sensor = avail[i];
 
-              return ListTile(
-                leading: Radio<Sensor>(value: sensor),
-                title: Text(sensor.name, style: AppTextStyles.textMedium),
+              return SizedBox(
+                height: itemHeight,
+                child: ListTile(
+                  leading: Radio<Sensor>(value: sensor),
+                  title: Text(sensor.name, style: AppTextStyles.textMedium),
+                  onTap: () => _onSelect(sensor),
+                ),
               );
             },
           ),
