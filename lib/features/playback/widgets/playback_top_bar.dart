@@ -184,7 +184,7 @@ class PlaybackTopBar extends ConsumerWidget implements PreferredSizeWidget {
                   onChanged: (selected) => playbackNotifier.setSelectedSensors(selected),
                   onLongPress: (item) => context.push(
                     Routes.sensorPlayback,
-                    extra: {'sensor': item, 'vc': vc, 'recId': current.id},
+                    extra: {'sensor': item, 'recording': current},
                   ),
                 );
                 if (result != null) playbackNotifier.setSelectedSensors(result);
