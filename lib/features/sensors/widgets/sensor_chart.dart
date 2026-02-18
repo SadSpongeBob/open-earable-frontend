@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 
 class SensorChart extends ConsumerStatefulWidget {
@@ -64,7 +65,7 @@ class _SensorChartState extends ConsumerState<SensorChart> {
                     children: [
                       Checkbox(
                         value: _axisEnabled[axisName],
-                        checkColor: Colors.white,
+                        checkColor: AppColors.fifty,
                         activeColor: _axisColor(axisName, sensor),
                         onChanged: (value) =>
                             _toggleAxis(axisName, value ?? false),

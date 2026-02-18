@@ -67,12 +67,13 @@ class SensorUpload {
 @Deprecated("Sensor type is not supported by sensors library")
 enum SensorType {
   heartRate,
-  thermometer;
+  thermometer, accelerometer;
 
   factory SensorType.fromString(String value) {
-    return switch (value) {
+    return switch (value.toUpperCase()) {
       'HEART_RATE' => heartRate,
       'THERMOMETER' => thermometer,
+      'ACCELEROMETER' => accelerometer,
       _ => throw ArgumentError.value(value, 'value', 'Invalid SensorType'),
     };
   }
@@ -81,6 +82,7 @@ enum SensorType {
     return switch (this) {
       SensorType.heartRate => 'HEART_RATE',
       SensorType.thermometer => 'THERMOMETER',
+      SensorType.accelerometer => 'ACCELEROMETER',
     };
   }
 }

@@ -13,27 +13,26 @@ import 'package:openearable/features/playback/widgets/speed_badge.dart';
 import 'package:video_player/video_player.dart';
 import '../../../app/routing/routes.dart';
 import 'rename_dialog.dart';
+import 'select_sensors_dialog.dart';
 
-class TopBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
+class PlaybackBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   final VideoPlayerController vc;
-  final GlobalKey speedKey;
   final Recording recording;
 
-  const TopBar({
+  const PlaybackBar({
     super.key,
     required this.vc,
-    required this.speedKey,
     required this.recording,
   });
 
   @override
-  ConsumerState<TopBar> createState() => _TopBarState();
+  ConsumerState<PlaybackBar> createState() => _PlaybackBarState();
 
   @override
   Size get preferredSize => const Size.fromHeight(70);
 }
 
-class _TopBarState extends ConsumerState<TopBar> {
+class _PlaybackBarState extends ConsumerState<PlaybackBar> {
   @override
   Widget build(BuildContext context) {
     final home = ref.watch(homeStateProvider);
@@ -69,6 +68,9 @@ class _TopBarState extends ConsumerState<TopBar> {
     });
 
     final playbackState = ref.watch(playbackProvider(current.id));
+    final availableSensors = ref.watch(
+      playbackProvider(current.id).select((s) => s.availableSensors),
+    );
     final playbackNotifier = ref.read(playbackProvider(current.id).notifier);
 
     final controller = ref.read(playbackControllerProvider);
@@ -110,12 +112,7 @@ class _TopBarState extends ConsumerState<TopBar> {
       flexibleSpace: Container(
         decoration: BoxDecoration(
           color: AppColors.fifty,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha((0.15 * 255).round()),
-              blurRadius: 12,
-            ),
-          ],
+            boxShadow: [BoxShadow(color: AppColors.fiveHundred, blurRadius: 12)]
         ),
       ),
       title: AnimatedBuilder(
@@ -138,19 +135,43 @@ class _TopBarState extends ConsumerState<TopBar> {
                         icon: const Icon(Icons.arrow_back_ios),
                         onPressed: () async {
                           await widget.vc.pause();
-                          unawaited(controller.stopAndUpload(current));
                           if (context.mounted) context.go(Routes.home);
                         },
                         color: AppColors.primary,
                         splashRadius: 20,
                       ),
+
                       IconButton(
                         icon: Image.asset(
-                          'assets/buttons/wave_sound_on.png',
+                          playbackState.selectedSensors.isEmpty ||
+                                  !playbackState.showSensorChart
+                              ? 'assets/buttons/wave_sound.png'
+                              : 'assets/buttons/wave_sound_on.png',
                           width: 26,
                           height: 26,
                         ),
-                        onPressed: () {},
+                        onLongPress: () async {
+                          if (!context.mounted) return;
+                          final result = await SelectSensorsDialog.show(
+                            context,
+                            available: availableSensors,
+                            initialSelected: playbackState.selectedSensors,
+                            onChanged: (selected) =>
+                                playbackNotifier.setSelectedSensors(selected),
+                            onLongPress: (item) => context.push(
+                              Routes.sensorPlayback,
+                              extra: {
+                                'recording': widget.recording,
+                                'sensor': item,
+                              },
+                            ),
+                          );
+                          if (result != null) {
+                            playbackNotifier.setSelectedSensors(result);
+                          }
+                        },
+                        onPressed: () =>
+                            playbackNotifier.toggleShowSensorChart(),
                         splashRadius: 20,
                       ),
                       IconButton(
