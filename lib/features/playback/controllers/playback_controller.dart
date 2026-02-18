@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/api/services/project/project_service.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
+import 'package:openearable/api/services/recording/sensor_repository.dart';
 import 'package:openearable/api/services/s3/s3_service.dart';
 import 'package:openearable/app/ui/toast_controller.dart';
 import 'package:openearable/app/ui/toast_event.dart';
@@ -22,12 +24,14 @@ final videoPlayerControllerProvider = FutureProvider.autoDispose
     .family<VideoPlayerController, Recording>((ref, recording) async {
       late final VideoPlayerController vc;
 
+      final sensors = <Sensor>[];
+
+      final localMedia = ref.read(localMediaProvider);
+
       if (recording.isCloud) {
         final recordingService = ref.read(recordingServiceProvider);
         final r = await recordingService.getRecording(recording.id);
-
         vc = VideoPlayerController.networkUrl(Uri.parse(r.videoUrl));
-
       } else {
         final path = recording.localVideoPath;
         if (path == null) throw Exception("Missing localVideoPath");
@@ -37,28 +41,32 @@ final videoPlayerControllerProvider = FutureProvider.autoDispose
       }
 
       await vc.initialize();
+
       try {
         final playbackController = ref.read(playbackControllerProvider);
-        final sensors = await playbackController.getAvailableSensors(recording);
-        final currentState = ref.read(playbackProvider(recording.id));
-        ref.read(playbackProvider(recording.id).notifier).state = PlaybackState(
-          isMuted: currentState.isMuted,
-          speed: currentState.speed,
-          selectedSensors: currentState.selectedSensors,
-          showSensorChart: currentState.showSensorChart,
-          availableSensors: sensors,
-        );
+        sensors.addAll(await playbackController.getAvailableSensors(recording));
+
+        ref
+            .read(playbackProvider(recording.id).notifier)
+            .setAvailableSensors(sensors);
       } catch (_) {
         // ignore errors, don't block video play
       }
 
       await vc.play();
 
-      ref.onDispose(() async {
-        try {
-          await vc.pause();
-        } catch (_) {}
-        await vc.dispose();
+      ref.onDispose(() {
+        // delete temp sensor files AFTER leaving the page
+        if (recording.isCloud) {
+          for (final sensor in sensors) {
+            final f = localMedia.recordingTempSensors(sensor.sensorId);
+            unawaited(SensorRepository.tryDeleteTempSensorFromPath(f.path));
+          }
+        }
+
+        // controller cleanup (fire and forget)
+        vc.pause().catchError((_) {});
+        vc.dispose();
       });
 
       return vc;
@@ -237,11 +245,8 @@ class PlaybackController {
       try {
         final r = await recordingService.getRecording(rec.id);
         final List<Sensor> out = [];
-        final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
-        final recordingId = rec.id;
         for (final entry in r.sensors) {
-          final outFile = localMedia.reccordingSensors(projectId, recordingId, entry.sensorId);
-          await outFile.parent.create(recursive: true);
+          final outFile = localMedia.recordingTempSensors(entry.sensorId);
           try {
             await s3Service.downloadToFile(getUrl: entry.url, filePath: outFile.path);
           } catch (e) {

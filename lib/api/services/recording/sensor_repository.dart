@@ -39,6 +39,17 @@ class SensorRepository {
       return [];
     }
   }
+
+  static Future<void> tryDeleteTempSensorFromPath(String filePath) async {
+    final file = File(filePath);
+    if (await file.exists()) {
+      try {
+        file.delete();
+      } catch (_) {
+        // Best effort
+      }
+    }
+  }
 }
 
 final sensorSampleProvider = FutureProvider.family<List<SensorSample>, String>((

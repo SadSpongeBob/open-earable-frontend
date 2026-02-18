@@ -12,8 +12,9 @@ class LocalMedia {
 
   final Directory baseDir;
   final Directory exportDir;
+  final Directory tempDir;
 
-  LocalMedia(this.baseDir, this.exportDir);
+  LocalMedia(this.baseDir, this.exportDir, this.tempDir);
 
   Directory defaultProjectDir() =>
       Directory(p.join(baseDir.path, defaultProjectId));
@@ -44,6 +45,9 @@ class LocalMedia {
     p.join(baseDir.path, projectId, recordingId, sensorId, sensorDataName),
   );
 
+  File recordingTempSensors(String sensorId) =>
+      File(p.join(tempDir.path, sensorId));
+
   Directory recordingExportDir(String recordingId) =>
       Directory(p.join(exportDir.path, recordingId));
 
@@ -61,11 +65,14 @@ class LocalMedia {
     final baseDir = Directory(p.join(base.path, "OpenEarable"));
     final export = Directory("/storage/emulated/0/Download");
     final exportDir = Directory(p.join(export.path, "OpenEarable"));
+    final temp = await getTemporaryDirectory();
+    final tempDir = Directory(p.join(temp.path, "OpenEarable"));
 
     await baseDir.create(recursive: true);
     await exportDir.create(recursive: true);
+    await tempDir.create(recursive: true);
 
-    return LocalMedia(baseDir, exportDir);
+    return LocalMedia(baseDir, exportDir, tempDir);
   }
 }
 

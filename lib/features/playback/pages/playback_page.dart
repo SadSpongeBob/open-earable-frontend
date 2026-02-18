@@ -38,6 +38,14 @@ class PlaybackPage extends ConsumerStatefulWidget {
 
 class _PlaybackPageState extends ConsumerState<PlaybackPage> {
   @override
+  void dispose() {
+    if (widget.recording != null) {
+      ref.invalidate(videoPlayerControllerProvider(widget.recording!));
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
@@ -135,7 +143,6 @@ class _PlaybackVideoScaffold extends ConsumerWidget {
               TopBar(vc: vc, speedKey: speedKey, recording: recording),
         ),
       ),
-
 
       body: SafeArea(
         child: videoAsync.when(
