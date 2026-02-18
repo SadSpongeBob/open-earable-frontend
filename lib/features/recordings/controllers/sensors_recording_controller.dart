@@ -83,7 +83,7 @@ class SensorsRecordingController extends ChangeNotifier {
         "data": dataList,
       };
 
-      final file = media.reccordingSensors(
+      final file = media.recordingSensors(
         projectId,
         recordingId,
         generatedSensorId,

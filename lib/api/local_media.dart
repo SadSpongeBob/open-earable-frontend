@@ -38,6 +38,14 @@ class LocalMedia {
   File reccordingSensors(String projectId, String recordingId, String sensorId) =>
       File(p.join(baseDir.path, projectId, recordingId, sensorId, sensorDataName));
 
+  File recordingSensors(
+    String projectId,
+    String recordingId,
+    String sensorId,
+  ) => File(
+    p.join(baseDir.path, projectId, recordingId, sensorId, sensorDataName),
+  );
+
   Directory recordingExportDir(String recordingId) =>
       Directory(p.join(exportDir.path, recordingId));
 
