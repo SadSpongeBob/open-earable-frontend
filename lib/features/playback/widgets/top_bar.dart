@@ -140,8 +140,6 @@ class _TopBarState extends ConsumerState<TopBar> {
                         icon: const Icon(Icons.arrow_back_ios),
                         onPressed: () async {
                           await widget.vc.pause();
-                          // fire-and-forget stop/upload (do not await)
-                          controller.stopAndUpload(current);
                           if (context.mounted) context.go(Routes.home);
                         },
                         color: AppColors.primary,

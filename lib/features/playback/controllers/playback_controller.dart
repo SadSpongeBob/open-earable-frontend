@@ -169,13 +169,7 @@ class PlaybackController {
     homeStateNotifier.removeRecording(rec.id);
   }
 
-  Future<void> stopAndUpload(Recording rec) async {
-    if (rec.isCloud) return;
 
-    final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
-
-    uploadController.uploadAndForget(rec.id, projectId);
-  }
 
   Future<void> renameRecording(Recording rec, String newName) async {
     final can = await _canManageRecording(rec);
