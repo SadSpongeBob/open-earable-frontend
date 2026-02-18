@@ -26,14 +26,9 @@ class _SensorChartPlayerState extends State<SensorChartPlayer> {
   int _currentMs = 0;
 
   void _updateCurrentMsFromController() {
-    try {
-      final pos = widget.controller.value.position;
-      final ms = pos.inMilliseconds;
-      if (ms != _currentMs) setState(() => _currentMs = ms);
-    } catch (_) {
-
-
-    }
+    final pos = widget.controller.value.position;
+    final ms = pos.inMilliseconds;
+    if (ms != _currentMs) setState(() => _currentMs = ms);
   }
 
   @override
@@ -49,9 +44,7 @@ class _SensorChartPlayerState extends State<SensorChartPlayer> {
 
   @override
   void dispose() {
-    try {
-      widget.controller.removeListener(_listener);
-    } catch (_) {}
+    widget.controller.removeListener(_listener);
     super.dispose();
   }
 
@@ -62,12 +55,8 @@ class _SensorChartPlayerState extends State<SensorChartPlayer> {
       _logic = SensorChartController(samples: widget.samples);
     }
     if (!identical(oldWidget.controller, widget.controller)) {
-      try {
-        oldWidget.controller.removeListener(_listener);
-      } catch (_) {}
-      try {
-        widget.controller.addListener(_listener);
-      } catch (_) {}
+      oldWidget.controller.removeListener(_listener);
+      widget.controller.addListener(_listener);
       _updateCurrentMsFromController();
     }
   }
