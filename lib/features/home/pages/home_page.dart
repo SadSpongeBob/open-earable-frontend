@@ -58,6 +58,15 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
+/// The state for [HomePage] which handles UI logic, selection modes, and user interactions.
+///
+/// Responsibilities:
+/// - Initialize projects and attempt pending uploads on page load.
+/// - Manage recording and project selection states.
+/// - Enter and exit recording "move mode" for transferring recordings between projects.
+/// - Provide callbacks for project and recording actions via [HomeController].
+/// - Display popups such as user lists, device management, and confirmation dialogs.
+/// - Handle toast notifications using [toastProvider].
 class _HomePageState extends ConsumerState<HomePage> {
   // --- Form Controllers ---
   final DevicesPopupController _popupController = DevicesPopupController();
@@ -79,6 +88,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
+  /// Loads projects and attempts pending uploads
   Future<void> _init() async {
     await ref.read(homeControllerProvider).loadProjects();
     unawaited(ref.read(uploadControllerProvider).tryUploads());
@@ -90,6 +100,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.dispose();
   }
 
+  /// Exits move mode and clears any recordings selected for moving
   void _exitMoveMode() {
     if (!_isChoosingMoveTarget) return;
     setState(() {
@@ -98,6 +109,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
+  /// Determines if a project is stored locally
   bool _isLocalProject(ProjectMetadata? p, String idFallback) {
     if (idFallback == LocalMedia.defaultProjectId) return true;
     if (p == null) return false;
@@ -106,6 +118,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    /// Listens for [ToastEvent] updates to show non-blocking feedback to the user.
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
       PopupToast.show(context, message: next.message);

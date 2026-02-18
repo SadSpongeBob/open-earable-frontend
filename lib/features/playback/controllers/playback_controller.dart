@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
