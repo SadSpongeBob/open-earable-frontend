@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
-import 'package:video_player/video_player.dart';
 import '../controllers/sensor_chart_controller.dart';
 import '../../../api/services/recording/sensor_repository.dart';
 import '../controllers/chart_data.dart';
 import 'chart_painter.dart';
 
 class SensorChartWidget extends StatefulWidget {
-  final VideoPlayerController controller;
+  final dynamic controller;
   final List<SensorSample> samples;
 
   const SensorChartWidget({
@@ -25,21 +24,33 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
   late SensorChartController _logic;
   int _currentMs = 0;
 
+  void _updateCurrentMsFromController() {
+    try {
+      final pos = widget.controller.value.position as Duration;
+      final ms = pos.inMilliseconds;
+      if (ms != _currentMs) setState(() => _currentMs = ms);
+    } catch (_) {
+
+
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _logic = SensorChartController(samples: widget.samples);
     _listener = () {
-      final pos = widget.controller.value.position;
-      final ms = pos.inMilliseconds;
-      if (ms != _currentMs) setState(() => _currentMs = ms);
+      _updateCurrentMsFromController();
     };
     widget.controller.addListener(_listener);
+    _updateCurrentMsFromController();
   }
 
   @override
   void dispose() {
-    widget.controller.removeListener(_listener);
+    try {
+      widget.controller.removeListener(_listener);
+    } catch (_) {}
     super.dispose();
   }
 
@@ -48,6 +59,15 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.samples, widget.samples)) {
       _logic = SensorChartController(samples: widget.samples);
+    }
+    if (!identical(oldWidget.controller, widget.controller)) {
+      try {
+        oldWidget.controller.removeListener(_listener);
+      } catch (_) {}
+      try {
+        widget.controller.addListener(_listener);
+      } catch (_) {}
+      _updateCurrentMsFromController();
     }
   }
 

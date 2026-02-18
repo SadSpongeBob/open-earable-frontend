@@ -7,10 +7,9 @@ class ChartPainter extends CustomPainter {
   final int startMs;
   final int endMs;
 
-  // Konfigurierbare Parameter
   final Color gridColor;
   final int gridLines;
-  final double gridAlpha; // 0.0 bis 1.0
+  final double gridAlpha;
   final Map<String, Color> axisColors;
   final double axisStrokeWidth;
   final double axisGlowWidth;
@@ -37,7 +36,6 @@ class ChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (data.resTs.isEmpty || endMs <= startMs) return;
 
-    // Grid zeichnen
     final gridPaint = Paint()
       ..color = gridColor.withAlpha((gridAlpha * 255).round())
       ..strokeWidth = 1;

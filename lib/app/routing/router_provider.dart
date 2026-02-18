@@ -13,6 +13,7 @@ import 'package:openearable/features/auth/pages/signup_page.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/playback/pages/sensor_playback_page.dart';
+import 'package:video_player/video_player.dart';
 import 'package:openearable/api/models/recording/sensor.dart' as custom_sensor;
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
@@ -69,9 +70,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(path: Routes.sensorPlayback, builder: (context, state) {
-        final sensor = state.extra as custom_sensor.Sensor;
+        final extra = state.extra;
 
-        return SensorPlaybackPage(sensor: sensor);
+        if (extra is! Map) {
+          return Scaffold(
+            body: Center(child: Text('SensorPlayback route requires sensor + vc as extra')),
+          );
+        }
+
+        final sensorObj = extra['sensor'];
+        final vcObj = extra['vc'];
+        final recIdObj = extra['recId'];
+
+        if (sensorObj is! custom_sensor.Sensor || vcObj is! VideoPlayerController || recIdObj is! String) {
+          return Scaffold(
+            body: Center(child: Text('SensorPlayback route requires valid sensor, VideoPlayerController and recId in extra')),
+          );
+        }
+
+        final sensor = sensorObj;
+        final vc = vcObj;
+        final recId = recIdObj as String;
+
+        return SensorPlaybackPage(sensor: sensor, videoController: vc, recordingId: recId);
       }),
       GoRoute(
         path: Routes.sensordata,
