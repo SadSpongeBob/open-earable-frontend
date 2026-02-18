@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,8 +7,10 @@ import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
 import 'package:openearable/api/models/project/project_role.dart';
 import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/api/services/project/project_service.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
+import 'package:openearable/api/services/recording/sensor_repository.dart';
 import 'package:openearable/api/services/s3/s3_service.dart';
 import 'package:openearable/app/ui/toast_controller.dart';
 import 'package:openearable/app/ui/toast_event.dart';
@@ -17,9 +19,15 @@ import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/recordings/controllers/upload_controller.dart';
 import 'package:video_player/video_player.dart';
 
+import '../state/playback_state.dart';
+
 final videoPlayerControllerProvider = FutureProvider.autoDispose
     .family<VideoPlayerController, Recording>((ref, recording) async {
       late final VideoPlayerController vc;
+
+      final sensors = <Sensor>[];
+
+      final localMedia = ref.read(localMediaProvider);
 
       if (recording.isCloud) {
         final recordingService = ref.read(recordingServiceProvider);
@@ -34,13 +42,37 @@ final videoPlayerControllerProvider = FutureProvider.autoDispose
       }
 
       await vc.initialize();
+
+      try {
+        final playbackController = ref.read(playbackControllerProvider);
+        sensors.addAll(await playbackController.getAvailableSensors(recording));
+
+        ref
+            .read(playbackProvider(recording.id).notifier)
+            .setAvailableSensors(sensors);
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint(
+            "Sensor initialization failed for recordingId=${recording.id}, error=$e",
+          );
+        }
+        emitToast(ref, ToastEvent.error("Sensors could not be initialized"));
+      }
+
       await vc.play();
 
-      ref.onDispose(() async {
-        try {
-          await vc.pause();
-        } catch (_) {}
-        await vc.dispose();
+      ref.onDispose(() {
+        // delete temp sensor files AFTER leaving the page
+        if (recording.isCloud) {
+          for (final sensor in sensors) {
+            final f = localMedia.recordingTempSensors(sensor.sensorId);
+            unawaited(SensorRepository.tryDeleteTempSensorFromPath(f.path));
+          }
+        }
+
+        // controller cleanup (fire and forget)
+        vc.pause().catchError((_) {});
+        vc.dispose();
       });
 
       return vc;
@@ -151,13 +183,7 @@ class PlaybackController {
     homeStateNotifier.removeRecording(rec.id);
   }
 
-  Future<void> stopAndUpload(Recording rec) async {
-    if (rec.isCloud) return;
 
-    final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
-
-    uploadController.uploadAndForget(rec.id, projectId);
-  }
 
   Future<void> renameRecording(Recording rec, String newName) async {
     final can = await _canManageRecording(rec);
@@ -218,5 +244,46 @@ class PlaybackController {
         }
       }
     }
+  }
+
+  Future<List<Sensor>> getAvailableSensors(Recording rec) async {
+    if (rec.isCloud) {
+      try {
+        final r = await recordingService.getRecording(rec.id);
+        final List<Sensor> out = [];
+        for (final entry in r.sensors) {
+          final outFile = localMedia.recordingTempSensors(entry.sensorId);
+          try {
+            await s3Service.downloadToFile(getUrl: entry.url, filePath: outFile.path);
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint(
+                "Sensor download failed for sensorName=${entry.name}, sensorId=${entry.sensorId}, error=$e",
+              );
+            }
+            continue;
+          }
+          out.add(Sensor(
+            sensorIndex: entry.sensorIndex,
+            sensorId: entry.sensorId,
+            name: entry.name,
+            timeStamp: entry.timestamp,
+            localPath: outFile.path,
+          ));
+        }
+        return out;
+      } catch (e) {
+        return [];
+      }
+    }
+    final projectId = rec.projectId ?? LocalMedia.defaultProjectId;
+    final recordingId = rec.id;
+
+    final sensors = await recordingService.getLocalRecordingSensors(
+      projectId,
+      recordingId,
+    );
+
+    return sensors;
   }
 }

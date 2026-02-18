@@ -12,6 +12,8 @@ import 'package:openearable/features/auth/pages/reset_password_page.dart';
 import 'package:openearable/features/auth/pages/signup_page.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
+import 'package:openearable/features/playback/pages/sensor_playback_page.dart';
+import 'package:openearable/api/models/recording/sensor.dart' as custom_sensor;
 import 'package:openearable/features/recordings/pages/recordings_page.dart';
 import 'package:openearable/features/settings/pages/settings_page.dart';
 import 'package:openearable/features/sensors/pages/sensor_page.dart';
@@ -44,10 +46,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       GoRoute(path: Routes.home, builder: (_, _) => const HomePage()),
-      GoRoute(
-        path: Routes.recording,
-        builder: (_, _) => const RecordingPage(),
-      ),
+      GoRoute(path: Routes.recording, builder: (_, _) => const RecordingPage()),
       GoRoute(path: Routes.settings, builder: (_, _) => const SettingsPage()),
       GoRoute(path: Routes.login, builder: (_, _) => const LoginPage()),
       GoRoute(path: Routes.signup, builder: (_, _) => const SignupPage()),
@@ -66,17 +65,22 @@ final routerProvider = Provider<GoRouter>((ref) {
               ? RecordingSource.cloud
               : RecordingSource.local;
 
-          return PlaybackPage(
-            recordingId: id,
-            source: source,
-            recording: rec,
-          );
+          return PlaybackPage(recordingId: id, source: source, recording: rec);
         },
       ),
+      GoRoute(path: Routes.sensorPlayback, builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+
+        final sensor = extra['sensor'] as custom_sensor.Sensor;
+        final recording = extra['recording'] as Recording;
+
+        return SensorPlaybackPage(sensor: sensor, recording: recording);
+      }),
       GoRoute(
-        path: Routes.sensordata, 
+        path: Routes.sensordata,
         builder: (context, state) {
-          final isRecordingSource = state.uri.queryParameters['source'] == 'recording';
+          final isRecordingSource =
+              state.uri.queryParameters['source'] == 'recording';
           return SensorPage(isRecordingSource: isRecordingSource);
         },
       ),
@@ -89,9 +93,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             return const Scaffold(
               body: Center(
                 child: Text(
-                  "Sensor data are missing. Please go back.", 
+                  "Sensor data are missing. Please go back.",
                   style: AppTextStyles.subheaderRegular,
-                )
+                ),
               ),
             );
           }
@@ -112,8 +116,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (kDebugMode) {
         debugPrint(
           'redirect | loc=$loc '
-              'path=${state.uri.path} '
-              'loggedOut=${session.isLoggedOut}',
+          'path=${state.uri.path} '
+          'loggedOut=${session.isLoggedOut}',
         );
       }
       final isPublic =
@@ -133,6 +137,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       return null;
-    }
+    },
   );
 });
