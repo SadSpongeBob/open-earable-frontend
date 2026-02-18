@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:video_player/video_player.dart';
 import '../controllers/sensor_chart_controller.dart';
 import '../../../api/services/recording/sensor_repository.dart';
@@ -64,11 +65,11 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha((0.15 * 255).round()),
+                  color: AppColors.fifty.withAlpha((0.15 * 255).round()),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha((0.05 * 255).round()),
+                      color: AppColors.nineHundred.withAlpha((0.05 * 255).round()),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                     ),

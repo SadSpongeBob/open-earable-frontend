@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openearable/app/constants/colors.dart';
 import '../controllers/chart_data.dart';
 
 class ChartPainter extends CustomPainter {
@@ -19,13 +20,13 @@ class ChartPainter extends CustomPainter {
     required this.data,
     required this.startMs,
     required this.endMs,
-    this.gridColor = Colors.grey,
+    this.gridColor = AppColors.twoHundred,
     this.gridLines = 5,
     this.gridAlpha = 0.2,
     this.axisColors = const {
-      'x': Colors.blue,
-      'y': Colors.red,
-      'z': Colors.purple,
+      'x': AppColors.blue,
+      'y': AppColors.primary,
+      'z': AppColors.secondary,
     },
     this.axisStrokeWidth = 2.4,
     this.axisGlowWidth = 6.0,

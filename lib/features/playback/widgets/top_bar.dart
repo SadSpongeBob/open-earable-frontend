@@ -114,7 +114,7 @@ class _TopBarState extends ConsumerState<TopBar> {
           color: AppColors.fifty,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha((0.15 * 255).round()),
+              color: AppColors.nineHundred.withAlpha((0.15 * 255).round()),
               blurRadius: 12,
             ),
           ],
