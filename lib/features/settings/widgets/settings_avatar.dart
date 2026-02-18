@@ -5,10 +5,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/app/widgets/pill_menu.dart';
 import 'package:openearable/app/constants/colors.dart';
 
+/// Widget for displaying and managing a user's avatar in the Settings Page.
+///
+/// Shows either a local image, a remote image from [avatarUrl], or a default
+/// placeholder if no image exists. Allows the user to:
+/// - Upload a new image from the gallery
+/// - Remove the current image if it's not default
+///
+/// Uses a [PillMenu] to provide interaction options. The [onImageSelected]
+/// callback is triggered when the user selects or removes an image.
 class SettingsAvatar extends ConsumerStatefulWidget {
+  
+  /// URL of the remote avatar image.
   final String? avatarUrl;
+
+  /// Local file selected for upload, overrides [avatarUrl] if present.
   final File? localFile;
+
+  /// Indicates if the current avatar has been marked for removal.
   final bool removed;
+
+  /// Callback triggered when an image is uploaded or removed.
   final Function(File?) onImageSelected;
 
   const SettingsAvatar({
