@@ -22,8 +22,8 @@ The classes inside files will follow the `CamelCase`: `class ButtonWidget()..`
 ## API Layer
 
 - Each server declared in the backend should have its own `@/lib/api/services/service_folder/`
-    - In `@/service_folder/service_endpoints.dart` URIs of the 
-    endpoints of that service should be declared.
+    - In `@/service_folder/service_endpoints.dart` URIs of the
+      endpoints of that service should be declared.
     - In `@/service_folder/service_name.dart` should the endpoint calls happen.
 - Use `dio` configured under `@/lib/api/client_dio.dart`
 

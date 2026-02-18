@@ -93,7 +93,7 @@ class _SettingsAvatarState extends ConsumerState<SettingsAvatar> {
                   color: AppColors.nineHundred,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(Icons.cloud_upload, color: Colors.white, size: 20),
+                child: const Icon(Icons.cloud_upload, color: AppColors.fifty, size: 20),
               ),
           ],
         );

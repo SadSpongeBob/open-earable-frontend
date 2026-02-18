@@ -12,4 +12,14 @@ class Sensor {
     required this.timeStamp,
     required this.localPath,
   });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Sensor &&
+          runtimeType == other.runtimeType &&
+          sensorId == other.sensorId;
+
+  @override
+  int get hashCode => sensorId.hashCode;
 }

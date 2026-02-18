@@ -26,7 +26,8 @@ class UploadRecordingResponse {
       json['videoUpload'] as Map<String, dynamic>,
     );
 
-    final sensorUploads = (json['sensorUploads'] as List)
+    final sensorUploadsRaw = json['sensorUploads'] as List<dynamic>;
+    final sensorUploads = (sensorUploadsRaw)
         .map((e) => SensorUploadInfo.fromJson(e as Map<String, dynamic>))
         .toList();
 
@@ -65,9 +66,11 @@ class UploadInfo {
     final filename = json['filename'] as String;
     final key = json['key'] as String;
     final uploadUrl = json['uploadUrl'] as String;
-    final timestamp = DateTime.parse(json['timestamp']).toUtc();
-    final headers = (json['requiredHeaders'] as Map<String, dynamic>)
-        .cast<String, String>();
+
+    final tsRaw = json['timestamp'] as String;
+    final timestamp = DateTime.parse(tsRaw).toUtc();
+
+    final headers = Map<String, String>.from(json['requiredHeaders'] as Map);
 
     return UploadInfo(
       filename: filename,
@@ -98,8 +101,18 @@ class SensorUploadInfo {
     final sensorId = json['sensorId'] as String;
     final sensorIndex = json['sensorIndex'] as int;
     final name = json['name'] as String;
-    final type = SensorType.fromString(json['sensorType'] as String);
-    final sensor = UploadInfo.fromJson(json['sensor'] as Map<String, dynamic>);
+
+    final typeRaw = json['type'] as String;
+    SensorType type;
+    try {
+      type = SensorType.fromString(typeRaw);
+    } catch (_) {
+      type = SensorType.heartRate;
+    }
+
+    final sensorJson = json['sensor'] as Map<String, dynamic>;
+
+    final sensor = UploadInfo.fromJson(sensorJson);
 
     return SensorUploadInfo(
       sensorId: sensorId,
@@ -120,8 +133,7 @@ class ThumbnailUploadInfo {
   factory ThumbnailUploadInfo.fromJson(Map<String, dynamic> json) {
     return ThumbnailUploadInfo(
       uploadUrl: json['uploadUrl'] as String,
-      requiredHeaders: (json['requiredHeaders'] as Map<String, dynamic>)
-          .cast<String, String>(),
+      requiredHeaders: Map<String, String>.from(json['requiredHeaders'] as Map),
     );
   }
 }

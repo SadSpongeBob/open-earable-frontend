@@ -139,24 +139,24 @@ class UploadController {
       return null;
     }
 
-    final name = meta['name'];
-    final timestampRaw = meta['timestamp'];
-    if (name is! String || timestampRaw is! String) return null;
+    final name = (meta['name'] as String?)?.trim();
+    final timestampRaw = meta['timestamp'] as String?;
+    if (name == null || name.isEmpty) return null;
 
     final ts =
-        DateTime.tryParse(timestampRaw)?.toUtc() ??
-        await _fallbackTimestampUtc(videoFile);
+        DateTime.tryParse(timestampRaw ?? '')?.toUtc() ??
+            await _fallbackTimestampUtc(videoFile);
 
     String? recordingIdForLog;
 
     try {
-      final thumbnail = localMedia.thumbnailFile(projectId, recordingId);
-      final thumbnailExists = await thumbnail.exists();
-
       final sensors = await recordingService.getLocalRecordingSensors(
         projectId,
         recordingId,
       );
+
+      final thumbnail = localMedia.thumbnailFile(projectId, recordingId);
+      final thumbnailExists = await thumbnail.exists();
 
       final req = UploadRecordingRequest(
         name: name,
@@ -166,7 +166,7 @@ class UploadController {
           sizeBytes: await videoFile.length(),
           timestamp: ts,
         ),
-        sensors: await sensors.map((s) => _mapToUpload(s)).wait,
+        sensors: await Future.wait(sensors.map(_mapToUpload)),
         projectId: projectId == LocalMedia.defaultProjectId ? null : projectId,
         thumbnailContent: thumbnailExists ? ContentType.jpeg : null,
       );
@@ -174,7 +174,7 @@ class UploadController {
       final uploadResp = await recordingService.startUpload(req);
       recordingIdForLog = uploadResp.recordingId;
 
-      _uploadSensors(sensors, uploadResp.sensorUploads);
+      await _uploadSensors(sensors, uploadResp.sensorUploads);
 
       await s3Service.uploadFile(
         putUrl: uploadResp.videoUpload.uploadUrl,
@@ -188,7 +188,7 @@ class UploadController {
       );
 
       if (thumbnailExists && uploadResp.thumbnailUpload != null) {
-        _tryThumbnailUpload(
+        await _tryThumbnailUpload(
           thumbnail,
           uploadResp.thumbnailUpload!,
           recordingId,
@@ -219,16 +219,17 @@ class UploadController {
     }
   }
 
+  Future<DateTime> _fallbackTimestampUtc(File file) async {
+    final stat = await file.stat();
+    final modified = stat.modified.toUtc();
+    final changed = stat.changed.toUtc();
+    return changed.isBefore(modified) ? changed : modified;
+  }
+
   Future<void> _uploadSensors(
     List<Sensor> sensors,
     List<SensorUploadInfo> sensorUploads,
   ) async {
-    if (sensorUploads.length != sensors.length && kDebugMode) {
-      throw StateError(
-        "Sensor upload count mismatch local=${sensors.length} remote=${sensorUploads.length}",
-      );
-    }
-
     final Map<int, UploadInfo> lookup = {
       for (final u in sensorUploads) u.sensorIndex: u.sensor,
     };
@@ -242,9 +243,16 @@ class UploadController {
           );
         }
 
+        final file = File(s.localPath);
+        if (!await file.exists()) {
+          throw StateError(
+            "Missing sensor file for sensor with sensorId=${s.sensorId}, filePath=${s.localPath}",
+          );
+        }
+
         await s3Service.uploadFile(
           putUrl: upload.uploadUrl,
-          file: File(s.localPath),
+          file: file,
           headers: upload.requiredHeaders,
         );
       }),
@@ -256,7 +264,7 @@ class UploadController {
     ThumbnailUploadInfo thumbnailUpload,
     String recordingId,
     String projectId,
-    String recordingIdForLog,
+    String? recordingIdForLog,
   ) async {
     try {
       await s3Service.uploadFile(
@@ -273,21 +281,18 @@ class UploadController {
     }
   }
 
-  Future<DateTime> _fallbackTimestampUtc(File file) async {
-    final stat = await file.stat();
-    final modified = stat.modified.toUtc();
-    final changed = stat.changed.toUtc();
-    return changed.isBefore(modified) ? changed : modified;
-  }
-
   Future<SensorUpload> _mapToUpload(Sensor sensor) async {
     final file = File(sensor.localPath);
+
     return SensorUpload(
       sensorIndex: sensor.sensorIndex,
       name: sensor.name,
+      // no sensor type information provided -> setting heartRate as default
       type: SensorType.heartRate,
       file: RecordingFile(
-        filename: file.uri.pathSegments.last,
+        filename: file.uri.pathSegments.isNotEmpty
+            ? file.uri.pathSegments.last
+            : LocalMedia.sensorDataName,
         contentType: ContentType.json,
         sizeBytes: await file.length(),
         timestamp: sensor.timeStamp,

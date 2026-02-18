@@ -83,11 +83,12 @@ class SensorsRecordingController extends ChangeNotifier {
         "data": dataList,
       };
 
-      final file = media.reccordingSensors(
+      final file = media.recordingSensors(
         projectId,
         recordingId,
         generatedSensorId,
       );
+      await file.parent.create(recursive: true);
       await file.writeAsString(
         const JsonEncoder.withIndent("  ").convert(jsonMap),
       );
