@@ -14,7 +14,7 @@ import 'package:openearable/features/home/state/network_status.dart';
 import 'package:openearable/features/playback/widgets/failed_load_screen.dart';
 
 import '../controllers/playback_controller.dart';
-import '../widgets/top_bar.dart';
+import '../widgets/playback_bar.dart';
 import '../widgets/video_card.dart';
 import '../state/playback_state.dart';
 
@@ -121,8 +121,6 @@ class _PlaybackVideoScaffold extends ConsumerWidget {
     final playbackState = ref.watch(playbackProvider(recording.id));
     final videoAsync = ref.watch(videoPlayerControllerProvider(recording));
 
-    final speedKey = GlobalKey();
-
     // Selected Sensor
     final Sensor? selectedSensor = playbackState.selectedSensors.isNotEmpty
         ? playbackState.selectedSensors.first
@@ -138,7 +136,7 @@ class _PlaybackVideoScaffold extends ConsumerWidget {
           loading: () => const SizedBox(height: 88),
           error: (_, _) => const SizedBox(height: 88),
           data: (vc) =>
-              TopBar(vc: vc, speedKey: speedKey, recording: recording),
+              PlaybackBar(vc: vc, recording: recording),
         ),
       ),
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/app/constants/colors.dart';
@@ -9,7 +8,7 @@ import 'package:openearable/features/playback/widgets/failed_load_screen.dart';
 import 'package:openearable/features/playback/widgets/sensor_chart_player.dart';
 import 'package:openearable/api/services/recording/sensor_repository.dart';
 import 'package:video_player/video_player.dart';
-import 'package:openearable/features/playback/widgets/playback_top_bar.dart';
+import 'package:openearable/features/playback/widgets/sensor_playback_bar.dart';
 
 class SensorPlaybackPage extends ConsumerStatefulWidget {
   final Sensor sensor;
@@ -34,14 +33,10 @@ class _SensorPlaybackPageState extends ConsumerState<SensorPlaybackPage> {
 
     return videoControllerAsync.when(
       data: (vc) => Scaffold(
-        appBar: PlaybackTopBar(
+        appBar: SensorPlaybackBar(
           vc: vc,
-          recordingId: widget.recording.id,
-          minimal: true,
-          title: widget.sensor.name,
-          onBack: () {
-            if (context.mounted) context.pop();
-          },
+          recording: widget.recording,
+          sensorName: widget.sensor.name,
         ),
         body: SafeArea(
           child: Center(
@@ -54,8 +49,9 @@ class _SensorPlaybackPageState extends ConsumerState<SensorPlaybackPage> {
                 return samplesAsync.when(
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
-                  error: (_, _) =>
-                      const Center(child: Text('Failed to load sensor information')),
+                  error: (_, _) => const Center(
+                    child: Text('Failed to load sensor information'),
+                  ),
                   data: (samples) {
                     return Card(
                       elevation: 8,
