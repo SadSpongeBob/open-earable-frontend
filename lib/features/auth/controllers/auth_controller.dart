@@ -11,6 +11,11 @@ import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/state/network_status.dart';
 
+/// Controller responsible for managing all authentication flows in the app.
+///
+/// Handles user signup, login, guest login, logout, and session bootstrapping.
+/// Interacts with [AuthService], [UserService], and [GuestStorage] to maintain
+/// the user's session state. Updates UI feedback through [ToastEvent] notifications.
 class AuthController {
   final AuthService _authService;
   final GuestStorage _guestStorage;
@@ -30,6 +35,10 @@ class AuthController {
       this._ref,
       );
 
+  /// Initializes the user session on app start.
+  ///
+  /// Checks if the user is a guest, if network is available, and refreshes
+  /// the authenticated session if necessary. Updates [SessionNotifier] accordingly.
   Future<void> bootstrap() async {
     _session.setLoading();
 
@@ -58,6 +67,10 @@ class AuthController {
     }
   }
 
+  /// Registers a new user account with name, email and password.
+  ///
+  /// Updates the session to authenticated upon success, or triggers a toast
+  /// notification on failure.
   Future<void> signup({
     required String name,
     required String email,
@@ -79,6 +92,9 @@ class AuthController {
     }
   }
 
+  /// Logs in an existing user using email and password.
+  ///
+  /// Updates the session and triggers toast notifications on failure.
   Future<void> login({required String email, required String password}) async {
     _session.setLoading();
     try {
@@ -95,12 +111,18 @@ class AuthController {
     }
   }
 
+  /// Initiates a guest session.
+  ///
+  /// Logs out any current session and sets the guest flag in storage.
   Future<void> guestLogin() async {
     await _authService.logout();
     await _guestStorage.setGuest(true);
     _session.setGuest();
   }
 
+  /// Logs out the current user and clears all relevant session data.
+  ///
+  /// Optionally accepts a [message] to show as a toast notification after logout.
   Future<void> logout({String? message}) async {
     await _authService.logout();
     await _guestStorage.clear();
@@ -109,6 +131,7 @@ class AuthController {
   }
 }
 
+/// Provider for [AuthController], exposing it to the app.
 final authControllerProvider = Provider<AuthController>((ref) {
   final authService = ref.read(authServiceProvider);
   final userService = ref.read(userServiceProvider);

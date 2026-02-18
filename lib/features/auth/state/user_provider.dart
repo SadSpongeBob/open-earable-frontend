@@ -3,6 +3,16 @@ import 'package:openearable/api/client_dio.dart';
 import 'package:openearable/api/models/auth/user.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 
+/// A Riverpod [FutureProvider] that exposes the current [User] object.
+///
+/// This provider:
+/// - Returns `null` if the user is a guest.
+/// - Returns cached user data from [sessionProvider] if available.
+/// - Otherwise, fetches the user from the [userServiceProvider] API.
+/// - Updates the [sessionProvider] with fresh user data after fetching.
+///
+/// This allows widgets and controllers to reactively watch and use the
+/// current authenticated user without manually managing the state.
 final userProvider = FutureProvider<User?>((ref) async {
   final session = ref.watch(sessionProvider);
 

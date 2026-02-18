@@ -15,7 +15,14 @@ import '../../../app/widgets/user_card.dart';
 import '../../../app/widgets/input_box.dart';
 import '../../../app/ui/popup_toast.dart';
 
+/// Page that allows a user to reset their password using an authentication token.
+///
+/// This page is accessed after a password reset request. Users can enter a new
+/// password and submit it. Successful reset shows a confirmation dialog and
+/// redirects the user to the login page. Failures are displayed via toast messages.
 class ResetPasswordPage extends ConsumerStatefulWidget {
+
+  /// The authentication token used to authorize the password reset request.
   final String authToken;
 
   const ResetPasswordPage({super.key, required this.authToken});
@@ -25,11 +32,15 @@ class ResetPasswordPage extends ConsumerStatefulWidget {
 }
 
 class _ResetState extends ConsumerState<ResetPasswordPage> {
+  // --- Form Controller ---
   final _pwController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  // --- UI State ---
   bool _loading = false;
   bool _showPassword = false;
 
+  /// Returns true if the password field is not empty.
   bool get _isFormFilled => _pwController.text.isNotEmpty;
 
   @override
@@ -38,6 +49,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
     _pwController.addListener(_onFormChanged);
   }
 
+  /// Updates the UI whenever the password input changes.
   void _onFormChanged() => setState(() {});
 
   @override
@@ -48,6 +60,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    /// Listens for [ToastEvent] updates to show non-blocking feedback to the user.
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
       PopupToast.show(context, message: next.message);
@@ -92,6 +105,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
                   const SizedBox(height: 30),
 
+                  // Password input field
                   InputBox(
                     controller: _pwController,
                     hint: "Password",
@@ -113,6 +127,7 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
 
                   const SizedBox(height: 30),
 
+                  // Reset password button
                   AppButton.primary(
                     text: "Reset",
                     onPressed: _isFormFilled ? _handleReset : null,
@@ -127,6 +142,11 @@ class _ResetState extends ConsumerState<ResetPasswordPage> {
     );
   }
 
+  /// Handles the password reset submission.
+  ///
+  /// Validates the password field, calls the [authServiceProvider] to update
+  /// the password using the provided auth token, and shows a confirmation dialog
+  /// on success. If failes then displays an error toast message.
   Future<void> _handleReset() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 

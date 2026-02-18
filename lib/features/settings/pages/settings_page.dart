@@ -21,7 +21,7 @@ import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 
-/// Page for managing user account settings, including profile name, email,
+/// Settings Page for managing user account settings, including profile name, email,
 /// password, avatar, download method, and account actions such as Sign Out
 /// and Delete Account.
 /// 
@@ -92,7 +92,6 @@ class _SettingsState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     /// Listens for [ToastEvent] updates to show non-blocking feedback to the user.
-    /// Resets the provider state to null after the toast is triggered.
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
       PopupToast.show(context, message: next.message);

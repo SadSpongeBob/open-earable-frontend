@@ -17,6 +17,11 @@ import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_seperator.dart';
 import '../../../app/widgets/input_box.dart';
 
+/// Sign Up Page that allows users to create a new account in the app.
+///
+/// Users provide a name, email, and password. Upon successful signup, the user
+/// is logged in automatically via [authControllerProvider]. The page also
+/// allows users to navigate to the login page or continue as a guest.
 class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
 
@@ -25,13 +30,16 @@ class SignupPage extends ConsumerStatefulWidget {
 }
 
 class _SignupPageState extends ConsumerState<SignupPage> {
+  // --- Form Controllers ---
   final _namecontroller = TextEditingController();
   final _emailController = TextEditingController();
   final _pwController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  // --- UI State ---
   bool _showPassword = false;
 
+  /// Returns true if all input fields (name, email, password) are not empty.
   bool get _isFormFilled =>
       _namecontroller.text.isNotEmpty &&
           _emailController.text.isNotEmpty &&
@@ -45,6 +53,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     _pwController.addListener(_onFormChanged);
   }
 
+  /// Updates the UI whenever a form field changes.
   void _onFormChanged() => setState(() {});
 
   @override
@@ -60,12 +69,14 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     final session = ref.watch(sessionProvider);
     final loading = session.isLoading;
 
+    /// Listens for [ToastEvent] updates to show non-blocking feedback to the user.
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
       PopupToast.show(context, message: next.message);
       ref.read(toastProvider.notifier).state = null;
     });
 
+    /// Listens for [AuthState] updates to show auth error messages as toast.
     ref.listen<AuthState>(sessionProvider, (prev, next) {
       final msg = next.error;
       if (msg != null && msg.isNotEmpty && msg != prev?.error) {
@@ -103,6 +114,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                   const SizedBox(height: 35),
 
+                  // Name input
                   InputBox(
                     controller: _namecontroller,
                     hint: "Name",
@@ -112,6 +124,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                   const SizedBox(height: 20),
 
+                  // Email input
                   InputBox(
                     controller: _emailController,
                     hint: "Email Address",
@@ -121,6 +134,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                   const SizedBox(height: 20),
 
+                  // Password input
                   InputBox(
                     controller: _pwController,
                     hint: "Password",
@@ -142,6 +156,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                   const SizedBox(height: 20),
 
+                  // Sign up button
                   AppButton.primary(
                     text: "Sign Up",
                     onPressed: _isFormFilled ? _handleSignup : null,
@@ -150,6 +165,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                   const SizedBox(height: 10),
 
+                  // Link to login page
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -167,11 +183,13 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
                   const AuthSeparator(),
 
+                  // Continue as guest
                   AuthFooterLink(
                     text: "Continue as Guest",
                     bold: true,
                     onTap: () async {
                       await ref.read(authControllerProvider).guestLogin();
+                      if (!context.mounted) return;
                       context.go(Routes.home);
                     },
                   ),
@@ -184,6 +202,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     );
   }
 
+  /// Handles the signup process by validating the form and calling the
+  /// [authControllerProvider.signup] method.
   Future<void> _handleSignup() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
