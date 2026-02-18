@@ -21,6 +21,29 @@ import 'package:video_player/video_player.dart';
 
 import '../state/playback_state.dart';
 
+/// Playback module for handling video and sensor playback in the OpenEarable app.
+/// 
+/// This file provides:
+/// - [videoPlayerControllerProvider]: Initializes and manages video playback for recordings.
+/// - [playbackControllerProvider]: Provides a singleton [PlaybackController] instance.
+/// - [PlaybackController]: Handles playback operations, sensor management, video export,
+///   renaming, and deletion of recordings.
+
+/// Provides a [VideoPlayerController] for a specific [Recording].
+///
+/// Handles initialization of the video controller based on whether the recording is
+/// local or in the cloud. Also loads associated sensor data for playback visualization.
+/// Cleans up the controller and temporary sensor files on dispose.
+///
+/// Parameters:
+/// - [recording]: The [Recording] to play.
+///
+/// Returns:
+/// - A fully initialized [VideoPlayerController] ready for playback.
+/// 
+/// Throws:
+/// - [Exception] if local video path is missing or file does not exist.
+/// - Emits a toast if sensor initialization fails.
 final videoPlayerControllerProvider = FutureProvider.autoDispose
     .family<VideoPlayerController, Recording>((ref, recording) async {
       late final VideoPlayerController vc;
@@ -78,6 +101,16 @@ final videoPlayerControllerProvider = FutureProvider.autoDispose
       return vc;
     });
 
+/// Provides a singleton [PlaybackController] for managing video playback and recording operations.
+///
+/// Dependencies injected:
+/// - [LocalMedia] for file management
+/// - [RecordingService] and [S3Service] for cloud/local recordings
+/// - [UploadController] for handling uploads
+/// - [HomeStateNotifier] for updating UI state
+/// - [ProjectService] for project and permission management
+/// - [AuthState] for user session and permissions
+/// - [Toast] function for user feedback
 final playbackControllerProvider = Provider<PlaybackController>((ref) {
   final localMedia = ref.read(localMediaProvider);
   final recordingService = ref.read(recordingServiceProvider);
@@ -101,6 +134,17 @@ final playbackControllerProvider = Provider<PlaybackController>((ref) {
   );
 });
 
+/// Manages playback operations for recordings including video control, sensor management,
+/// exporting recordings, and recording CRUD operations.
+///
+/// Responsibilities:
+/// - Toggle play/pause and seek video
+/// - Load available sensors for playback visualization
+/// - Check user permissions for managing recordings
+/// - Delete or rename recordings (local and cloud)
+/// - Export recordings and associated sensor files
+///
+/// Dependencies are injected via constructor.
 class PlaybackController {
   PlaybackController({
     required this.localMedia,
@@ -125,11 +169,13 @@ class PlaybackController {
   final AuthState _authState;
   final void Function(ToastEvent) _toast;
 
+  /// Toggles playback state (play/pause) for a given [VideoPlayerController].
   void togglePlay(VideoPlayerController vc) {
     if (!vc.value.isInitialized) return;
     vc.value.isPlaying ? vc.pause() : vc.play();
   }
 
+  /// Seeks the video by [seconds] relative to current position.
   void seekBySeconds(VideoPlayerController vc, int seconds) {
     if (!vc.value.isInitialized) return;
     final current = vc.value.position;
@@ -165,6 +211,8 @@ class PlaybackController {
     }
   }
 
+  /// Deletes a recording if the current user has permission.
+  /// - Local or cloud recording deletion handled automatically.
   Future<void> deleteRecording(Recording rec) async {
     final can = await _canManageRecording(rec);
     if (!can) {
@@ -183,8 +231,8 @@ class PlaybackController {
     homeStateNotifier.removeRecording(rec.id);
   }
 
-
-
+  /// Renames a recording if the current user has permission.
+  /// Updates home state after successful rename.
   Future<void> renameRecording(Recording rec, String newName) async {
     final can = await _canManageRecording(rec);
     if (!can) {
@@ -211,6 +259,7 @@ class PlaybackController {
     );
   }
 
+  /// Exports a recording folder to the local filesystem, including video and sensors.
   Future<void> exportVideoFolder(Recording rec) async {
     final exportDir = localMedia.recordingExportDir(rec.name);
     await exportDir.create(recursive: true);
@@ -246,6 +295,7 @@ class PlaybackController {
     }
   }
 
+  /// Retrieves a list of available sensors for a recording.
   Future<List<Sensor>> getAvailableSensors(Recording rec) async {
     if (rec.isCloud) {
       try {

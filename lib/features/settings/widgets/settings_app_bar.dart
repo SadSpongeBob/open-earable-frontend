@@ -12,18 +12,16 @@ import 'package:openearable/app/widgets/app_button.dart';
 /// [canSave] is true and [loading] is false.
 ///
 /// Implements [PreferredSizeWidget] to allow AppBar integration with Scaffold.
+/// 
+/// Parameters:
+/// - [loading]: Indicates whether a save operation is currently in progress.
+/// - [canSave]: Determines if the 'Save' button should be enabled.
+/// - [onBack]: Callback invoked when the 'Back' button is pressed.
+/// - [onSave]: Async callback invoked when the 'Save' button is pressed.
 class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
-  
-  /// Indicates whether a save operation is currently in progress.
   final bool loading;
-
-  /// Determines if the 'Save' button should be enabled.
   final bool canSave;
-
-  /// Callback invoked when the 'Back' button is pressed.
   final VoidCallback onBack;
-
-  /// Async callback invoked when the 'Save' button is pressed.
   final Future<void> Function() onSave;
 
   const SettingsAppBar({

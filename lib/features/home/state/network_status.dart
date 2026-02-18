@@ -7,9 +7,9 @@ import 'package:flutter_riverpod/misc.dart';
 
 /// Represents the current network connectivity status.
 ///
-/// - `wifi`: Device is connected via Wi-Fi.
-/// - `mobile`: Device is connected via cellular/mobile data.
-/// - `offline`: Device has no network connection.
+/// - [wifi]: Device is connected via Wi-Fi.
+/// - [mobile]: Device is connected via cellular/mobile data.
+/// - [offline]: Device has no network connection.
 ///
 /// Provides helper methods:
 /// - `mapResult(ConnectivityResult)`: Converts a [ConnectivityResult] to [NetworkStatus].

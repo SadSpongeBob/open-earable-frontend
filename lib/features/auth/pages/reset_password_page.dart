@@ -20,9 +20,10 @@ import '../../../app/ui/popup_toast.dart';
 /// This page is accessed after a password reset request. Users can enter a new
 /// password and submit it. Successful reset shows a confirmation dialog and
 /// redirects the user to the login page. Failures are displayed via toast messages.
+/// 
+/// Parameters:
+/// - [authToken]: The authentication token used to authorize the password reset request.
 class ResetPasswordPage extends ConsumerStatefulWidget {
-
-  /// The authentication token used to authorize the password reset request.
   final String authToken;
 
   const ResetPasswordPage({super.key, required this.authToken});

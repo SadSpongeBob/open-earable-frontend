@@ -9,6 +9,20 @@ import 'package:openearable/features/playback/state/playback_state.dart';
 import 'package:openearable/features/playback/widgets/speed_badge.dart';
 import 'package:video_player/video_player.dart';
 
+/// A playback bar for controlling a single sensor's video playback.
+///
+/// Parameters:
+/// - [vc]: The [VideoPlayerController] controlling the video playback.
+/// - [recording]: The [Recording] object associated with this playback.
+/// - [sensorName]: The name of the sensor being visualized.
+///
+/// Behavior:
+/// - Updates the volume and playback speed when [PlaybackState] changes.
+/// - Provides buttons to pause/play, rewind 10s, fast-forward 10s, toggle mute,
+///   and adjust playback speed using [PlaybackSpeedBadge].
+/// - Displays the name of the currently selected sensor.
+/// 
+/// Implements [PreferredSizeWidget] so it can be used as an AppBar.
 class SensorPlaybackBar extends ConsumerStatefulWidget
     implements PreferredSizeWidget {
   final VideoPlayerController vc;
@@ -31,6 +45,12 @@ class SensorPlaybackBar extends ConsumerStatefulWidget
 }
 
 class _SensorPlaybackBarState extends ConsumerState<SensorPlaybackBar> {
+  /// Builds the playback bar UI.
+  ///
+  /// Layout:
+  /// - Left side: back button, playback speed badge, sensor name.
+  /// - Center: rewind 10s, play/pause, fast-forward 10s.
+  /// - Reacts to changes in [PlaybackState] to update speed.
   @override
   Widget build(BuildContext context) {
     final current = widget.recording;

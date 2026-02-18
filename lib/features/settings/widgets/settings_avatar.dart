@@ -14,18 +14,16 @@ import 'package:openearable/app/constants/colors.dart';
 ///
 /// Uses a [PillMenu] to provide interaction options. The [onImageSelected]
 /// callback is triggered when the user selects or removes an image.
+/// 
+/// Parameters:
+/// - [avatarUrl]: URL of the remote avatar image.
+/// - [localFile]: Local file selected for upload, overrides [avatarUrl] if present.
+/// - [removed]: Indicates if the current avatar has been marked for removal.
+/// - [onImageSelected]: Callback triggered when an image is uploaded or removed.
 class SettingsAvatar extends ConsumerStatefulWidget {
-  
-  /// URL of the remote avatar image.
   final String? avatarUrl;
-
-  /// Local file selected for upload, overrides [avatarUrl] if present.
   final File? localFile;
-
-  /// Indicates if the current avatar has been marked for removal.
   final bool removed;
-
-  /// Callback triggered when an image is uploaded or removed.
   final Function(File?) onImageSelected;
 
   const SettingsAvatar({

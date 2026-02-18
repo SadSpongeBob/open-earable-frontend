@@ -8,6 +8,15 @@ import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/features/home/state/network_status.dart';
 import 'package:openearable/features/playback/controllers/playback_controller.dart';
 
+/// A widget that displays an error message for a failed recording load.
+///
+/// Provides two actions for the user:
+/// 1. **Go Back**: Navigates to the home screen.
+/// 2. **Retry**: Invalidates the network and video player providers to attempt reloading.
+///
+/// Parameters:
+/// - [errorMessage]: The message describing the failure.
+/// - [recording]: The [Recording] that failed to load, used to retry playback.
 class FailedLoadScreen extends ConsumerWidget {
   const FailedLoadScreen({
     super.key,
@@ -41,6 +50,7 @@ class FailedLoadScreen extends ConsumerWidget {
                 children: [
                   AppButton.danger(
                     text: 'Go Back',
+                    // Navigate back to the home screen
                     onPressed: () => context.go(Routes.home),
                     fullWidth: false,
                   ),
@@ -48,6 +58,7 @@ class FailedLoadScreen extends ConsumerWidget {
                   Expanded(
                     child: AppButton.primary(
                       text: 'Retry',
+                      // Retry loading: invalidate network and video player state
                       onPressed: () {
                         ref.invalidate(networkStatusProvider);
                         ref.invalidate(

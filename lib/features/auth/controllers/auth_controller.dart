@@ -16,6 +16,15 @@ import 'package:openearable/features/home/state/network_status.dart';
 /// Handles user signup, login, guest login, logout, and session bootstrapping.
 /// Interacts with [AuthService], [UserService], and [GuestStorage] to maintain
 /// the user's session state. Updates UI feedback through [ToastEvent] notifications.
+/// 
+/// Parameters:
+/// - [_authService]: Service for handling authentication API calls.
+/// - [_userService]: Service for fetching user data.
+/// - [_guestStorage]: Local storage for tracking guest sessions.
+/// - [_session]: State notifier for the current session.
+/// - [_homeState]: State notifier for home/project state.
+/// - [_toast]: State controller for showing toast notifications.
+/// - [_ref]: Riverpod reference for reading other providers.
 class AuthController {
   final AuthService _authService;
   final GuestStorage _guestStorage;

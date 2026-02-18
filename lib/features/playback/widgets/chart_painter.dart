@@ -2,6 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 import '../controllers/chart_data.dart';
 
+/// Paints a chart of sensor data for a given time window.
+///
+/// The chart includes:
+/// - Smooth X, Y, Z axis lines for sensor values
+/// - Optional glow effect for axis lines
+/// - Background grid lines for reference
+///
+/// Parameters:
+/// - [data]: The [ChartData] containing the sensor values and timestamps.
+/// - [startMs]: Start time in milliseconds for the visible window.
+/// - [endMs]: End time in milliseconds for the visible window.
+/// - [gridColor]: Color of the grid lines. Default `AppColors.twoHundred`.
+/// - [gridLines]: Number of horizontal grid lines. Default 5.
+/// - [gridAlpha]: Opacity of the grid lines. Default 0.2.
+/// - [axisColors]: Map of axis names ('x', 'y', 'z') to their line colors.
+/// - [axisStrokeWidth]: Width of the axis lines. Default 2.4.
+/// - [axisGlowWidth]: Width of the glow effect for axis lines. Default 6.0.
+/// - [axisGlowAlpha]: Opacity of the glow effect. Default 0.12.
 class ChartPainter extends CustomPainter {
   final ChartData data;
   final int startMs;
@@ -32,6 +50,13 @@ class ChartPainter extends CustomPainter {
     this.axisGlowAlpha = 0.12,
   });
 
+  /// Paints the sensor chart onto the given [canvas] with the specified [size].
+  ///
+  /// Internal helpers:
+  /// - `tx(int t)`: Converts timestamp to X coordinate.
+  /// - `ty(double v)`: Converts sensor value to Y coordinate.
+  /// - `buildSmoothPath(List<double> vals)`: Creates a smooth path for a list of values.
+  /// - `paintAxis(List<double> vals, Color color)`: Paints one axis line with optional glow.
   @override
   void paint(Canvas canvas, Size size) {
     if (data.resTs.isEmpty || endMs <= startMs) return;
@@ -97,6 +122,10 @@ class ChartPainter extends CustomPainter {
     paintAxis(rz, axisColors['z']!);
   }
 
+  /// Determines whether the painter should repaint.
+  ///
+  /// Returns `true` if the data length or time window has changed.
+  /// This ensures the chart updates when new sensor samples are available.
   @override
   bool shouldRepaint(covariant ChartPainter old) {
     return old.data.resTs.length != data.resTs.length || old.startMs != startMs || old.endMs != endMs;
