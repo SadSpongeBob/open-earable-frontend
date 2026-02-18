@@ -25,7 +25,7 @@ class ChartData {
         double defaultMinV = -1,
         double defaultMaxV = 1,
         double paddingRatio = 0.08,
-        double epsilon = 1e-6,
+        double epsilon = 1e-3,
       }) {
     final ts = <int>[];
     final x = <double>[];
