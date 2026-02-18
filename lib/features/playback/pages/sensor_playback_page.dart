@@ -19,6 +19,7 @@ class _SensorPlaybackPageState extends State<SensorPlaybackPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Padding(
           padding: EdgeInsetsGeometry.symmetric(horizontal: 16),
           child: Row(

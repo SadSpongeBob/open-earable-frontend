@@ -166,7 +166,7 @@ class _TopBarState extends ConsumerState<TopBar> {
                             onChanged: (selected) =>
                                 playbackNotifier.setSelectedSensors(selected),
                             onLongPress: (item) =>
-                                context.go(Routes.sensorPlayback, extra: item),
+                                context.push(Routes.sensorPlayback, extra: item),
                           );
                           if (result != null) {
                             playbackNotifier.setSelectedSensors(result);
