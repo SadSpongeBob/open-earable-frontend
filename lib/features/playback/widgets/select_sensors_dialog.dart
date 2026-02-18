@@ -60,11 +60,6 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
     if (widget.onChanged != null) {
       widget.onChanged!(_selected == null ? [] : [_selected!]);
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.pop(_selected == null ? <Sensor>[] : <Sensor>[_selected!]);
-      }
-    });
   }
 
   @override
@@ -103,11 +98,16 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
 
               return SizedBox(
                 height: itemHeight,
-                child: ListTile(
-                  leading: Radio<Sensor>(value: sensor),
-                  title: Text(sensor.name, style: AppTextStyles.textMedium),
-                  onTap: () => _onSelect(sensor),
-                  onLongPress: () => widget.onLongPress?.call(sensor),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _onSelect(sensor),
+                    onLongPress: () => widget.onLongPress?.call(sensor),
+                    child: ListTile(
+                      leading: Radio<Sensor>(value: sensor),
+                      title: Text(sensor.name, style: AppTextStyles.textMedium),
+                    ),
+                  ),
                 ),
               );
             },
@@ -125,7 +125,11 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
           bottomRounded: true,
           child: AppButton.ghost(
             text: 'Close',
-            onPressed: () => context.pop(),
+            onPressed: () => WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                context.pop(_selected == null ? <Sensor>[] : <Sensor>[_selected!]);
+              }
+            }),
             borderRadius: 0,
           ),
         ),
