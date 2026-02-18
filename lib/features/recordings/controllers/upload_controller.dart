@@ -91,8 +91,6 @@ class UploadController {
       return;
     }
 
-    homeStateNotifier.removeRecording(recordingId);
-    homeStateNotifier.addRecording(uploaded);
     homeStateNotifier.replaceRecording(
       oldId: recordingId,
       newRecording: uploaded,
