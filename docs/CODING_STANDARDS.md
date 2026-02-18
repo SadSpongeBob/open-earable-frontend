@@ -127,6 +127,3 @@ Future<ProjectSummary> createProject({ ... })
 - Use the latest version of the dependencies.
 - Use the stable version of the dependencies.
 - Use the dependencies that are actively maintained.
-- Use the latest version of the dependencies.
-- Use the stable version of the dependencies.
-- Use the dependencies that are actively maintained.
