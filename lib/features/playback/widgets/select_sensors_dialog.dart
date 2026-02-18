@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/sensor.dart';
+import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/app/widgets/dialog.dart';
 import 'package:openearable/app/theme/text_styles.dart';
@@ -120,17 +121,24 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
       title: 'Select sensor',
       body: body,
       actions: [
-        BaseDialogActionRow(
-          topBorder: false,
-          bottomRounded: true,
-          child: AppButton.ghost(
-            text: 'Close',
-            onPressed: () => WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                context.pop(_selected == null ? <Sensor>[] : <Sensor>[_selected!]);
-              }
-            }),
-            borderRadius: 0,
+        Container(
+          decoration: BoxDecoration(
+            border: BoxBorder.fromLTRB(
+              top: BorderSide(width: 2, color: AppColors.sixHundred),
+            ),
+          ),
+          child: BaseDialogActionRow(
+            topBorder: false,
+            bottomRounded: true,
+            child: AppButton.ghost(
+              text: 'Close',
+              onPressed: () => WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  context.pop(_selected == null ? <Sensor>[] : <Sensor>[_selected!]);
+                }
+              }),
+              borderRadius: 0,
+            ),
           ),
         ),
       ],
