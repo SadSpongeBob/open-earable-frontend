@@ -1,32 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
+import 'package:video_player/video_player.dart';
 import '../controllers/sensor_chart_controller.dart';
 import '../../../api/services/recording/sensor_repository.dart';
 import '../controllers/chart_data.dart';
 import 'chart_painter.dart';
 
-class SensorChartWidget extends StatefulWidget {
-  final dynamic controller;
+class SensorChartPlayer extends StatefulWidget {
+  final VideoPlayerController controller;
   final List<SensorSample> samples;
 
-  const SensorChartWidget({
+  const SensorChartPlayer({
     super.key,
     required this.controller,
     required this.samples,
   });
 
   @override
-  State<SensorChartWidget> createState() => _SensorChartWidgetState();
+  State<SensorChartPlayer> createState() => _SensorChartPlayerState();
 }
 
-class _SensorChartWidgetState extends State<SensorChartWidget> {
+class _SensorChartPlayerState extends State<SensorChartPlayer> {
   late final VoidCallback _listener;
   late SensorChartController _logic;
   int _currentMs = 0;
 
   void _updateCurrentMsFromController() {
     try {
-      final pos = widget.controller.value.position as Duration;
+      final pos = widget.controller.value.position;
       final ms = pos.inMilliseconds;
       if (ms != _currentMs) setState(() => _currentMs = ms);
     } catch (_) {
@@ -55,7 +56,7 @@ class _SensorChartWidgetState extends State<SensorChartWidget> {
   }
 
   @override
-  void didUpdateWidget(covariant SensorChartWidget oldWidget) {
+  void didUpdateWidget(covariant SensorChartPlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.samples, widget.samples)) {
       _logic = SensorChartController(samples: widget.samples);
