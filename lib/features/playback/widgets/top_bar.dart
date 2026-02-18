@@ -145,6 +145,7 @@ class _TopBarState extends ConsumerState<TopBar> {
                         color: AppColors.primary,
                         splashRadius: 20,
                       ),
+
                       IconButton(
                         icon: Image.asset(
                           playbackState.selectedSensors.isEmpty || !playbackState.showSensorChart
