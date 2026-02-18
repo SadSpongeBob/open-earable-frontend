@@ -70,7 +70,9 @@ class _TopBarState extends ConsumerState<TopBar> {
     });
 
     final playbackState = ref.watch(playbackProvider(current.id));
-    final availableSensors = ref.watch(playbackProvider(current.id).select((s) => s.availableSensors));
+    final availableSensors = ref.watch(
+      playbackProvider(current.id).select((s) => s.availableSensors),
+    );
     final playbackNotifier = ref.read(playbackProvider(current.id).notifier);
 
     final controller = ref.read(playbackControllerProvider);
@@ -148,25 +150,30 @@ class _TopBarState extends ConsumerState<TopBar> {
 
                       IconButton(
                         icon: Image.asset(
-                          playbackState.selectedSensors.isEmpty || !playbackState.showSensorChart
+                          playbackState.selectedSensors.isEmpty ||
+                                  !playbackState.showSensorChart
                               ? 'assets/buttons/wave_sound.png'
                               : 'assets/buttons/wave_sound_on.png',
                           width: 26,
                           height: 26,
                         ),
-                        onPressed: () async {
+                        onLongPress: () async {
                           if (!context.mounted) return;
                           final result = await SelectSensorsDialog.show(
                             context,
                             available: availableSensors,
                             initialSelected: playbackState.selectedSensors,
-                            onChanged: (selected) => playbackNotifier.setSelectedSensors(selected),
+                            onChanged: (selected) =>
+                                playbackNotifier.setSelectedSensors(selected),
+                            onLongPress: (item) =>
+                                context.go(Routes.sensorPlayback, extra: item),
                           );
                           if (result != null) {
                             playbackNotifier.setSelectedSensors(result);
                           }
                         },
-                        onLongPress: () => playbackNotifier.toggleShowSensorChart(),
+                        onPressed: () =>
+                            playbackNotifier.toggleShowSensorChart(),
                         splashRadius: 20,
                       ),
                       IconButton(

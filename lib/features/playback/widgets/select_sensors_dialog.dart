@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/app/widgets/dialog.dart';
@@ -9,12 +10,14 @@ class SelectSensorsDialog extends StatefulWidget {
   final List<Sensor> available;
   final List<Sensor> initialSelected;
   final void Function(List<Sensor>)? onChanged;
+  final void Function(Sensor)? onLongPress;
 
   const SelectSensorsDialog({
     super.key,
     required this.available,
     this.initialSelected = const [],
     this.onChanged,
+    this.onLongPress,
   });
 
   static Future<List<Sensor>?> show(
@@ -22,6 +25,7 @@ class SelectSensorsDialog extends StatefulWidget {
     List<Sensor>? available,
     List<Sensor>? initialSelected,
     void Function(List<Sensor>)? onChanged,
+    void Function(Sensor)? onLongPress,
   }) {
     return showAppDialog(
       context,
@@ -29,6 +33,7 @@ class SelectSensorsDialog extends StatefulWidget {
         available: available ?? [],
         initialSelected: initialSelected ?? [],
         onChanged: onChanged,
+        onLongPress: onLongPress,
       ),
     );
   }
@@ -57,9 +62,7 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        Navigator.of(
-          context,
-        ).pop(_selected == null ? <Sensor>[] : <Sensor>[_selected!]);
+        context.pop(_selected == null ? <Sensor>[] : <Sensor>[_selected!]);
       }
     });
   }
@@ -78,17 +81,12 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
         ],
       );
     } else {
-      /// Each item is 56px high, plus 8px padding.
-      /// We want to show at most 4 items without scrolling.
-      /// thand the widget will not have a fixed size the size will be
-      /// determined by the content, but we want to limit it to a max height of
-      /// 240px (4 items * 56px + 8px padding)
-      /// to avoid it taking too much space if there are many sensors.
-      /// TODO : change this if you have a better idea
-      ///
       const double itemHeight = 56.0;
       const double maxHeight = 240.0;
-      final double desiredHeight = math.min(maxHeight, avail.length * itemHeight + 8);
+      final double desiredHeight = math.min(
+        maxHeight,
+        avail.length * itemHeight + 8,
+      );
 
       body = ConstrainedBox(
         constraints: BoxConstraints(maxHeight: desiredHeight),
@@ -99,7 +97,7 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
             shrinkWrap: true,
             physics: const AlwaysScrollableScrollPhysics(),
             itemCount: avail.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, i) {
               final sensor = avail[i];
 
@@ -109,6 +107,7 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
                   leading: Radio<Sensor>(value: sensor),
                   title: Text(sensor.name, style: AppTextStyles.textMedium),
                   onTap: () => _onSelect(sensor),
+                  onLongPress: () => widget.onLongPress?.call(sensor),
                 ),
               );
             },
@@ -126,7 +125,7 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
           bottomRounded: true,
           child: AppButton.ghost(
             text: 'Close',
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             borderRadius: 0,
           ),
         ),
