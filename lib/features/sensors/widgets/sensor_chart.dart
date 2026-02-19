@@ -161,13 +161,13 @@ class _SensorChartState extends ConsumerState<SensorChart> {
     final index = sensor.axisNames.indexOf(axisName);
 
     final appPalette = [
-    Colors.blue,       
-    Colors.red,        
-    Colors.purple,     
-    Colors.pink,       
-    Colors.cyan,       
-    Colors.deepPurple,
-    Colors.indigoAccent,
+    AppColors.blue,       
+    AppColors.primary,        
+    AppColors.purple,     
+    AppColors.pink,       
+    AppColors.cyan,       
+    AppColors.deepPurple,
+    AppColors.indigo,
     ];
 
     return appPalette[index % appPalette.length];

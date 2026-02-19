@@ -17,7 +17,7 @@ class AppColors {
   static const Color purple = Color(0xFF9C27B0);
   static const Color pink = Color(0xFFE91E63);
   static const Color cyan = Color(0xFF00BCD4);
-  static const Color deepPyrple = Color(0xFF673AB7);
+  static const Color deepPurple = Color(0xFF673AB7);
   static const Color indigo = Color(0xFF536DFE);
 
   /// Grayscale colors from 0 till 900
