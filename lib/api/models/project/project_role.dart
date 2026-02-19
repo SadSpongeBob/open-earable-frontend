@@ -1,6 +1,9 @@
+/// Represents the type of role a user can have in a project.
 enum ProjectRoleType { owner, editor, viewer }
 
+/// Provides API serialization and user-friendly labels for [ProjectRoleType].
 extension ProjectRoleTypeApi on ProjectRoleType {
+  /// Converts the role to the uppercase string used in API requests/responses.
   String toApi() {
     switch (this) {
       case ProjectRoleType.owner:
@@ -12,6 +15,7 @@ extension ProjectRoleTypeApi on ProjectRoleType {
     }
   }
 
+  /// Returns a human-readable label for the role.
   String get label {
     switch (this) {
       case ProjectRoleType.owner:
@@ -23,6 +27,9 @@ extension ProjectRoleTypeApi on ProjectRoleType {
     }
   }
 
+  /// Creates a [ProjectRoleType] from an API string value.
+  /// 
+  /// Throws [ArgumentError] if the role string is invalid.
   static ProjectRoleType fromApi(String role) {
     switch (role.toUpperCase()) {
       case 'OWNER':
@@ -37,6 +44,10 @@ extension ProjectRoleTypeApi on ProjectRoleType {
   }
 }
 
+/// Represents a user's role within a project, including permissions.
+/// 
+/// Parameters:
+/// - [userId]: The ID of the user associated with this role.
 abstract class ProjectRole {
   final String userId;
 
@@ -69,10 +80,12 @@ abstract class ProjectRole {
   }
 }
 
+/// Viewer role: read-only access to project recordings.
 class Viewer extends ProjectRole {
   Viewer({required super.userId});
 }
 
+/// Editor role: can view, edit, and record videos but cannot manage users.
 class Editor extends ProjectRole {
   Editor({required super.userId});
 
@@ -87,6 +100,7 @@ class Editor extends ProjectRole {
   }
 }
 
+/// Owner role: full permissions including managing users and recordings.
 class Owner extends ProjectRole {
   Owner({required super.userId});
 
@@ -106,13 +120,16 @@ class Owner extends ProjectRole {
   }
 }
 
+/// Provides API serialization and human-readable labels for [ProjectRole] instances.
 extension ProjectRoleApi on ProjectRole {
+  /// Returns the API string representation of this role (OWNER, EDITOR, VIEWER).
   String toApi() {
     if (this is Owner) return 'OWNER';
     if (this is Editor) return 'EDITOR';
     return 'VIEWER';
   }
 
+  /// Returns a human-readable label for this role.
   String get label {
     if (this is Owner) return 'Owner';
     if (this is Editor) return 'Editor';

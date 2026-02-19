@@ -3,12 +3,30 @@ import 'package:dio/dio.dart';
 import 'package:openearable/api/services/auth/auth_endpoints.dart';
 import 'package:openearable/api/services/auth/token_storage.dart';
 
+/// Dio interceptor that automatically attaches an authorization token to HTTP requests.
+///
+/// Uses [TokenStorage] to read the current access token and attaches it as a Bearer
+/// token in the `Authorization` header, unless:
+/// - The request already provides an override token via `options.extra['authTokenOverride']`.
+/// - The request targets authentication endpoints (login, register, refresh, or reset password).
+///
+/// This interceptor ensures that API requests requiring authentication include the token
+/// without manually setting headers each time.
 class AttachTokenInterceptor extends Interceptor {
   final TokenStorage _tokenStorage;
 
   AttachTokenInterceptor({required TokenStorage tokenStorage})
     : _tokenStorage = tokenStorage;
 
+  /// Called before a request is sent.
+  ///
+  /// - Checks if an override token is provided in `options.extra['authTokenOverride']`.
+  ///   If so, it attaches that token and proceeds.
+  /// - Skips attaching tokens for authentication endpoints (login, register, refresh, reset password).
+  /// - Otherwise, reads the stored access token from [TokenStorage] and attaches it if available.
+  ///
+  /// [options] The request options, including path and headers.
+  /// [handler] Handler to continue or stop the request.
   @override
   Future<void> onRequest(
     RequestOptions options,

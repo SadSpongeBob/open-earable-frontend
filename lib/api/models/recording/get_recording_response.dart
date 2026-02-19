@@ -1,6 +1,20 @@
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
 
+/// Represents the full response returned when fetching a recording from the server.
+///
+/// Contains metadata about the recording, associated sensors, the project it belongs to,
+/// the uploading user, and upload status.
+/// 
+/// Parameters:
+/// - [recordingId]: Unique identifier for the recording.
+/// - [name]: Display name of the recording.
+/// - [videoUrl]: URL to the recording video.
+/// - [videoTimestamp]: Timestamp of the recording video in UTC.
+/// - [sensors]: List of sensors attached to the recording.
+/// - [projectId]: Optional ID of the project this recording belongs to.
+/// - [userId]: ID of the user who created/uploaded the recording.
+/// - [uploadStatus]: Upload status of the recording.
 class GetRecordingResponse {
   final String recordingId;
   final String name;
@@ -40,6 +54,17 @@ class GetRecordingResponse {
   }
 }
 
+/// Represents metadata for a sensor associated with a recording.
+///
+/// Includes the sensor's ID, type, name, URL for data access, index, and timestamp.
+/// 
+/// Parameters:
+/// - [sensorId]: Unique identifier for the sensor.
+/// - [sensorIndex]: Index of the sensor in the recording.
+/// - [name]: Display name of the sensor.
+/// - [url]: URL to the sensor data file.
+/// - [type]: Type of the sensor.
+/// - [timestamp]: Timestamp of the sensor data in UTC.
 class GetSensorResponse {
   final String sensorId;
   final int sensorIndex;
