@@ -3,6 +3,23 @@ import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/widgets/bluetooth_button.dart';
 import 'package:openearable/app/widgets/image_button.dart';
 
+/// A vertical right sidebar for the recording page.
+///
+/// Contains buttons for settings, sensor overlay toggle/navigation to Sensor Page,
+/// recording/shutter, optionally a flip camera button, and a Bluetooth button.
+///
+/// [onSettings] is called when the settings button is tapped.
+/// [onWaveSound] is called when the wave/sensor button is tapped.
+/// [onWaveSoundLongPress] is called on long press of the wave/sensor overlay button.
+/// [onShutter] is called when the recording/shutter button is tapped.
+/// [onFlipCamera] is called when the flip camera button is tapped (required if [showFlipButton] is true).
+/// [onBluetooth] is called when the Bluetooth button is tapped.
+///
+/// [isWaveSoundActive] controls the active state of the wave overlay button.
+/// [isRecording] indicates if recording is currently in progress.
+/// [isPaused] indicates if recording is paused.
+/// [showFlipButton] controls whether the flip camera button is visible.
+/// [padding] sets the vertical padding for the sidebar.
 class HomeRecordingRightBar extends StatelessWidget {
   const HomeRecordingRightBar({
     super.key,
@@ -103,6 +120,9 @@ class HomeRecordingRightBar extends StatelessWidget {
   }
 }
 
+/// A circular image button with semantic labeling for accessibility.
+///
+/// Used internally by [HomeRecordingRightBar].
 class _Btn extends StatelessWidget {
   const _Btn({
     required this.asset,

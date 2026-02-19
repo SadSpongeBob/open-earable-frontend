@@ -6,6 +6,18 @@ import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/features/home/state/wearables_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+/// An overlay widget that displays a sensor chart on top of a video.
+///
+/// The chart is only shown if:
+/// 1. A chart ID is active in [recordingChartProvider].
+/// 2. The overlay is marked as visible in [recordingChartProvider].
+/// 3. A connected wearable has a sensor matching the chart ID.
+///
+/// If any condition is not met, the widget returns an empty [SizedBox].
+///
+/// The overlay displays:
+/// - The matched sensor's name
+/// - A [SensorChart] for the matched device and sensor index
 class VideoSensorOverlay extends ConsumerWidget {
   const VideoSensorOverlay({super.key});
 

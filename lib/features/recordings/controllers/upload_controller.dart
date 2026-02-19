@@ -17,6 +17,19 @@ import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/home/state/network_status.dart';
 
+/// Provides methods to upload recordings, their sensors, and thumbnails.
+///
+/// Properties:
+/// - [ref]: Riverpod reference for accessing providers.
+/// - [localMedia]: Access to local file storage for recordings and sensor data.
+/// - [recordingService]: API service for interacting with the backend.
+/// - [s3Service]: Handles direct S3 file uploads.
+/// - [homeStateNotifier]: Notifies the app state about upload progress.
+///
+/// Usage:
+/// - Call [tryUploads] to check for recordings that need uploading.
+/// - Use [uploadAndForget] for background or fire-and-forget uploads.
+/// - Use [uploadRecording] to perform a full upload and get a remote `Recording`.
 class UploadController {
   final Ref ref;
   final LocalMedia localMedia;
@@ -32,6 +45,13 @@ class UploadController {
     this.homeStateNotifier,
   );
 
+  /// Checks all non-local projects for recordings that need to be uploaded.
+  ///
+  /// - Skips recordings that are already uploading or uploaded.
+  /// - Initiates fire-and-forget uploads via [uploadAndForget] for each eligible recording.
+  ///
+  /// Side Effects:
+  /// - Updates app state via [homeStateNotifier] to mark recordings as uploading.
   Future<void> tryUploads() async {
     final projects = ref
         .read(homeStateProvider)
@@ -54,6 +74,18 @@ class UploadController {
     }
   }
 
+  /// Uploads a single recording in a fire-and-forget manner.
+  ///
+  /// - Verifies the user is logged in (not a guest).
+  /// - Checks network status and user preferences (Wi-Fi only uploads).
+  /// - Marks recording as uploading in [homeStateNotifier].
+  /// - Calls [uploadRecording] to perform the actual upload.
+  /// - On success, replaces the local recording with the uploaded version.
+  /// - Cleans up local files and handles errors by marking upload as failed.
+  ///
+  /// Parameters:
+  /// - [recordingId]: The ID of the local recording.
+  /// - [projectId]: The ID of the project containing the recording.
   Future<void> uploadAndForget(String recordingId, String projectId) async {
     final authState = ref.read(sessionProvider);
     if (authState.isGuest) return;
@@ -121,6 +153,15 @@ class UploadController {
     }
   }
 
+  /// Uploads a recording with its sensors and thumbnail.
+  ///
+  /// Parameters:
+  /// - [recordingId]: Local recording ID.
+  /// - [projectId]: Project ID containing the recording.
+  /// - [onVideoProgress]: Optional callback to report video upload progress.
+  ///
+  /// Returns:
+  /// - Remote [Recording] on success, null if upload fails or files are missing.
   Future<Recording?> uploadRecording({
     required String recordingId,
     required String projectId,
@@ -219,6 +260,10 @@ class UploadController {
     }
   }
 
+  /// Returns a fallback UTC timestamp for a file based on its filesystem metadata.
+  ///
+  /// - Uses [FileStat.modified] and [FileStat.changed] and returns the earlier of the two.
+  /// - Useful when the original video recording timestamp is missing or invalid.
   Future<DateTime> _fallbackTimestampUtc(File file) async {
     final stat = await file.stat();
     final modified = stat.modified.toUtc();
@@ -226,6 +271,15 @@ class UploadController {
     return changed.isBefore(modified) ? changed : modified;
   }
 
+  /// Uploads all sensor data files associated with a recording.
+  ///
+  /// - Matches each local sensor with its upload info from the server.
+  /// - Uploads files to S3 using [s3Service].
+  /// - Throws a [StateError] if a file or upload info is missing.
+  ///
+  /// Parameters:
+  /// - [sensors]: List of sensor objects with local paths.
+  /// - [sensorUploads]: Corresponding upload information from the server.
   Future<void> _uploadSensors(
     List<Sensor> sensors,
     List<SensorUploadInfo> sensorUploads,
@@ -259,6 +313,17 @@ class UploadController {
     );
   }
 
+  /// Attempts to upload the thumbnail image for a recording.
+  ///
+  /// - Uploads to S3 if a thumbnail exists and upload info is provided.
+  /// - Logs errors in debug mode but does not throw.
+  ///
+  /// Parameters:
+  /// - [thumbnail]: File object for the local thumbnail.
+  /// - [thumbnailUpload]: Upload info from the server. 
+  /// - [recordingId]: Local recording ID (for logging).
+  /// - [projectId]: Project ID (for logging).
+  /// - [recordingIdForLog]: Remote recording ID (optional, for logging).
   Future<void> _tryThumbnailUpload(
     File thumbnail,
     ThumbnailUploadInfo thumbnailUpload,
@@ -281,6 +346,17 @@ class UploadController {
     }
   }
 
+  /// Maps a local sensor file to a [SensorUpload] object for upload.
+  ///
+  /// - Reads local file size and timestamp.
+  /// - Currently defaults sensor type to [SensorType.heartRate].
+  /// - Returns a fully prepared [SensorUpload] object.
+  ///
+  /// Parameters:
+  /// - [sensor]: Sensor object with local path and metadata.
+  ///
+  /// Returns:
+  /// - [SensorUpload] ready to be sent to the server.
   Future<SensorUpload> _mapToUpload(Sensor sensor) async {
     final file = File(sensor.localPath);
 
@@ -301,6 +377,9 @@ class UploadController {
   }
 }
 
+/// Provides a singleton instance of [UploadController] for the app.
+///
+/// Handles uploading recordings, sensors, and thumbnails to the cloud.
 final uploadControllerProvider = Provider<UploadController>((ref) {
   final localMedia = ref.read(localMediaProvider);
 

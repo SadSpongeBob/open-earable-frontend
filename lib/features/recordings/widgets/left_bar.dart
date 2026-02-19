@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 
+/// A vertical left sidebar for the Recording Page.
+///
+/// Contains a button to navigate back to the Home Page.
+///
+/// [onBackToProjects] is called when the "Back to projects" button is tapped.
 class RecordingLeftBar extends StatelessWidget {
   const RecordingLeftBar({
     super.key,
@@ -34,6 +39,10 @@ class RecordingLeftBar extends StatelessWidget {
   }
 }
 
+/// A reusable circular button widget displaying an image.
+///
+/// Includes semantic labeling for accessibility.
+/// Used internally by [RecordingLeftBar].
 class _Btn extends StatelessWidget {
   const _Btn({
     required this.asset,
