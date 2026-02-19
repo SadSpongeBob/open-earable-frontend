@@ -227,7 +227,7 @@ class PlaybackController {
         await s3Service.downloadToFile(
           getUrl: sensor.url,
           filePath: localMedia
-              .sensorExportFile(r.recordingId, sensor.sensorId, sensor.name)
+              .sensorExportFile(r.recordingId, sensor.name)
               .path,
         );
       }
