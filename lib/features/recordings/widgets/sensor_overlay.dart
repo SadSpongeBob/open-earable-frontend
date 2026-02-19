@@ -4,7 +4,6 @@ import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/sensors/widgets/sensor_chart.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/features/home/state/wearables_state.dart';
-import 'package:openearable/app/theme/text_styles.dart';
 
 /// An overlay widget that displays a sensor chart on top of a video.
 ///
@@ -35,7 +34,6 @@ class VideoSensorOverlay extends ConsumerWidget {
 
     int? matchedSensorIndex;
     String? matchedDeviceId;
-    String? matchedSensorName;
 
     for (var wearable in wearablesNotifier.wearables) {
       final providers = wearablesNotifier.getSensorDataProviders(wearable);
@@ -44,7 +42,6 @@ class VideoSensorOverlay extends ConsumerWidget {
         String sensorName = providers[i].sensor.sensorName.toLowerCase().trim();
 
         if (selectedId.contains(sensorName) || sensorName.contains(selectedId)) {
-          matchedSensorName = sensorName;
           matchedDeviceId = wearable.deviceId;
           matchedSensorIndex = i;
           break;
@@ -63,36 +60,20 @@ class VideoSensorOverlay extends ConsumerWidget {
       child: Container(
         height: 250,
         width: double.infinity,
-        decoration: BoxDecoration(color: AppColors.fifty.withValues(alpha: 0.55)),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              matchedSensorName ?? "Sensor",
-              style: AppTextStyles.footerMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+        // Using withAlpha for consistent color manipulation
+        decoration: BoxDecoration(color: AppColors.fifty.withAlpha(140)),
+        padding: const EdgeInsets.all(12), // Uniform padding
+        child: Material(
+          color: Colors.transparent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            // We use Expanded or just the chart now that there's no Column
+            child: SensorChart(
+              allowToggleAxes: false,
+              deviceId: matchedDeviceId,
+              sensorIndex: matchedSensorIndex,
             ),
-
-            const SizedBox(height: 8),
-
-            Expanded(
-              child: Material(
-                color: Colors.transparent,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    child: SensorChart(
-                      allowToggleAxes: false,
-                      deviceId: matchedDeviceId,
-                      sensorIndex: matchedSensorIndex,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
