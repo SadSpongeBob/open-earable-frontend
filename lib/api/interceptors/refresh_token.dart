@@ -5,6 +5,11 @@ import 'package:openearable/api/models/auth/auth_tokens.dart';
 import 'package:openearable/api/services/auth/auth_endpoints.dart';
 import 'package:openearable/api/services/auth/token_storage.dart';
 
+/// Internal representation of a request that failed with 401 and is waiting
+/// for a refreshed token.
+///
+/// - [requestOptions] The original Dio request options.
+/// - [completer] A Completer that will be completed once the request is retried.
 class _QueuedRequest {
   final RequestOptions requestOptions;
   final Completer<Response<dynamic>> completer;
@@ -12,6 +17,12 @@ class _QueuedRequest {
   _QueuedRequest(this.requestOptions, this.completer);
 }
 
+/// Interceptor that automatically refreshes the access token when a 401 (Unauthorized)
+/// response is received, and retries the original request.
+///
+/// - Queues any concurrent requests that also fail with 401 while a token refresh is in progress.
+/// - Retries all queued requests once the refresh is complete.
+/// - If the refresh fails, calls the provided logout callback to clear session state.
 class RefreshTokenInterceptor extends Interceptor {
   final Dio _dio;
   final TokenStorage _tokenStorage;
@@ -21,6 +32,12 @@ class RefreshTokenInterceptor extends Interceptor {
   bool _isRefreshing = false;
   final List<_QueuedRequest> _queue = [];
 
+  /// Creates a [RefreshTokenInterceptor].
+  ///
+  /// - [dio] The Dio instance used to retry requests.
+  /// - [tokenStorage] Storage for access and refresh tokens.
+  /// - [refresh] Callback that returns new tokens when the refresh token is valid.
+  /// - [logout] Callback called when token refresh fails or is not possible.
   RefreshTokenInterceptor({
     required Dio dio,
     required TokenStorage tokenStorage,
@@ -31,6 +48,11 @@ class RefreshTokenInterceptor extends Interceptor {
        _refresh = refresh,
        _logout = logout;
 
+  /// Called when a Dio request fails.
+  ///
+  /// - If the response status code is 401, attempts to refresh the token and retry.
+  /// - Skips auth endpoints and requests already retried.
+  /// - Queues concurrent requests while refreshing.
   @override
   Future<void> onError(
     DioException err,

@@ -2,6 +2,19 @@ import 'package:flutter/material.dart';
 import '../theme/text_styles.dart';
 import '../constants/colors.dart';
 
+/// A reusable, styled text input field for forms.
+///
+/// Parameters:
+/// - [controller]: The [TextEditingController] that holds the current value of the input field.
+/// - [hint]: Placeholder text displayed when the field is empty.
+/// - [validator]: Optional validation function. Returns a `String` error message if invalid, or `null` if valid.
+/// - [obscureText]: Whether to hide the input text (e.g., for passwords). Defaults to `false`.
+/// - [suffixIcon]: Optional widget displayed at the end of the input field (e.g., show/hide password button).
+/// - [keyboardType]: The type of keyboard to show (e.g., `TextInputType.emailAddress`). Defaults to `TextInputType.text`.
+/// - [textAlign]: Alignment of the input text. Defaults to `TextAlign.start`.
+/// - [focusNode]: Optional [FocusNode] to manage focus programmatically.
+/// - [textInputAction]: Optional [TextInputAction] to customize the keyboard action button (e.g., done, next).
+/// - [onSubmitted]: Optional callback invoked when the user submits the field via the keyboard.
 class InputBox extends StatelessWidget {
   final TextEditingController controller;
   final String hint;

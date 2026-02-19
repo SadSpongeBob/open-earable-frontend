@@ -21,7 +21,15 @@ import 'package:openearable/features/sensors/pages/sensor_details_page.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/features/playback/pages/playback_page.dart';
 
+/// Provides the application's configured [GoRouter] instance.
+///
+/// This router:
+/// - Defines app routes and page builders
+/// - Integrates with [sessionProvider] to handle authentication redirects
+/// - Uses [GoRouterRefreshStream] to refresh navigation when session state changes
+/// - Supports deep links and route parameters (path, query, and extra)
 final routerProvider = Provider<GoRouter>((ref) {
+  // Refresh router whenever session state changes (e.g., login/logout)
   final refresh = GoRouterRefreshStream(
     ref.read(sessionProvider.notifier).stream,
   );
@@ -109,6 +117,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
 
+    /// Handles authentication-based navigation guards.
+    ///
+    /// Rules:
+    /// - Unauthenticated users are redirected to [Routes.login]
+    ///   unless accessing a public route
+    /// - Authenticated users are redirected away from auth pages
+    ///   to [Routes.home]
+    /// - No redirect occurs while the session is loading
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
       final loc = state.matchedLocation;

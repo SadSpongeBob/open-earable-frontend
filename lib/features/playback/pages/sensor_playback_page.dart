@@ -10,6 +10,18 @@ import 'package:openearable/api/services/recording/sensor_repository.dart';
 import 'package:video_player/video_player.dart';
 import 'package:openearable/features/playback/widgets/sensor_playback_bar.dart';
 
+/// A page for playback of recorded sensor data associated with a recording.
+///
+/// This page handles:
+/// - Displaying the video playback of the recording via a [VideoPlayerController].
+/// - Rendering sensor-specific data using [SensorChartPlayer].
+/// - Showing a custom [SensorPlaybackBar] in the app bar with playback controls and sensor info.
+/// - Loading sensor samples asynchronously via [sensorSampleProvider].
+/// - Handling loading and error states for both the video controller and sensor data.
+///
+/// Parameters:
+/// - [sensor]: The [Sensor] object representing the sensor data to visualize.
+/// - [recording]: The [Recording] object that contains the video and sensor data.
 class SensorPlaybackPage extends ConsumerStatefulWidget {
   final Sensor sensor;
   final Recording recording;

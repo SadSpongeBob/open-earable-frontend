@@ -1,3 +1,4 @@
+/// Utility class defining REST API endpoints for project-related operations.
 class ProjectEndpoints {
   static const String baseUrl = '/api/project';
 
@@ -18,5 +19,4 @@ class ProjectEndpoints {
   static const String moveRecordings = '$baseUrl/recording';
 
   static String updateProjectUserRole(String projectId) => '$baseUrl/$projectId/user';
-
 }

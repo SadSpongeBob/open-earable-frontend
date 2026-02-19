@@ -23,9 +23,18 @@ extension _RoleChoiceX on RoleChoice {
       this == RoleChoice.editor ? ProjectRoleType.editor : ProjectRoleType.viewer;
 }
 
+/// A popup dialog for managing project users.
+///
+/// Features:
+/// - Displays a list of users in the current project.
+/// - Allows adding new users with a role (Editor or Viewer).
+/// - Allows removing or updating roles of users if the current user has permissions.
+/// - Uses Riverpod providers ([homeControllerProvider], [homeStateProvider], [sessionProvider])
+///   to manage state and perform actions.
 class UsersPopup extends ConsumerStatefulWidget {
   const UsersPopup({super.key});
 
+  /// Opens the UsersPopup as a dialog.
   static Future<void> show(BuildContext context) {
     return showDialog(
       context: context,
@@ -38,6 +47,7 @@ class UsersPopup extends ConsumerStatefulWidget {
   ConsumerState<UsersPopup> createState() => _UsersPopupState();
 }
 
+/// Internal state for [UsersPopup], manages input and role selection.
 class _UsersPopupState extends ConsumerState<UsersPopup> {
   final _emailController = TextEditingController();
   RoleChoice _role = RoleChoice.viewer;
@@ -244,6 +254,10 @@ class _UsersList extends StatelessWidget {
   }
 }
 
+/// A card representing a single user in the popup.
+///
+/// Shows user's name, email, avatar, and role.
+/// Provides inline role editing and removal for users with permissions.
 class _UserCard extends ConsumerWidget {
   const _UserCard({
     required this.user,
@@ -252,9 +266,16 @@ class _UserCard extends ConsumerWidget {
     required this.onRemove,
   });
 
+  /// The project user being represented.
   final ProjectUser user;
+
+  /// Current logged-in user ID.
   final String? myUserId;
+
+  /// Whether the logged-in user can manage other users.
   final bool canManage;
+
+  /// Callback when the user should be removed.
   final Future<void> Function(String userId) onRemove;
 
   @override

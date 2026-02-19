@@ -3,6 +3,9 @@ import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/app/widgets/dialog.dart';
 import '../../../app/theme/text_styles.dart';
 
+/// Confirmation dialog shown before performing a delete action.
+///
+/// Calls [onDelete] when the user confirms and then closes the dialog.
 class DeleteConfirmDialog extends StatefulWidget {
   const DeleteConfirmDialog({
     super.key,
@@ -10,9 +13,15 @@ class DeleteConfirmDialog extends StatefulWidget {
     required this.title,
   });
 
+  /// Callback executed when the delete button is pressed.
   final VoidCallback onDelete;
+
+  /// Title displayed at the top of the dialog.
   final String title;
 
+  /// Displays the delete confirmation dialog.
+  ///
+  /// Executes [onDelete] if the user confirms the action.
   static Future<void> show(
     BuildContext context, {
     required VoidCallback onDelete,

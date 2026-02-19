@@ -1,3 +1,9 @@
+/// ------------------------------------------------------------------------
+/// File: wearable_connector.dart
+/// Author: OpenEarable
+/// Description: Handles wearable connections and broadcasts events.
+/// ------------------------------------------------------------------------
+
 import 'dart:async';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
 

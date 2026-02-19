@@ -7,9 +7,18 @@ import 'package:openearable/features/sensors/widgets/sensor_configuration_detail
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
-/// A row that displays a sensor configuration and allows the user to select a value.
+/// A widget that displays a single sensor configuration row for a device.
 ///
-/// The selected value is added to the [SensorConfigurationProvider].
+/// Tapping the row opens a bottom sheet showing detailed configuration options
+/// for the sensor. The currently selected value (or options) is shown on the row's
+/// trailing side. If the sensor is off, "Off" is displayed.
+///
+/// This widget interacts with [SensorConfigurationProvider] to get and update
+/// the selected configuration value and options.
+/// 
+/// Parameters:
+/// - [sensorConfiguration]: The sensor configuration represented by this row.
+/// - [deviceId]: The ID of the device to which the sensor configuration belongs.
 class SensorConfigurationValueRow extends ConsumerWidget {
   final SensorConfiguration sensorConfiguration;
   final String deviceId;
@@ -116,6 +125,11 @@ class SensorConfigurationValueRow extends ConsumerWidget {
     );
   }
 
+  /// Returns true if the configuration is currently active/on.
+  /// Handles different types of sensor configurations:
+  /// - ConfigurableSensorConfiguration: active if any options are selected
+  /// - SensorFrequencyConfiguration: active if frequency > 0
+  /// - Others: always considered on
   bool _isOn(SensorConfigurationProvider notifier, SensorConfiguration config) {
     bool isOn = false;
     if (config is ConfigurableSensorConfiguration) {

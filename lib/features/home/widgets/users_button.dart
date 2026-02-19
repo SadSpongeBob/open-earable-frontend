@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+/// A tappable button representing "Users".
+///
+/// Calls [onTap] when pressed.
 class UsersButton extends StatelessWidget {
   const UsersButton({super.key, required this.onTap});
 
+  /// Callback triggered when the button is tapped.
   final VoidCallback onTap;
 
   @override

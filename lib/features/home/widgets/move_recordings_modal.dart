@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Non-interactive overlay modal shown when the user is choosing
+/// a target project to move selected recordings to.
 class MoveRecordingsModal extends StatelessWidget {
   const MoveRecordingsModal({super.key});
 

@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 import '../../../app/theme/text_styles.dart';
 
+/// A horizontal separator used in authentication pages to visually
+/// separate sections.
+///
+/// Displays a horizontal line on both sides of the text "or" to create a
+/// clean visual division.
 class AuthSeparator extends StatelessWidget {
   const AuthSeparator({super.key});
 

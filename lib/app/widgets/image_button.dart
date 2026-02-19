@@ -1,5 +1,23 @@
 import 'package:flutter/material.dart';
 
+/// A customizable button that displays an image, with an optional active image overlay.
+///
+/// [ImageButton] can display two images: a default `image` and an `activeImage`
+/// that appears while the button is pressed or when `isActive` is true.
+/// It supports tap and long-press gestures and provides built-in press animation
+/// using a short duration opacity effect.
+///
+/// Parameters:
+/// - [buttonKey]: Optional key for the button widget.
+/// - [image]: The default image to display when the button is inactive.
+/// - [activeImage]: The image to display when the button is pressed or active.
+/// - [onPressed]: Callback invoked when the button is tapped.
+/// - [onLongPress]: Optional callback invoked on long press.
+/// - [width]: Width of the button.
+/// - [height]: Height of the button.
+/// - [pressDuration]: Duration of the press animation (default: 100ms).
+/// - [isActive]: Whether the button should show the active state initially (default: false).
+/// - [semanticLabel]: Accessibility label for screen readers.
 class ImageButton extends StatefulWidget  {
   final GlobalKey? buttonKey;
   final String image;

@@ -8,6 +8,18 @@ import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import '../../../app/routing/routes.dart';
 
+/// A card widget that displays a sensor's name and a small chart preview.
+///
+/// Tapping the card navigates to the sensor detail page,
+/// and the checkbox indicates whether this sensor is currently selected
+/// in the active recording overlay.
+///
+/// The card uses [SensorChart] to show a mini preview of the sensor data.
+/// 
+/// Parameters:
+/// - [sensor]: The sensor to display in this card.
+/// - [wearable]: The wearable device that owns this sensor.
+/// - [sensorIndex]: The index of the sensor in the wearable's sensor list.
 class SelectableSensorCard extends ConsumerWidget {
   final Sensor sensor;
   final Wearable wearable;

@@ -17,11 +17,16 @@ import '../../settings/widgets/download_method_dropdown.dart';
 import '../../../app/widgets/user_card.dart';
 import '../../../app/widgets/input_box.dart';
 import '../widgets/settings_app_bar.dart';
-
 import '../../../app/ui/popup_toast.dart';
 import '../../../app/ui/toast_controller.dart';
 import '../../../app/ui/toast_event.dart';
 
+/// Settings Page for managing user account settings, including profile name, email,
+/// password, avatar, download method, and account actions such as Sign Out
+/// and Delete Account.
+/// 
+/// Supports both authenticated and guest users. Uses Riverpod providers to
+/// reactively handle user and session state, as well as toast notifications.
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -30,15 +35,24 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsState extends ConsumerState<SettingsPage> {
+  // --- Form & Input State ---
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _pwController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  // --- UI & Logic Flags ---
   bool _showPassword = false;
   bool _loading = false;
+
+  /// Tracks if the profile has unsaved changes to enable the save button.
   bool _dirty = false;
   bool _saving = false;
+
+  /// Tracks if data from the [userProvider] has been loaded into controllers.
   bool _initialized = false;
+
+  // --- Avatar Management ---
   bool _removeAvatarPending = false;
   File? _pendingAvatar;
 
@@ -50,6 +64,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
     _pwController.addListener(_markDirty);
   }
 
+  /// Sets [_dirty] to true whenever a field changes.
   void _markDirty() {
     final shouldSetDirty = !_dirty;
     setState(() {
@@ -57,6 +72,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
     });
   }
 
+  /// Determines whether the save button should be enabled.
   bool get _canSave {
     if (_saving || _loading) return false;
     if (!_dirty) return false;
@@ -75,6 +91,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    /// Listens for [ToastEvent] updates to show non-blocking feedback to the user.
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
       PopupToast.show(context, message: next.message);
@@ -280,6 +297,10 @@ class _SettingsState extends ConsumerState<SettingsPage> {
     );
   }
 
+  /// Handles saving changes to user profile with name, email, password,
+  /// and avatar.
+  /// If profile successfully updated then shows success toast.
+  /// Otherwise shows an error toast.
   Future<void> _handleChanges() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _saving = true);
@@ -329,6 +350,8 @@ class _SettingsState extends ConsumerState<SettingsPage> {
     }
   }
 
+  /// Deletes the current user account and handles loading state.
+  /// If the deletion fails shows an error toast.
   Future<void> _handleDelete() async {
     setState(() => _loading = true);
     try {
@@ -342,6 +365,7 @@ class _SettingsState extends ConsumerState<SettingsPage> {
     }
   }
 
+  /// Initializes the form controllers with existing user data.
   void _initializeControllers(User u) {
     _initialized = true;
     _nameController.text = u.name;

@@ -15,6 +15,13 @@ import '../../../app/routing/routes.dart';
 import 'rename_dialog.dart';
 import 'select_sensors_dialog.dart';
 
+/// A customizable playback bar displayed at the top of a Playback Page.
+///
+/// Displays the video title, playback controls, sensor chart toggles, and action buttons.
+///
+/// Parameters:
+/// - [vc]: The [VideoPlayerController] controlling playback of the recording.
+/// - [recording]: The [Recording] being played, used for title display and actions.
 class PlaybackBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   final VideoPlayerController vc;
   final Recording recording;
@@ -33,6 +40,18 @@ class PlaybackBar extends ConsumerStatefulWidget implements PreferredSizeWidget 
 }
 
 class _PlaybackBarState extends ConsumerState<PlaybackBar> {
+  /// Builds the playback bar UI.
+  ///
+  /// Layout:
+  /// - **Left**: Back button, sensor toggle, mute/unmute, playback speed badge, recording name.
+  /// - **Center**: Playback controls (rewind, play/pause, fast forward).
+  /// - **Right**: Recording actions (Export, Rename, Delete).
+  ///
+  /// Behavior:
+  /// - Listens to [PlaybackState] changes and updates the [VideoPlayerController] volume and speed.
+  /// - Long-pressing the sensor button opens [SelectSensorsDialog] to manage sensor selection.
+  /// - Rename and Delete buttons trigger respective [PlaybackController] operations.
+  /// - Export button triggers [PlaybackController.exportVideoFolder] for the current recording.
   @override
   Widget build(BuildContext context) {
     final home = ref.watch(homeStateProvider);
@@ -55,6 +74,7 @@ class _PlaybackBarState extends ConsumerState<PlaybackBar> {
       if (prevMuted != next.isMuted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
+          // Update volume when mute state changes
           widget.vc.setVolume(next.isMuted ? 0 : 1);
         });
       }
@@ -62,6 +82,7 @@ class _PlaybackBarState extends ConsumerState<PlaybackBar> {
       if (prevSpeed != next.speed) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
+          // Update playback speed when it changes in state
           widget.vc.setPlaybackSpeed(next.speed);
         });
       }
@@ -75,6 +96,7 @@ class _PlaybackBarState extends ConsumerState<PlaybackBar> {
 
     final controller = ref.read(playbackControllerProvider);
 
+    // Validate new recording name before renaming
     bool nameExistsInSameProject(String name) {
       return home.recordings.any(
         (r) =>
@@ -208,6 +230,7 @@ class _PlaybackBarState extends ConsumerState<PlaybackBar> {
                     IconButton(
                       icon: const Icon(Icons.fast_rewind),
                       iconSize: 40,
+                      // Seek backward/forward by 10 seconds
                       onPressed: () => widget.vc.seekTo(
                         widget.vc.value.position - const Duration(seconds: 10),
                       ),

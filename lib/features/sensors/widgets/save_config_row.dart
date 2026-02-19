@@ -6,7 +6,20 @@ import 'package:openearable/features/sensors/state/sensor_configuration_storage.
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+/// A UI row that allows the user to save the current sensor configuration
+/// under a custom name.
+///
+/// This widget:
+/// - Reads the current configuration from [SensorConfigurationProvider]
+/// - Serializes it to JSON via `toJson()`
+/// - Persists it using [SensorConfigurationStorage]
+///
+/// If no name is provided, an alert dialog is shown instead of saving.
+///
+/// The configuration is saved per device using the provided [deviceId].
 class SaveConfigRow extends ConsumerStatefulWidget {
+  /// The ID of the wearable device whose sensor configuration
+  /// should be saved.
   final String deviceId;
 
   const SaveConfigRow({super.key, required this.deviceId});

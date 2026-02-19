@@ -3,11 +3,17 @@ import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/app/widgets/dialog.dart';
 import 'package:openearable/app/widgets/input_box.dart';
 
+/// Dialog for renaming a project.
+/// 
+/// Displays an input field pre-filled with [initialName] and returns
+/// the new name when the user confirms. Includes "Ok" and "Close" actions.
 class RenameProjectDialog extends StatefulWidget {
   const RenameProjectDialog({super.key, this.initialName = ''});
 
+  /// The initial project name to populate the input box.
   final String initialName;
 
+  /// Shows the rename dialog and returns the new project name if confirmed.
   static Future<String?> show(BuildContext context, {String initialName = ''}) {
     return showAppDialog(
       context,
@@ -41,6 +47,7 @@ class _RenameProjectDialogState extends State<RenameProjectDialog> {
     super.dispose();
   }
 
+  /// Handles submitting the new project name and closing the dialog.
   Future<void> _submitRename() async {
     if (_working) return;
 

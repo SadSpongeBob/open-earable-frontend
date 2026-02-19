@@ -2,6 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+/// Displays a custom dialog with optional bottom inset animation.
+///
+/// This wraps [showDialog] and ensures that the dialog is properly
+/// padded above the keyboard when it appears.
+///
+/// Parameters:
+/// - [context]: The BuildContext to show the dialog in.
+/// - [dialog]: The content widget of the dialog.
+/// - [barrierDismissible]: Whether tapping outside the dialog closes it (default: true).
+///
+/// Returns a [Future] that completes when the dialog is dismissed, returning
+/// a value of type [T] if provided.
 Future<T?> showAppDialog<T>(
   BuildContext context, {
   required Widget dialog,
@@ -25,6 +37,20 @@ Future<T?> showAppDialog<T>(
   );
 }
 
+/// A reusable base dialog widget with customizable title, body, and actions.
+///
+/// This provides a consistent card-style dialog with rounded corners,
+/// optional title, and a column of content and action buttons.
+///
+/// Parameters:
+/// - [title]: Optional title displayed at the top of the dialog.
+/// - [body]: The main content of the dialog.
+/// - [actions]: A list of widgets representing dialog actions (e.g., buttons).
+/// - [width]: Width of the dialog (default: 400).
+/// - [height]: Optional fixed height of the dialog.
+/// - [borderRadius]: Corner radius of the dialog (default: 36).
+/// - [headerPadding]: Padding around the title.
+/// - [bodyPadding]: Padding around the body content.
 class BaseDialog extends StatelessWidget {
   final String? title;
   final Widget body;
@@ -95,6 +121,18 @@ class BaseDialog extends StatelessWidget {
   }
 }
 
+/// A container for dialog actions with optional top border and rounded bottom.
+///
+/// This widget is intended to be used inside [BaseDialog] to display a
+/// row of actions such as buttons, maintaining consistent height, width,
+/// and border styling.
+///
+/// Parameters:
+/// - [child]: The content widget inside the action row.
+/// - [width]: Width of the row (default: 400).
+/// - [height]: Height of the row (default: 50).
+/// - [topBorder]: Whether to display a top border (default: true).
+/// - [bottomRounded]: Whether to round the bottom corners (default: false).
 class BaseDialogActionRow extends StatelessWidget {
   final Widget child;
   final double width;

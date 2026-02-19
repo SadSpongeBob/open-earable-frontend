@@ -7,10 +7,14 @@ import 'package:openearable/features/home/state/wearables_provider.dart';
 import 'package:openearable/features/home/state/wearables_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
-/// Page for connecting to devices
+/// A widget that lists available Bluetooth devices and manages connections.
 ///
-/// All BLE devices are listed and tapping on it will connect to the device.
-/// Connected Wearables are added to the [WearablesProvider].
+/// This widget scans for BLE wearables, displays discovered devices,
+/// and allows users to tap a device to connect to it. Connected wearables
+/// are added to the [WearablesProvider].
+///
+/// The page also checks system prerequisites like Bluetooth and Location,
+/// showing appropriate messages if they are disabled.
 class Devices extends ConsumerStatefulWidget {
   const Devices({super.key});
 
@@ -174,6 +178,7 @@ class _Devices extends ConsumerState<Devices> {
     );
   }
 
+  // Returns a small indicator circle or progress indicator for device status.
   Widget _statusCircle({required Color color, required bool isConnecting}) {
     return Positioned(
       right: -15,
@@ -192,6 +197,7 @@ class _Devices extends ConsumerState<Devices> {
     );
   }
 
+  // Attempts to connect to a discovered device and updates provider state.
   Future<void> _connectToDevice(
     DiscoveredDevice device,
     BuildContext context,
@@ -212,6 +218,7 @@ class _Devices extends ConsumerState<Devices> {
     }
   }
 
+  // Checks if Bluetooth and Location services are enabled.
   Future<List<SystemIssue>> _checkSystemStatus() async {
     final provider = ref.read(wearablesProvider);
     final issues = <SystemIssue>[];
@@ -228,4 +235,8 @@ class _Devices extends ConsumerState<Devices> {
   }
 }
 
+/// Represents system-level issues that may prevent device scanning or connection.
+/// 
+/// [bluetoothOff] : Bluetooth is turned off on the device.
+/// [locationOff] : Location is turned off on the device.
 enum SystemIssue { bluetoothOff, locationOff }

@@ -3,6 +3,7 @@ import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/app/widgets/devices.dart';
 
+/// A popup widget that displays a Devices Popup with list of available devices.
 class DevicesPopup extends StatelessWidget {
   const DevicesPopup({super.key});
 

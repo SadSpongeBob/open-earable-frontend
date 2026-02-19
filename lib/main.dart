@@ -7,6 +7,11 @@ import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/routing//router_provider.dart';
 import 'package:openearable/app/routing/app_bootstrapper.dart';
 
+/// Entry point for the OpenEarable application.
+///
+/// Initializes required resources, environment variables, and sets
+/// device orientation to landscape. Prepares local media and starts
+/// the app with [ProviderScope] for Riverpod state management.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
@@ -27,6 +32,11 @@ Future<void> main() async {
   );
 }
 
+/// Root widget of the OpenEarable application.
+///
+/// Uses [MaterialApp.router] to provide navigation via GoRouter.
+/// Wraps the child widgets with [AppBootstrapper] to handle
+/// app-wide initialization and startup logic.
 class OpenEarableApp extends ConsumerWidget {
   const OpenEarableApp({super.key});
 

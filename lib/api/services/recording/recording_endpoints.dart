@@ -1,5 +1,7 @@
+/// Provides API endpoint paths for recording-related operations.
+///
+/// All paths are relative to the API base URL.
 class RecordingEndpoints {
-
   static const String base = '/api/recording';
 
   static String recording(String recordingId) => '$base/$recordingId';

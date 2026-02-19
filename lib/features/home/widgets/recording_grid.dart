@@ -3,6 +3,13 @@ import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+/// Displays a grid of recordings with optional selection functionality.
+///
+/// Supports:
+/// - Showing thumbnails for each recording.
+/// - Indicating upload status (uploading, uploaded, failed).
+/// - Selection mode with check circles.
+/// - Tap and long-press callbacks for each recording.
 class RecordingGrid extends StatelessWidget {
   const RecordingGrid({
     super.key,
@@ -13,12 +20,19 @@ class RecordingGrid extends StatelessWidget {
     this.onLongPressRecording,
   });
 
+  /// List of recordings to display.
   final List<Recording> recordings;
 
+  /// Whether selection mode is active.
   final bool isSelectionMode;
+
+  /// Set of recording IDs currently selected.
   final Set<String> selectedRecordingIds;
 
+  /// Callback when a recording is tapped.
   final ValueChanged<Recording>? onTapRecording;
+
+  /// Callback when a recording is long-pressed.
   final ValueChanged<Recording>? onLongPressRecording;
 
   @override

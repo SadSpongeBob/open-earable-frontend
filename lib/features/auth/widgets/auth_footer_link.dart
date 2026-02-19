@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../app/theme/text_styles.dart';
 
+/// A tappable text widget that triggers [onTap] used in authentication pages
+/// to provide footer links.
+/// 
+/// Parameters:
+/// - [text]: The text to display for the footer link.
+/// - [onTap]: The callback triggered when the user taps the text.
+/// - [bold]: Whether the text should appear bold. Defaults to `false`.
 class AuthFooterLink extends StatelessWidget {
   final String text;
   final VoidCallback onTap;

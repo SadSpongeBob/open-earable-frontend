@@ -6,6 +6,15 @@ import '../../../api/services/recording/sensor_repository.dart';
 import '../controllers/chart_data.dart';
 import 'chart_painter.dart';
 
+/// Displays a sensor data chart synced with a video playback.
+///
+/// Parameters:
+/// - [controller]: The [VideoPlayerController] used to track playback time.
+/// - [samples]: List of [SensorSample]s representing the sensor data to render.
+///
+/// Behavior:
+/// - Updates the chart in real time as the video plays.
+/// - Shows a fixed-duration window of sensor samples ending at the current video time.
 class SensorChartPlayer extends StatefulWidget {
   final VideoPlayerController controller;
   final List<SensorSample> samples;
@@ -25,6 +34,10 @@ class _SensorChartPlayerState extends State<SensorChartPlayer> {
   late SensorChartController _logic;
   int _currentMs = 0;
 
+  /// Updates the current playback position from the video controller.
+  ///
+  /// If the video position has changed since the last update, sets
+  /// [_currentMs] and triggers a rebuild to refresh the chart.
   void _updateCurrentMsFromController() {
     final pos = widget.controller.value.position;
     final ms = pos.inMilliseconds;

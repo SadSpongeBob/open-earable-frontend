@@ -17,6 +17,11 @@ import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_seperator.dart';
 import '../../../app/widgets/input_box.dart';
 
+/// Login page for OpenEarable app.
+///
+/// Allows users to log in with email and password, reset their password,
+/// or continue as a guest. Utilizes Riverpod providers to handle
+/// authentication state and toast notifications.
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -25,12 +30,15 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
+  // --- Form Controllers ---
   final _emailController = TextEditingController();
   final _pwController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  // --- UI State ---
   bool _showPassword = false;
 
+  /// Returns true if both email and password fields are filled.
   bool get _isFormFilled =>
       _emailController.text.isNotEmpty && _pwController.text.isNotEmpty;
 
@@ -41,6 +49,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _pwController.addListener(_onFormChanged);
   }
 
+  /// Triggered when form fields change to update UI state.
   void _onFormChanged() {
     setState(() {});
   }
@@ -57,12 +66,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final session = ref.watch(sessionProvider);
     final loading = session.isLoading;
 
+    /// Listens for [ToastEvent] updates to show non-blocking feedback to the user.
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
       PopupToast.show(context, message: next.message);
       ref.read(toastProvider.notifier).state = null;
     });
 
+    /// Listens for [AuthState] updates to show auth error messages as toast.
     ref.listen<AuthState>(sessionProvider, (prev, next) {
       final msg = next.error;
       if (msg != null && msg.isNotEmpty && msg != prev?.error) {
@@ -100,6 +111,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                   const SizedBox(height: 35),
 
+                  // Email Input
                   InputBox(
                     controller: _emailController,
                     hint: "Email Address",
@@ -109,6 +121,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                   const SizedBox(height: 20),
 
+                  // Password Input
                   InputBox(
                     controller: _pwController,
                     hint: "Password",
@@ -132,6 +145,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   _buildRememberForgotRow(context),
                   const SizedBox(height: 20),
 
+                  // Login Button
                   AppButton.primary(
                     text: "Log In",
                     onPressed: _isFormFilled ? _handleLogin : null,
@@ -140,6 +154,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                   const SizedBox(height: 10),
 
+                  // Signup Link
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -157,11 +172,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                   const AuthSeparator(),
 
+                  // Guest Login
                   AuthFooterLink(
                     text: "Continue as Guest",
                     bold: true,
                     onTap: () async {
                       await ref.read(authControllerProvider).guestLogin();
+                      if (!context.mounted) return;
                       context.go(Routes.home);
                     },
                   ),
@@ -174,6 +191,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
+  /// Builds the "Forgot Password?" row.
   Widget _buildRememberForgotRow(BuildContext context) {
     return Row(
       children: [
@@ -186,6 +204,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
+  /// Handles login form submission
   Future<void> _handleLogin() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 

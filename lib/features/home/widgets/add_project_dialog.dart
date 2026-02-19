@@ -3,11 +3,19 @@ import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/app/widgets/dialog.dart';
 import 'package:openearable/app/widgets/input_box.dart';
 
+/// Dialog for creating a new project.
+///
+/// Returns the entered project name when confirmed,
+/// or `null` if the dialog is dismissed.
 class AddProjectDialog extends StatefulWidget {
   const AddProjectDialog({super.key, this.initialName = ''});
 
   final String initialName;
 
+  /// Displays the dialog and returns the entered project name.
+  ///
+  /// [initialName] can be provided to pre-fill the input field.
+  /// Returns `null` if the dialog is closed without confirmation.
   static Future<String?> show(BuildContext context, {String initialName = ''}) {
     return showAppDialog(
       context,
@@ -41,6 +49,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
     super.dispose();
   }
 
+  /// Validates the input and closes the dialog with the project name.
   Future<void> _handleAdd() async {
     if (_working) return;
 
