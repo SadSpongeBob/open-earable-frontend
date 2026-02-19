@@ -64,16 +64,18 @@ class VideoSensorOverlay extends ConsumerWidget {
         height: 250,
         width: double.infinity,
         decoration: BoxDecoration(color: AppColors.fifty.withValues(alpha: 0.55)),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               matchedSensorName ?? "Sensor",
-              style: AppTextStyles.textRegular,
+              style: AppTextStyles.footerMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
 
             Expanded(
               child: Material(
