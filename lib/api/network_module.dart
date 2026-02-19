@@ -7,10 +7,28 @@ import 'package:openearable/api/services/auth/auth_service.dart';
 import 'package:openearable/api/services/auth/token_storage.dart';
 import 'package:openearable/api/services/user/user_service.dart';
 
+/// A centralized module for network communication and API services.
+///
+/// [NetworkModule] provides configured instances of:
+/// - [Dio]: HTTP client with interceptors for attaching tokens, 
+///   refreshing tokens, and mapping responses.
+/// - [AuthService]: Handles authentication-related API calls and token refresh.
+/// - [UserService]: Handles user-related API calls.
+/// - [TokenStorage]: Handles secure storage of access and refresh tokens.
+///
+/// This module ensures all API requests are properly authorized, 
+/// handles automatic token refresh, and maps server responses to usable formats.
 class NetworkModule {
+  /// Handles secure storage of access and refresh tokens.
   final TokenStorage tokenStorage;
+
+  /// Configured HTTP client with base URL, timeouts, and interceptors.
   final Dio dio;
+
+  /// Provides methods for user-related API operations.
   final UserService userService;
+
+  /// Provides methods for authentication-related API operations.
   final AuthService authService;
 
   NetworkModule._({
@@ -20,6 +38,10 @@ class NetworkModule {
     required this.userService,
   });
 
+  /// Factory constructor to create a fully configured [NetworkModule].
+  ///
+  /// Parameters:
+  /// - [logout]: Callback invoked when the user's session expires and they need to log in again.
   factory NetworkModule.create({required Future<void> Function() logout}) {
     final tokenStorage = TokenStorage();
 

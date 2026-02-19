@@ -1,3 +1,4 @@
+/// Provides API endpoint URLs related to user authentication and account management.
 class AuthEndpoints {
   static const baseUrl = "/api/auth";
   static const login = "$baseUrl/authentication";
