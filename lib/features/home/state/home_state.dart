@@ -5,6 +5,15 @@ import 'package:openearable/api/models/project/project.dart';
 import 'package:openearable/api/models/project/project_user.dart';
 import '../../../api/models/recording/recording.dart';
 
+/// Represents the state of the home page, including:
+/// 
+/// - The list of projects and the currently open project
+/// - Selection state for projects and recordings
+/// - Recordings in the open project
+/// - Loading and error states
+/// - Users in the currently open project (for the users popup)
+///
+/// This state is immutable and updated via `HomeStateNotifier`.
 @immutable
 class HomeState {
   final List<ProjectMetadata> projects;
@@ -50,6 +59,12 @@ class HomeState {
     required this.usersErrorMessage,
   });
 
+  /// Returns the initial/default state for the home page.
+  /// 
+  /// - Contains a single default project.
+  /// - No project or recording is selected.
+  /// - Loading flags are false.
+  /// - Error messages are null.
   factory HomeState.initial() => HomeState(
     projects: [
       ProjectMetadata.local(LocalMedia.defaultProjectId, 'Default'),

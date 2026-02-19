@@ -32,6 +32,25 @@ import '../widgets/users_button.dart';
 import '../widgets/users_popup.dart';
 import '../widgets/move_recordings_modal.dart';
 
+/// Home Page of the OpenEarable app.
+///
+/// Displays the user's projects and recordings in a two-panel layout:
+/// - **Left Panel (Projects Bar)**: Lists all projects, allows adding, selecting,
+///   duplicating, renaming, and deleting projects.
+/// - **Center Panel (Recordings Grid)**: Shows recordings of the currently open
+///   project. Supports selection mode for deletion, duplication, or moving recordings.
+/// - **Right Panel (Recording Controls)**: Provides Navigation to Settings,
+///   Sensor, Recording Pages, and Bluetooth device management.
+///
+/// Features include:
+/// - Project and recording selection modes with contextual action bars.
+/// - Move mode for transferring recordings between projects.
+/// - Guest and authenticated user support with conditional UI elements.
+/// - Toast notifications for user feedback on actions (e.g., deletion, duplication).
+/// - Background image and custom UI for a polished visual layout.
+/// - Integration with `HomeController` and `UploadController` for project and
+///   recording management.
+/// - Bluetooth devices popup for recording input configuration.
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -39,10 +58,26 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
+/// The state for [HomePage] which handles UI logic, selection modes, and user interactions.
+///
+/// Responsibilities:
+/// - Initialize projects and attempt pending uploads on page load.
+/// - Manage recording and project selection states.
+/// - Enter and exit recording "move mode" for transferring recordings between projects.
+/// - Provide callbacks for project and recording actions via [HomeController].
+/// - Display popups such as user lists, device management, and confirmation dialogs.
+/// - Handle toast notifications using [toastProvider].
 class _HomePageState extends ConsumerState<HomePage> {
+  // --- Form Controllers ---
   final DevicesPopupController _popupController = DevicesPopupController();
   final GlobalKey bluetoothKey = GlobalKey();
+
+  // --- UI State ---
+
+   /// True if the user is currently choosing a target project to move recordings to
   bool _isChoosingMoveTarget = false;
+
+  /// Holds the IDs of recordings selected for moving between projects
   Set<String> _recordingIdsToMove = const <String>{};
 
   @override
@@ -53,6 +88,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
+  /// Loads projects and attempts pending uploads
   Future<void> _init() async {
     await ref.read(homeControllerProvider).loadProjects();
     unawaited(ref.read(uploadControllerProvider).tryUploads());
@@ -64,6 +100,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.dispose();
   }
 
+  /// Exits move mode and clears any recordings selected for moving
   void _exitMoveMode() {
     if (!_isChoosingMoveTarget) return;
     setState(() {
@@ -72,6 +109,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
+  /// Determines if a project is stored locally
   bool _isLocalProject(ProjectMetadata? p, String idFallback) {
     if (idFallback == LocalMedia.defaultProjectId) return true;
     if (p == null) return false;
@@ -80,6 +118,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    /// Listens for [ToastEvent] updates to show non-blocking feedback to the user.
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
       PopupToast.show(context, message: next.message);

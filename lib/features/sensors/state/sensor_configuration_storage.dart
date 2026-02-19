@@ -3,12 +3,35 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/local_media.dart';
 
+/// Provides a [SensorConfigurationStorage] instance for persisting
+/// sensor configuration data locally.
+///
+/// Dependencies:
+/// - Watches [localMediaProvider] to access the app's base storage directory.
+///
+/// Usage:
+/// This provider should be used whenever sensor configurations need to be
+/// saved, loaded, listed, or deleted from local storage.
 final sensorConfigurationStorageProvider =
     Provider<SensorConfigurationStorage>((ref) {
   final localMedia = ref.watch(localMediaProvider);
   return SensorConfigurationStorage(localMedia);
 });
 
+/// A storage service responsible for persisting sensor configurations
+/// as JSON files in the app's local media directory.
+///
+/// Each configuration is stored as a separate `.json` file inside the
+/// `sensor_configurations` subdirectory of [LocalMedia.baseDir].
+///
+/// Key features:
+/// - Automatic directory creation
+/// - JSON-based serialization
+/// - Key sanitization for safe file names
+/// - Bulk and single configuration loading
+///
+/// File structure:
+/// `<baseDir>/sensor_configurations/<sanitized_key>.json`
 class SensorConfigurationStorage {
   final LocalMedia localMedia;
 

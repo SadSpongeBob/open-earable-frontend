@@ -2,6 +2,21 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 
+/// Provider responsible for managing sensor configurations and their selected values.
+///
+/// This class listens to the [SensorConfigurationManager]'s configuration stream
+/// and keeps a local, reactive representation of:
+/// - Selected sensor configuration values
+/// - Selected configuration options for configurable sensors
+///
+/// It exposes helper methods to:
+/// - Add and remove configurations
+/// - Manage selectable configuration options
+/// - Filter valid configuration values based on selected options
+/// - Serialize and restore configurations from JSON
+///
+/// This implementation is adapted from the OpenEarable reference application,
+/// with modifications to fit the app's state management and UI architecture.
 class SensorConfigurationProvider with ChangeNotifier {
   final SensorConfigurationManager _sensorConfigurationManager;
 

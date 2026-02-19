@@ -5,6 +5,18 @@ import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 
+/// Displays the details of a single [SensorConfiguration] for a specific wearable.
+///
+/// If the [sensorConfiguration] is a [ConfigurableSensorConfiguration], it
+/// will show a list of available options with switches to toggle them on or off.
+/// 
+/// Parameters:
+/// - [sensorConfiguration]: The sensor configuration to display and allow editing for.
+/// - [deviceId]: The ID of the wearable device that owns the sensor.
+///
+/// Additionally, it displays a dropdown for selecting the sensor's sampling rate
+/// or other configurable values. Changes made here are applied to the
+/// corresponding [SensorConfigurationProvider] for the given [deviceId].
 class SensorConfigurationDetailView extends ConsumerWidget {
   final SensorConfiguration sensorConfiguration;
   final String deviceId;

@@ -5,6 +5,19 @@ import 'package:openearable/api/services/recording/sensor_repository.dart';
 import 'package:openearable/features/playback/widgets/sensor_chart_player.dart';
 import 'package:video_player/video_player.dart';
 
+/// A video card with optional sensor visualization and playback controls.
+///
+/// Parameters:
+/// - [controller]: The [VideoPlayerController] for controlling video playback.
+/// - [sensorPath]: Optional path to sensor data for overlaying a chart.
+/// - [showSensorChart]: Whether to show the sensor chart overlay (default: true).
+///
+/// Behavior:
+/// - Shows the video in a card with rounded corners and elevation.
+/// - If [sensorPath] is provided and [showSensorChart] is true, overlays
+///   a [SensorChartPlayer] at the bottom of the video.
+/// - Displays a scrubbable [VideoProgressIndicator] at the bottom of the card.
+/// - Uses a [Stack] to layer the video, sensor chart, and progress indicator.
 class VideoCard extends StatelessWidget {
   final VideoPlayerController controller;
   final String? sensorPath;
@@ -19,12 +32,14 @@ class VideoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Add video player as base layer
     final children = <Widget>[
       VideoPlayer(controller),
     ];
 
     final shouldShowChart = sensorPath != null && showSensorChart;
 
+    // Overlay sensor chart if available
     if (shouldShowChart) {
       children.add(
         Positioned(
@@ -47,7 +62,7 @@ class VideoCard extends StatelessWidget {
       );
     }
 
-    // progress indicator stays at the bottom
+    // Add progress indicator at the bottom
     children.add(
       Positioned(
         bottom: 0,

@@ -9,6 +9,14 @@ import 'package:openearable/features/recordings/controllers/sensors_recording_co
 import 'package:openearable/features/sensors/state/sensor_data_provider.dart';
 import 'package:openearable/app/utils/logger.dart';
 
+/// Adapted from the OpenEarable Flutter SDK manager implementation.
+/// Source: OpenEarable GitHub.
+/// 
+/// Modifications:
+/// - Integrated with SensorsRecordingController
+/// - Added custom event streams and logging
+/// - Added microtask-based async scheduling
+
 /// Event for when a newer firmware version is available
 class NewFirmwareAvailableEvent extends WearableEvent {
   final String currentVersion;
@@ -27,6 +35,11 @@ class NewFirmwareAvailableEvent extends WearableEvent {
   String toString() =>
       'NewFirmwareAvailableEvent for ${wearable.name}: $currentVersion -> $latestVersion';
 }
+
+/// System-wide events emitted by the [WearablesProvider].
+/// 
+/// Listen to [wearableEventStream] for UI notifications (e.g., Firmware updates).
+/// Listen to [unsupportedFirmwareStream] for safety-critical hardware blocks.
 
 abstract class UnsupportedFirmwareEvent {
   final Wearable wearable;
@@ -76,8 +89,17 @@ class WearableErrorEvent extends WearableEvent {
 }
 
 
-// MARK: WearablesProvider
-
+/// Manages the lifecycle and state of connected OpenEarable devices.
+///
+/// This provider handles:
+/// - Bluetooth scanning and device discovery.
+/// - Establishing and maintaining connections.
+/// - Initializing device-specific capabilities (Sensors, Firmware, Stereo pairing).
+/// - Synchronizing time across all connected wearables.
+/// - Broadcasting events for firmware updates and connection errors.
+///
+/// This implementation is a modified version of the standard OpenEarable 
+/// manager, optimized for [SensorsRecordingController] integration.
 class WearablesProvider with ChangeNotifier {
   List<DiscoveredDevice> discoveredDevices = [];
   Map<String, bool> connectingDevices = {};

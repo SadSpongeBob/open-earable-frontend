@@ -4,6 +4,14 @@ import 'package:openearable/api/services/user/user_preference_storage.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/widgets/pill_menu.dart';
 
+/// Dropdown widget for selecting the user's preferred download method.
+///
+/// Allows the user to choose between:
+/// - WiFi only downloads
+/// - Mobile data and WiFi downloads
+///
+/// Uses [UserPreferenceStorage] to persist the preference locally
+/// and updates the UI reactively with loading/saving states.
 class DownloadMethodDropdown extends ConsumerStatefulWidget {
   const DownloadMethodDropdown({super.key});
 
@@ -14,11 +22,12 @@ class DownloadMethodDropdown extends ConsumerStatefulWidget {
 
 class _DownloadMethodDropdownState
     extends ConsumerState<DownloadMethodDropdown> {
+  // --- Option Text Constants ---
   static const String _wifiOnlyText = 'Download with WiFi';
   static const String _mobileAndWifiText = 'Download with mobile data and WiFi';
-
   static const List<String> _options = [_wifiOnlyText, _mobileAndWifiText];
 
+  // --- State ---
   String _selected = _wifiOnlyText;
   bool _loading = true;
   bool _saving = false;
@@ -29,6 +38,9 @@ class _DownloadMethodDropdownState
     _loadPreference();
   }
 
+  /// Loads the saved download preference from [UserPreferenceStorage].
+  ///
+  /// Updates [_selected] and sets [_loading] to false once loaded.
   Future<void> _loadPreference() async {
     final storage = ref.read(userPreferenceStorage);
     final wifiOnly = await storage.isWifiOnly();
@@ -40,6 +52,10 @@ class _DownloadMethodDropdownState
     });
   }
 
+  /// Handles selection changes in the dropdown.
+  ///
+  /// Updates [_selected], saves the preference via [UserPreferenceStorage],
+  /// and manages [_saving] state during the operation.
   Future<void> _onSelected(String value) async {
     setState(() {
       _selected = value;
@@ -65,6 +81,7 @@ class _DownloadMethodDropdownState
     );
   }
 
+  /// Returns the color for each dropdown item based on selection and loading state.
   Color _getColor(String value) {
     if (_loading) return AppColors.nineHundred;
     return value == _selected ? AppColors.primary : AppColors.nineHundred;

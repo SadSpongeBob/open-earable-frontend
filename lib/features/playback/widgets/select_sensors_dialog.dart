@@ -7,6 +7,17 @@ import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/app/widgets/dialog.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+/// A dialog widget that lets the user select a sensor from a list.
+///
+/// Displays available sensors as radio buttons and notifies the parent
+/// immediately when the selection changes. Long-pressing a sensor triggers
+/// an optional callback.
+///
+/// Parameters:
+/// - [available]: List of sensors to display for selection.
+/// - [initialSelected]: List of initially selected sensors. Defaults to empty.
+/// - [onChanged]: Optional callback invoked immediately when the selection changes.
+/// - [onLongPress]: Optional callback invoked when a sensor is long-pressed.
 class SelectSensorsDialog extends StatefulWidget {
   final List<Sensor> available;
   final List<Sensor> initialSelected;
@@ -21,6 +32,18 @@ class SelectSensorsDialog extends StatefulWidget {
     this.onLongPress,
   });
 
+  /// Displays the select sensors dialog and returns the selected sensor(s).
+  ///
+  /// Parameters:
+  /// - [context]: BuildContext to show the dialog.
+  /// - [available]: List of sensors to display. Defaults to empty list.
+  /// - [initialSelected]: List of initially selected sensors. Defaults to empty list.
+  /// - [onChanged]: Optional callback for immediate selection changes.
+  /// - [onLongPress]: Optional callback for long-press on a sensor.
+  ///
+  /// Returns:
+  /// - A [Future<List<Sensor>?>] that completes with the selected sensor in a list,
+  ///   or an empty list if nothing was selected or the dialog was closed.
   static Future<List<Sensor>?> show(
     BuildContext context, {
     List<Sensor>? available,
@@ -55,6 +78,12 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
     }
   }
 
+  /// Updates the currently selected sensor and triggers the [onChanged] callback.
+  ///
+  /// Parameters:
+  /// - [value]: The sensor that was selected. Can be null to deselect.
+  ///
+  /// Immediately calls [widget.onChanged] with the new selection.
   void _onSelect(Sensor? value) {
     setState(() => _selected = value);
     // notify immediately that selection changed
@@ -63,6 +92,19 @@ class _SelectSensorsDialogState extends State<SelectSensorsDialog> {
     }
   }
 
+  /// Builds the dialog UI.
+  ///
+  /// Layout:
+  /// - Title: "Select sensor"
+  /// - Body:
+  ///   - If no sensors are available: shows "No sensors available."
+  ///   - Otherwise: displays a scrollable list of sensors with radio buttons.
+  /// - Actions: Close button that returns the currently selected sensor.
+  ///
+  /// Behavior:
+  /// - Tapping a sensor selects it.
+  /// - Long-pressing a sensor triggers [widget.onLongPress].
+  /// - The Close button returns the current selection to the caller.
   @override
   Widget build(BuildContext context) {
     final avail = widget.available;

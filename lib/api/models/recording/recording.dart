@@ -2,6 +2,21 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 
+/// Represents a video recording with metadata, source information, and upload status.
+///
+/// Can represent recordings stored locally or in the cloud.
+/// 
+/// Parameters:
+/// - [id]: Unique identifier for the recording.
+/// - [name]: Name or title of the recording.
+/// - [source]: Source of the recording (local or cloud).
+/// - [thumbnailUrl]: URL of the thumbnail.
+/// - [localThumbnailPath]: Local path to the thumbnail image (for local recordings).
+/// - [localVideoPath]: Local file path to the video (for local recordings).
+/// - [videoTimestamp]: Timestamp of the recording in UTC.
+/// - [projectId]: Optional project ID this recording belongs to.
+/// - [userId]: ID of the user who created/uploaded the recording.
+/// - [uploadStatus]: Current upload status of the recording.
 class Recording {
   final String id;
   final String name;
@@ -86,6 +101,7 @@ class Recording {
   int get hashCode => Object.hash(id, source);
 }
 
+/// Represents the current status of a recording upload.
 enum UploadStatus {
   completed,
   failed,
@@ -110,8 +126,10 @@ enum UploadStatus {
   };
 }
 
+/// Indicates whether a recording is stored locally or in the cloud.
 enum RecordingSource { local, cloud }
 
+/// Utility getters for [Recording].
 extension RecordingX on Recording {
   bool get isLocal => source == RecordingSource.local;
 

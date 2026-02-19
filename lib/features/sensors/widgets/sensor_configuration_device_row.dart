@@ -8,7 +8,21 @@ import 'package:openearable/features/sensors/widgets/save_config_row.dart';
 import 'package:openearable/features/sensors/widgets/sensor_configuration_value_row.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
-/// A widget that displays a list of sensor configurations for a device.
+/// Displays sensor configuration options for a given [Wearable] device.
+///
+/// This widget shows a card containing two tabs:
+/// 1. **New** – Displays the current sensor configurations of the device
+///    and allows the user to edit and save them.
+/// 2. **Saved** – Shows previously saved configurations from storage and
+///    allows loading or deleting them.
+///
+/// If the device does not support sensor configuration, a message is shown.
+///
+/// The widget automatically updates its content when switching tabs
+/// and when configurations are saved or loaded.
+/// 
+/// Parameters:
+/// - [device]: The wearable device whose sensor configurations are displayed.
 class SensorConfigurationDeviceRow extends ConsumerStatefulWidget {
   final Wearable device;
 

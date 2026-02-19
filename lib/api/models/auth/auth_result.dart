@@ -1,3 +1,10 @@
+/// A generic wrapper for authentication results.
+///
+/// Represents the outcome of an authentication operation, such as login,
+/// registration, or token refresh. It contains:
+/// - [success]: whether the operation succeeded,
+/// - [errorMessage]: an optional message if the operation failed,
+/// - [data]: the returned data on success (e.g., user info or tokens).
 class AuthResult<T> {
   final bool success;
   final String? errorMessage;

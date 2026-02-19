@@ -1,6 +1,10 @@
 import '../../../api/services/recording/sensor_repository.dart';
 
-/// Prepared data for the chart: resampled timestamps and axis series.
+/// Represents preprocessed sensor data ready for charting.
+///
+/// Contains resampled timestamps and corresponding axis data.
+/// Also stores the computed min and max values after optional padding.
+/// Typically used to display time-series sensor data in charts.
 class ChartData {
   final List<int> resTs;
   final List<double> rx;
@@ -17,6 +21,27 @@ class ChartData {
     required this.minV,
     required this.maxV,
   });
+
+  /// Creates [ChartData] from raw [SensorSample]s by resampling and interpolating.
+  ///
+  /// Filters the samples to only include timestamps between [startMs] and [endMs].
+  /// Generates a uniformly spaced series of timestamps at [stepMs] intervals and
+  /// interpolates x/y/z values to these timestamps. Computes min and max values
+  /// and applies optional [paddingRatio] for chart scaling.
+  ///
+  /// Parameters:
+  /// - [samples]: List of raw sensor samples to process.
+  /// - [startMs]: Start timestamp (inclusive) in milliseconds.
+  /// - [endMs]: End timestamp (inclusive) in milliseconds.
+  /// - [stepMs]: Interval in milliseconds for resampled timestamps (default 30ms).
+  /// - [defaultMinV]: Minimum value if no samples exist (default -1).
+  /// - [defaultMaxV]: Maximum value if no samples exist (default 1).
+  /// - [paddingRatio]: Fraction of range to pad min/max for chart display (default 0.08).
+  /// - [epsilon]: Minimum difference between min and max; used to avoid zero-range (default 1e-3).
+  ///
+  /// Returns:
+  /// A [ChartData] instance with resampled timestamps, interpolated axis values,
+  /// and padded min/max values suitable for chart plotting.
   static ChartData fromSamples(
       List<SensorSample> samples,
       int startMs,

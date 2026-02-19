@@ -3,6 +3,18 @@ import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/project/project_role.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 
+/// Represents a project containing recordings and users with specific roles.
+///
+/// A project has a unique ID, a name, an owner, a list of recordings, and
+/// a list of users with assigned roles. Provides helper methods to check
+/// user permissions.
+/// 
+/// Parameters:
+/// - [id]: Unique identifier of the project.
+/// - [name]: The project name.
+/// - [ownerId]: User ID of the project owner.
+/// - [recordings]: List of recordings associated with the project.
+/// - [users]: List of users and their roles in the project.
 @immutable
 class Project {
   final String id;

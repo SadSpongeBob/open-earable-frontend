@@ -2,6 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+/// A customizable inline dropdown menu displayed as a "pill".
+///
+/// [PillMenu] displays a single selected value and allows the user
+/// to choose from a list of options when tapped or long-pressed.
+/// The currently selected value is highlighted, and each option
+/// can have a custom text color via [itemColor].
+/// 
+/// Parameters:
+/// - [value]: Currently selected value. If `null`, the menu shows "Loading" and is disabled.
+/// - [options]: List of selectable options.
+/// - [labelOf]: Function to get a string label from an option.
+/// - [onChanged]: Callback invoked when the user selects a new option.
+/// - [itemColor]: Optional function to provide a custom color for each menu item.
+/// - [borderRadius]: Border radius for the pill's container. Defaults to 36.
+/// - [openOnTap]: Whether tapping opens the menu. Defaults to `true`.
+/// - [openOnLongPress]: Whether long pressing opens the menu. Defaults to `false`.
+/// - [menuWidth]: Optional fixed width of the dropdown menu.
+///
+/// [PillMenu] internally uses [PillMenuAnchor], which manages
+/// overlay positioning, menu opening/closing, and selection.
 class PillMenu<T> extends StatelessWidget {
   final T? value;
   final List<T> options;
@@ -94,6 +114,12 @@ class PillMenu<T> extends StatelessWidget {
   }
 }
 
+/// Anchor widget that manages opening the dropdown menu in an overlay.
+///
+/// [PillMenuAnchor] is used internally by [PillMenu] but can also
+/// be used directly for more control over the menu appearance and
+/// behavior. It exposes a [childBuilder] function to render the
+/// pill based on whether the menu is currently open.
 class PillMenuAnchor<T> extends StatefulWidget {
   final T? value;
   final List<T> options;

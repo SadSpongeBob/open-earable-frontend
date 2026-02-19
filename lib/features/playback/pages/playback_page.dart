@@ -18,9 +18,23 @@ import '../widgets/playback_bar.dart';
 import '../widgets/video_card.dart';
 import '../state/playback_state.dart';
 
+/// A page for playing back a recording, either local or cloud-based.
+///
+/// This page handles:
+/// - Loading a recording by [recordingId] and [source].
+/// - Handling offline/cloud network conditions:
+///   - Shows a [FailedLoadScreen] if offline or Wi-Fi preferences disallow playback.
+/// - Displaying video using a [VideoCard] and a [PlaybackBar].
+/// - Managing playback state (selected sensors, chart display) via [playbackProvider].
+/// - Listening to global toast events via [toastProvider] and showing popup messages.
 class PlaybackPage extends ConsumerStatefulWidget {
+  /// The ID of the recording to play.
   final String recordingId;
+
+  /// The source of the recording (e.g., cloud or local).
   final RecordingSource source;
+
+  /// Optional [Recording] object if already available to avoid lookup.
   final Recording? recording;
 
   const PlaybackPage({
@@ -45,6 +59,7 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
 
   @override
   Widget build(BuildContext context) {
+    /// Listens for [ToastEvent] updates to show non-blocking feedback to the user.
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
       PopupToast.show(context, message: next.message);
@@ -111,6 +126,12 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage> {
   }
 }
 
+/// Internal scaffold that displays the video player and playback UI.
+///
+/// Handles:
+/// - Showing loading/error states while the video controller initializes.
+/// - Displaying the [PlaybackBar] in the app bar.
+/// - Showing the video content with optional sensor chart overlay.
 class _PlaybackVideoScaffold extends ConsumerWidget {
   const _PlaybackVideoScaffold({required this.recording});
 

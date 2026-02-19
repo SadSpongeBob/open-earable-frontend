@@ -1,3 +1,11 @@
+/// Represents metadata about a project, either local or cloud-based.
+/// 
+/// Parameters:
+/// - [id]: Unique identifier of the project.
+/// - [name]: The human-readable project name.
+/// - [recordingAmount]: The number of recordings associated with this project.
+/// - [userAmount]: The number of users with access to this project.
+/// - [projectSource]: Indicates whether the project is stored locally or in the cloud.
 class ProjectMetadata {
   final String id;
   final String name;
@@ -13,6 +21,7 @@ class ProjectMetadata {
     required this.projectSource,
   });
 
+  /// Creates a local project metadata instance with zero recordings and users.
   factory ProjectMetadata.local(String id, String name) {
     return ProjectMetadata(
       id: id,
@@ -23,6 +32,7 @@ class ProjectMetadata {
     );
   }
 
+  /// Creates a cloud project metadata instance with zero recordings and users.
   factory ProjectMetadata.cloud(String id, String name) {
     return ProjectMetadata(
       id: id,
@@ -33,6 +43,9 @@ class ProjectMetadata {
     );
   }
 
+  /// Creates a [ProjectMetadata] instance from a JSON map (typically from API response).
+  /// 
+  /// Expects keys: 'projectId', 'name', 'recordingAmount', 'userAmount'.
   factory ProjectMetadata.fromJson(Map<String, dynamic> json) {
     final id = json['projectId'] as String;
     final name = json['name'] as String;
@@ -65,12 +78,15 @@ class ProjectMetadata {
   };
 }
 
+/// Indicates the source of the project: either local or cloud.
 enum ProjectSource {
   local,
   cloud;
 
+  /// Returns the string representation used in JSON (uppercase).
   String get json => name.toUpperCase();
 
+  /// Converts a JSON string (case-insensitive) to a [ProjectSource] value.
   static ProjectSource fromJson(String value) =>
       ProjectSource.values.byName(value.toUpperCase());
 }

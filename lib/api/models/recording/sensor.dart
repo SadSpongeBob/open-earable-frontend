@@ -1,3 +1,12 @@
+/// Represents a sensor associated with a recording, including its metadata
+/// and local storage path.
+/// 
+/// Parameters:
+/// - [sensorIndex]: The index of the sensor in the recording.
+/// - [sensorId]: Unique identifier for the sensor.
+/// - [name]: Human-readable name of the sensor (e.g., "Accelerometer").
+/// - [timeStamp]: Timestamp when the sensor data was recorded.
+/// - [localPath]: Local file path where the sensor data is stored.
 class Sensor {
   final int sensorIndex;
   final String sensorId;

@@ -4,12 +4,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/app/utils/helpers.dart';
 
+/// Manages sensor data collection for a recording session.
+///
+/// Properties:
+/// - [isRecording]: Whether recording is active.
+/// - [isPaused]: Whether recording is currently paused.
+/// - [_bucket]: Internal storage for sensor readings, keyed by timestamp and sensor ID.
 class SensorsRecordingController extends ChangeNotifier {
   bool isRecording = false;
   bool isPaused = false;
 
   final Map<int, Map<String, List<dynamic>>> _bucket = {};
 
+  /// Records sensor data at the current timestamp.
+  ///
+  /// - Adds the sensor readings to the internal [_bucket] only if [isRecording] is true and [isPaused] is false.
+  /// - Timestamp is taken in milliseconds since epoch.
+  /// 
+  /// Parameters:
+  /// - [sensorId]: Unique identifier of the sensor (e.g., "accelerometer").
+  /// - [values]: List of numeric sensor readings (e.g., [x, y, z] axes).
   void recordData(String sensorId, List<dynamic> values) {
     if (!isRecording || isPaused) return;
 
@@ -18,8 +32,14 @@ class SensorsRecordingController extends ChangeNotifier {
     _bucket.putIfAbsent(nowEpochMs, () => {});
     _bucket[nowEpochMs]![sensorId] = values;
   }
-
-  /// Call this at the SAME TIME as video start
+  /// Starts a new sensor recording session.
+  ///
+  /// - Clears any previous data in [_bucket].
+  /// - Sets [isRecording] to true and [isPaused] to false.
+  /// - Notifies listeners for UI updates.
+  ///
+  /// Note:
+  /// - Call this at the SAME TIME as video start
   Future<void> startRecording() async {
     isRecording = true;
     isPaused = false;
@@ -28,21 +48,51 @@ class SensorsRecordingController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Call together with video pause
+  /// Pauses sensor data collection.
+  ///
+  /// - Sets [isPaused] to true.
+  /// - No data will be recorded until [resumeRecording] is called.
+  /// - Notifies listeners for UI updates.
+  ///
+  /// Note:
+  /// - Call together with video pause
   void pauseRecording() {
     if (!isRecording || isPaused) return;
     isPaused = true;
     notifyListeners();
   }
 
-  /// Call together with video resume
+  /// Resumes sensor data collection after a pause.
+  ///
+  /// - Sets [isPaused] to false.
+  /// - Notifies listeners for UI updates.
+  ///
+  /// Note:
+  /// - Call together with video resume
   void resumeRecording() {
     if (!isRecording || !isPaused) return;
     isPaused = false;
     notifyListeners();
   }
 
-  /// Call when video stops
+  /// Stops sensor recording and writes data to local storage.
+  ///
+  /// - Sets [isRecording] and [isPaused] to false.
+  /// - Aggregates sensor readings from [_bucket] and groups them by sensor ID.
+  /// - Creates a JSON file for each sensor under the project/recording directory.
+  /// - Each JSON includes:
+  ///   - sourceName`: Sensor ID
+  ///   - `startEpochMs`: Video start timestamp in milliseconds
+  ///   - `data`: List of timestamped sensor readings (axis0, axis1, ...)
+  ///
+  /// Parameters:
+  /// - [videoStart]: Timestamp of when video recording started.
+  /// - [recordingId]: Unique ID of the recording session.
+  /// - [projectId]: ID of the project where recording belongs.
+  /// - [ref]: WidgetRef used to access [localMediaProvider] for file storage.
+  ///
+  /// Note:
+  /// - Call when video stops
   Future<void> stopRecording({
     required DateTime videoStart,
     required String recordingId,

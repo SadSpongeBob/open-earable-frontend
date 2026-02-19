@@ -16,6 +16,17 @@ import '../controllers/recording_controller.dart';
 import 'package:openearable/features/recordings/controllers/sensors_recording_controller.dart';
 import '../widgets/left_bar.dart';
 
+/// A page for capturing video and recording sensor data.
+///
+/// Parameters:
+/// - [onVideoRecorded]: Optional callback invoked with the path of the recorded video when recording finishes.
+/// - [initialCamera]: The initial camera to use ([CameraLensDirection.back] by default).
+///
+/// Behavior:
+/// - Displays a live camera preview using [CameraController].
+/// - Integrates with [SensorsRecordingController] to record wearable sensor data alongside video.
+/// - Handles UI actions like shutter press, pause/resume, camera flip, and Bluetooth device management.
+/// - Updates state in [homeStateProvider] to store new recordings.
 class RecordingPage extends ConsumerStatefulWidget {
   const RecordingPage({
     super.key,
@@ -30,6 +41,10 @@ class RecordingPage extends ConsumerStatefulWidget {
   ConsumerState<RecordingPage> createState() => _RecordingPageState();
 }
 
+/// Provides a singleton [SensorsRecordingController] for managing wearable sensor recordings.
+///
+/// The provider is kept alive across widget rebuilds to maintain sensor state
+/// even when the [RecordingPage] is temporarily removed from the widget tree.
 final sensorsRecordingProvider =
     ChangeNotifierProvider<SensorsRecordingController>((ref) {
       final controller = SensorsRecordingController();
@@ -65,6 +80,18 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
     super.dispose();
   }
 
+  /// Handles pressing the shutter button to start or stop recording.
+  ///
+  /// Behavior:
+  /// - If currently recording:
+  ///   - Stops video recording.
+  ///   - Stops sensor recording if wearables are connected.
+  ///   - Updates home state with the new recording.
+  ///   - Navigates to the playback page for the recorded video.
+  /// - If not recording:
+  ///   - Starts sensor recording if wearables are connected.
+  ///   - Starts video recording.
+  /// - Prevents concurrent execution using [_busy] flag.
   Future<void> _onShutterPressed() async {
     if (_busy) return;
     _busy = true;
@@ -94,7 +121,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
             wearablesNotifier.detachSensorsRecordingController();
           }
           ref.read(homeStateProvider.notifier).addRecording(recording);
-
+          if (!mounted) return;
           context.go(
             Routes.playback(recording.isCloud, recording.id),
             extra: recording,
@@ -117,6 +144,15 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
     if (!mounted) return;
   }
 
+  /// Handles pressing the flip or pause button.
+  ///
+  /// Behavior:
+  /// - If not recording, toggles camera direction.
+  /// - If recording:
+  ///   - Pauses recording if currently recording.
+  ///   - Resumes recording if paused.
+  /// - Pauses/resumes sensor recording in sync with video recording.
+  /// - Prevents concurrent execution using [_busy] flag.
   Future<void> _onFlipOrPausePressed() async {
     final hasSensors = ref.read(wearablesProvider).isConnected;
 
@@ -142,10 +178,18 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
     setState(() {});
   }
 
+  /// Navigates back to the home/projects page.
   void _navigateToHome() {
     context.go(Routes.home);
   }
 
+  /// Builds the camera preview widget.
+  ///
+  /// Returns:
+  /// - A [CameraPreview] if the controller is initialized.
+  /// - A [CircularProgressIndicator] while the camera initializes.
+  ///
+  /// The preview is clipped and aligned to maintain aspect ratio.
   Widget _buildCameraPreview() {
     if (!_controller.isInitialized) {
       return const Center(child: CircularProgressIndicator());
@@ -164,6 +208,16 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
     );
   }
 
+  /// Builds the full recording page layout.
+  ///
+  /// Layout:
+  /// - Left: [RecordingLeftBar] with back button.
+  /// - Center: camera preview with optional [VideoSensorOverlay].
+  /// - Right: [HomeRecordingRightBar] with shutter, flip, Devices-Popup button, and sensor overlay controls.
+  ///
+  /// Notes:
+  /// - Uses [ListenableBuilder] to rebuild when [RecordingController] state changes.
+  /// - Sensor overlay visibility is controlled via [recordingChartProvider].
   @override
   Widget build(BuildContext context) {
     final chartProvider = ref.watch(recordingChartProvider);
@@ -180,11 +234,13 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
                   builder: (context, constraints) {
                     return Stack(
                       children: [
+                        // Show live camera preview
                         SizedBox(
                           width: constraints.maxWidth,
                           height: constraints.maxHeight,
                           child: _buildCameraPreview(),
                         ),
+                        // Overlay sensor visualization if enabled
                         const VideoSensorOverlay(),
                       ],
                     );
@@ -192,6 +248,7 @@ class _RecordingPageState extends ConsumerState<RecordingPage> {
                 ),
               ),
 
+              // Right bar actions: shutter, flip, Bluetooth, wave sound (sensors), etc.
               HomeRecordingRightBar(
                 onSettings: () {
                   if (!_controller.isRecording) {

@@ -16,6 +16,17 @@ import 'package:openearable/api/models/recording/upload_recording_request.dart';
 import 'package:openearable/api/models/recording/upload_recording_response.dart';
 import 'package:openearable/api/services/recording/recording_endpoints.dart';
 
+/// Service for managing recordings, both locally and in the cloud.
+///
+/// This service provides methods to:
+/// - Upload recordings to the cloud ([startUpload], [completeUpload], etc.)
+/// - Fetch recordings from the cloud ([getRecording], [getRecordings])
+/// - Rename, delete, or duplicate recordings in the cloud ([renameCloud],
+///   [deleteCloudRecording], [duplicateCloudRecordings])
+/// - Read local recordings from device storage ([getLocalRecording],
+///   [getLocalProjectRecordings], [getLocalRecordings], [getLocalRecordingSensors])
+/// - Modify local recordings ([renameLocal], [updateLocalUploadStatus], 
+///   [deleteLocalRecording], [duplicateLocalRecording])
 class RecordingService {
   RecordingService({required Dio dio, required LocalMedia localMedia})
     : _dio = dio,
@@ -24,10 +35,11 @@ class RecordingService {
   final Dio _dio;
   final LocalMedia _localMedia;
 
-  // =========================
+  // ========================================================================
   // Cloud
-  // =========================
+  // ========================================================================
 
+  /// Starts uploading a recording to the cloud.
   Future<UploadRecordingResponse> startUpload(
     UploadRecordingRequest req,
   ) async {
@@ -35,22 +47,26 @@ class RecordingService {
     return UploadRecordingResponse.fromJson(res.asMap());
   }
 
+  /// Marks a cloud recording as complete.
   Future<Recording> completeUpload(String recordingId) async {
     final res = await _dio.put(RecordingEndpoints.complete(recordingId));
     return Recording.fromJson(res.asMap());
   }
 
+  /// Fetches a cloud recording by [recordingId].
   Future<GetRecordingResponse> getRecording(String recordingId) async {
     final res = await _dio.get(RecordingEndpoints.recording(recordingId));
     return GetRecordingResponse.fromJson(res.asMap());
   }
 
+  /// Fetches all cloud recordings.
   Future<List<Recording>> getRecordings() async {
     final res = await _dio.get(RecordingEndpoints.base);
     final data = res.asList();
     return data.map((r) => Recording.fromJson(r)).toList();
   }
-
+  
+  /// Renames a recording in the cloud.
   Future<void> renameCloud({
     required String recordingId,
     required String name,
@@ -61,10 +77,12 @@ class RecordingService {
     );
   }
 
+  /// Deletes a recording from the cloud.
   Future<void> deleteCloudRecording(String recordingId) async {
     await _dio.delete(RecordingEndpoints.deleteRecording(recordingId));
   }
 
+  /// Duplicates cloud recordings.
   Future<List<Recording>> duplicateCloudRecordings({
     required List<String> recordingIds,
     String? projectId,
@@ -79,10 +97,11 @@ class RecordingService {
         .toList();
   }
 
-  // =========================
+  // ========================================================================
   // Local - Read
-  // =========================
+  // ========================================================================
 
+  /// Fetches a local recording by [projectId] and [recordingId].
   Future<Recording> getLocalRecording(
     String projectId,
     String recordingId,
@@ -133,6 +152,7 @@ class RecordingService {
     );
   }
 
+  /// Fetches all local recordings for a specific project.
   Future<List<Recording>> getLocalProjectRecordings(String projectId) async {
     final projectDir = _localMedia.projectDir(projectId);
     if (!await projectDir.exists()) return [];
@@ -162,10 +182,12 @@ class RecordingService {
     return recordings;
   }
 
+  /// Fetches all local recordings across all projects (default project only).
   Future<List<Recording>> getLocalRecordings() async {
     return getLocalProjectRecordings(LocalMedia.defaultProjectId);
   }
 
+  /// Fetches all sensors for a local recording.
   Future<List<Sensor>> getLocalRecordingSensors(
     String projectId,
     String recordingId,
@@ -199,10 +221,11 @@ class RecordingService {
     return sensors;
   }
 
-  // =========================
+  // ========================================================================
   // Local - Write
-  // =========================
+  // ========================================================================
 
+  /// Deletes a local recording.
   Future<bool> deleteLocalRecording({
     required String projectId,
     required String recordingId,
@@ -213,6 +236,7 @@ class RecordingService {
     return true;
   }
 
+  /// Renames a local recording.
   Future<void> renameLocal({
     required String projectId,
     required String recordingId,
@@ -229,6 +253,7 @@ class RecordingService {
     await _atomicWriteJson(metaFile, meta);
   }
 
+  /// Updates the upload status of a local recording.
   Future<void> updateLocalUploadStatus(
     String projectId,
     String recordingId,
@@ -246,6 +271,7 @@ class RecordingService {
     await _atomicWriteJson(metaFile, decoded);
   }
 
+  /// Duplicates a local recording.
   Future<bool> duplicateLocalRecording({
     required String projectId,
     required String sourceRecordingId,
@@ -280,10 +306,11 @@ class RecordingService {
     return true;
   }
 
-  // =========================
+  // ========================================================================
   // Helpers
-  // =========================
+  // ========================================================================
 
+  /// Reads a JSON file and ensures it returns a [Map<String, dynamic>].
   Future<Map<String, dynamic>> _readJson(File file, String recordingId) async {
     final raw = await file.readAsString();
     final decoded = jsonDecode(raw);
@@ -295,6 +322,7 @@ class RecordingService {
     return decoded;
   }
 
+  /// Reads a timestamp from metadata or uses fallback.
   DateTime _readTimestampOrFallback({
     required Map<String, dynamic> meta,
     required DateTime fallback,
@@ -308,12 +336,14 @@ class RecordingService {
     return fallback.toUtc();
   }
 
+  /// Copies [src] file to [dst] if it exists.
   Future<void> _copyIfExists(File src, File dst) async {
     if (await src.exists()) {
       await src.copy(dst.path);
     }
   }
 
+  /// Writes JSON to file atomically.
   Future<void> _atomicWriteJson(File file, Map<String, dynamic> json) async {
     final tmp = File('${file.path}.tmp');
     await tmp.writeAsString(
@@ -324,6 +354,7 @@ class RecordingService {
   }
 }
 
+/// Riverpod provider for [RecordingService].
 final recordingServiceProvider = Provider<RecordingService>((ref) {
   final dio = ref.read(apiDioProvider);
   final localMedia = ref.read(localMediaProvider);

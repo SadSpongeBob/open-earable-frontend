@@ -21,6 +21,7 @@ import '../state/home_state.dart';
 
 typedef ToastSink = void Function(ToastEvent);
 
+/// Provider for [HomeController], scoped to manage Home feature logic and dependencies.
 final homeControllerProvider = Provider<HomeController>((ref) {
   final projectService = ref.read(projectServiceProvider);
   final userService = ref.read(userServiceProvider);
@@ -41,8 +42,23 @@ final homeControllerProvider = Provider<HomeController>((ref) {
   );
 });
 
+/// Home controller responsible for managing the state and actions of the Home Page.
+///
+/// Handles all project and recording-related operations, including:
+/// - Loading, opening, creating, renaming, deleting, and duplicating projects.
+/// - Loading, creating, duplicating, moving, and deleting recordings.
+/// - Managing project selection and recording selection UI states.
+/// - Managing project users, including adding, updating roles, and removing users.
+/// - Integrating with local storage via [LocalMedia] and remote services via [ProjectService], 
+///   [RecordingService], and [UserService].
+/// - Providing toast notifications to the UI for success/error feedback.
+/// - Permission checking for cloud projects based on user roles.
+///
+/// Works closely with [HomeStateNotifier] to update the UI reactively and supports
+/// both guest and authenticated user workflows.
 class HomeController {
   HomeController({
+
     required ProjectService projectService,
     required UserService userService,
     required RecordingService recordingService,
@@ -64,19 +80,37 @@ class HomeController {
   final Ref _ref;
   final LocalMedia _localMedia;
 
+  // ------------------------------------------------------------
+  // Properties
+  // ------------------------------------------------------------
+
+  /// Current state of the HomePage, including open project, recordings, 
+  /// selection state, etc.
   HomeState get state => _state.current;
 
+  // ------------------------------------------------------------
+  // Error & success helpers
+  // ------------------------------------------------------------
+
+  /// Handles errors by updating state and showing a toast.
   void _error(Object e, {String? userMessage}) {
     final msg = userMessage ?? e.toString();
     _state.setErrorMessage(msg);
     _toast(ToastEvent.error(msg));
   }
 
+  /// Displays a success message via toast.
   void _success(String message) => _toast(ToastEvent.success(message));
 
+  // ------------------------------------------------------------
+  // Project helpers
+  // ------------------------------------------------------------
+
+  /// Checks if a project exists in the list of projects.
   bool _projectExists(String projectId, List<ProjectMetadata> projects) =>
       projects.any((p) => p.id == projectId);
 
+  /// Checks if a project name already exists (optionally excluding a project id).
   bool _nameExists(String name, {String? excludeProjectId}) {
     final normalized = name.trim().toLowerCase();
     if (normalized == 'default') return true;
@@ -87,6 +121,7 @@ class HomeController {
     });
   }
 
+  /// Generates a unique duplicate name for a project.
   String _duplicateName(String name) {
     final base = '$name (Copy)';
     var candidate = base;
@@ -98,6 +133,7 @@ class HomeController {
     return candidate;
   }
 
+  /// Finds a project by ID.
   ProjectMetadata? _findById(String id) {
     for (final p in state.projects) {
       if (p.id == id) return p;
@@ -105,6 +141,7 @@ class HomeController {
     return null;
   }
 
+  /// Adds the default project to the project list.
   List<ProjectMetadata> _withDefault(List<ProjectMetadata> projects) {
     final authState = _ref.read(sessionProvider);
     final ProjectMetadata defaultItem = authState.isGuest
@@ -117,6 +154,7 @@ class HomeController {
     ];
   }
 
+  /// Merges local and cloud projects into a single list.
   List<ProjectMetadata> _mergeProjects(
     List<ProjectMetadata> local,
     List<ProjectMetadata> cloud,
@@ -125,6 +163,11 @@ class HomeController {
     return [...local.where((l) => !cloudIds.contains(l.id)), ...cloud];
   }
 
+  // ------------------------------------------------------------
+  // Recording helpers
+  // ------------------------------------------------------------
+
+  /// Merges local and cloud recordings into a single list.
   List<Recording> _mergeRecordings(
     List<Recording> local,
     List<Recording> cloud,
@@ -132,6 +175,7 @@ class HomeController {
     return [...local, ...cloud];
   }
 
+  /// Finds a recording by ID.
   Recording? _findRecordingById(String id) {
     for (final r in state.recordings) {
       if (r.id == id) return r;
@@ -139,8 +183,10 @@ class HomeController {
     return null;
   }
 
+  /// Generates a new unique ID for a recording.
   String _newRecordingId() => Helpers.getRecordingId();
 
+  /// Checks if a recording name already exists.
   bool _recordingNameExists(String name) {
     final normalized = name.trim().toLowerCase();
     return state.recordings.any(
@@ -148,6 +194,7 @@ class HomeController {
     );
   }
 
+  /// Generates a duplicate name for a recording.
   String _duplicateRecordingName(String name) {
     final base = '$name (Copy)';
     var candidate = base;
@@ -159,6 +206,16 @@ class HomeController {
     return candidate;
   }
 
+  /// Refreshes the recordings for the currently open project.
+  Future<void> _refreshOpenProjectRecordings() async {
+    await openProject(state.openProjectId);
+  }
+
+  // ------------------------------------------------------------
+  // Permission helpers
+  // ------------------------------------------------------------
+
+  /// Returns the current user's role for a specific project.
   Future<ProjectRole?> _getMyRoleForProject(String projectId) async {
     final authState = _ref.read(sessionProvider);
     if (authState.isGuest) return null;
@@ -174,6 +231,7 @@ class HomeController {
     }
   }
 
+  /// Checks if the user can manage recordings in the current project.
   Future<bool> _canManageRecordingsAsync() async {
     final project = _findById(state.openProjectId);
     if (project == null) return false;
@@ -206,6 +264,7 @@ class HomeController {
     return me.role is Owner || me.role is Editor;
   }
 
+  /// Checks if the user can move recordings to a cloud project.
   Future<bool> canMoveToCloudProject({
     required String targetProjectId,
     required String myUserId,
@@ -242,6 +301,7 @@ class HomeController {
     }
   }
 
+  /// Checks if the user can add a recording to the currently open project.
   Future<bool> canAddRecordingToOpenProject() async {
     final project = _findById(state.openProjectId);
     if (project == null) return false;
@@ -268,14 +328,11 @@ class HomeController {
     }
   }
 
-  Future<void> _refreshOpenProjectRecordings() async {
-    await openProject(state.openProjectId);
-  }
+  // ------------------------------------------------------------
+  // Project loading & opening
+  // ------------------------------------------------------------
 
-  // ----------------
-  // Load/Open
-  // ----------------
-
+  /// Loads all projects and opens a valid project.
   Future<void> loadProjects() async {
     if (state.areProjectsLoaded) return;
 
@@ -314,6 +371,7 @@ class HomeController {
     }
   }
 
+  /// Opens a specific project by ID, fetching recordings and updating state.
   Future<void> openProject(String projectId) async {
     final project = _findById(projectId);
     if (project == null) {
@@ -344,6 +402,7 @@ class HomeController {
     }
   }
 
+  /// Loads cloud recordings and merges with local recordings.
   Future<List<Recording>> _loadCloudRecordings(
     List<Recording> localRecordings,
     String projectId,
@@ -362,6 +421,7 @@ class HomeController {
     return _mergeRecordings(localRecordings, cloud);
   }
 
+  /// Handles tap on a project in the UI.
   Future<void> handleProjectTap(String projectId) async {
     if (state.isProjectSelectionMode) {
       toggleProjectSelection(projectId);
@@ -377,9 +437,9 @@ class HomeController {
     }
   }
 
-  // ----------------
-  // Create/Rename/Delete/Duplicate Projects
-  // ----------------
+  // ------------------------------------------------------------
+  // Project CRUD operations
+  // ------------------------------------------------------------
 
   Future<void> createProject(String name) async {
     final trimmed = name.trim();
@@ -612,9 +672,9 @@ class HomeController {
     }
   }
 
-  // ----------------
-  // Project Selection UI state
-  // ----------------
+  // ------------------------------------------------------------
+  // Project selection UI state
+  // ------------------------------------------------------------
 
   void enterSelectionMode({String? initialProjectId}) {
     final ids = <String>{};
@@ -646,9 +706,9 @@ class HomeController {
     }
   }
 
-  // ----------------
+  // ------------------------------------------------------------
   // Recording selection UI state
-  // ----------------
+  // ------------------------------------------------------------
 
   void exitRecordingSelectionMode() => _state.clearRecordingSelection();
 
@@ -671,6 +731,10 @@ class HomeController {
       _state.setRecordingSelection({recordingId});
     }
   }
+
+  // ------------------------------------------------------------
+  // Recording CRUD operations
+  // ------------------------------------------------------------
 
   Future<void> deleteRecordings(Set<String> recordingIds) async {
     if (recordingIds.isEmpty) return;
@@ -1006,9 +1070,9 @@ class HomeController {
     }
   }
 
-  // ----------------
-  // Project users popup
-  // ----------------
+  // ------------------------------------------------------------
+  // Project user management
+  // ------------------------------------------------------------
 
   Future<void> loadUsersForOpenProject({required String myUserId}) async {
     final projectId = state.openProjectId;
@@ -1141,6 +1205,11 @@ class HomeController {
     }
   }
 
+  // ------------------------------------------------------------
+  // Miscellaneous
+  // ------------------------------------------------------------
+
+  /// Handles tap on a recording in the UI (selection or deselection).
   void handleRecordingTap(String recordingId) {
     if (!state.isRecordingSelectionMode) return;
 
@@ -1151,6 +1220,7 @@ class HomeController {
     }
   }
 
+  /// Handles navigation to recording creation/playback.
   Future<void> handleGoToRecordingTap({
     required VoidCallback goToRecording,
   }) async {
@@ -1166,5 +1236,6 @@ class HomeController {
     goToRecording();
   }
 
+  /// Clears the project users popup state.
   void clearUsersPopupState() => _state.clearUsersPopupState();
 }

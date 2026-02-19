@@ -14,6 +14,11 @@ import '../../../app/ui/toast_event.dart';
 import '../../../app/widgets/user_card.dart';
 import '../../../app/widgets/input_box.dart';
 
+/// Page for requesting a password reset.
+///
+/// Allows users to input their registered email address to receive a
+/// password reset link. Provides feedback via toast notifications and
+/// confirmation dialogs. Integrates with the authentication service.
 class RequestResetPage extends ConsumerStatefulWidget {
   const RequestResetPage({super.key});
 
@@ -22,10 +27,14 @@ class RequestResetPage extends ConsumerStatefulWidget {
 }
 
 class _RequestResetState extends ConsumerState<RequestResetPage> {
+  // --- Form Controllers ---
   final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  // --- UI State ---
   bool _loading = false;
 
+  /// Returns true if the email input field is not empty.
   bool get _isFormFilled => _emailController.text.isNotEmpty;
 
   @override
@@ -34,6 +43,7 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
     _emailController.addListener(_onFormChanged);
   }
 
+  /// Updates the UI whenever the form changes.
   void _onFormChanged() => setState(() {});
 
   @override
@@ -44,6 +54,7 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
 
   @override
   Widget build(BuildContext context) {
+    /// Listens for [ToastEvent] updates to show non-blocking feedback to the user.
     ref.listen<ToastEvent?>(toastProvider, (prev, next) {
       if (next == null) return;
       PopupToast.show(context, message: next.message);
@@ -87,7 +98,8 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
                   ),
 
                   const SizedBox(height: 35),
-
+                  
+                  // Email input field
                   InputBox(
                     controller: _emailController,
                     hint: "Email Address",
@@ -97,6 +109,7 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
 
                   const SizedBox(height: 30),
 
+                  // Send reset link button
                   AppButton.primary(
                     text: "Send",
                     onPressed: _isFormFilled ? _handleSendReset : null,
@@ -105,6 +118,7 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
 
                   const SizedBox(height: 16),
 
+                  // Navigate back to login page
                   AppButton.secondary(
                     text: "Back to Log In",
                     onPressed: () => context.go(Routes.login),
@@ -118,6 +132,10 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
     );
   }
 
+  /// Handles the password reset request.
+  ///
+  /// Validates the email form, sends a reset request via [authServiceProvider],
+  /// shows a confirmation dialog on success, and displays a toast on failure.
   Future<void> _handleSendReset() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -135,6 +153,8 @@ class _RequestResetState extends ConsumerState<RequestResetPage> {
         title: 'Reset request',
         message: 'Password reset link has been sent to your email address!',
       );
+
+      if (!mounted) return;
 
       context.go(Routes.login);
     } on DioException catch (e) {
