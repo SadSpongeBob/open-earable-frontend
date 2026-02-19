@@ -58,7 +58,7 @@ class LocalMedia {
     String recordingId,
     String sensorId,
     String sensorName,
-  ) => File(p.join(exportDir.path, recordingId, sensorId, sensorName));
+  ) => File(p.join(exportDir.path, recordingId, sensorId, "$sensorName.json"));
 
   static Future<LocalMedia> initLocalMedia() async {
     final base = await getApplicationDocumentsDirectory();
