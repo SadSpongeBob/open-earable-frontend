@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 
+/// A reusable card container for user-related content.
+///
+/// [UserCard] displays its [child] inside a styled card with:
+/// - A maximum width of 500px or 85% of the screen width (whichever is smaller),
+/// - Rounded corners and a shadow for visual emphasis,
+/// - Padding around the content,
+/// - A scrollable area if the content overflows vertically.
+/// 
+/// Parameters:
+/// - [child]: The content displayed inside the card.
 class UserCard extends StatelessWidget {
   final Widget child;
 

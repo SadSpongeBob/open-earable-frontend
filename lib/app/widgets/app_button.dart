@@ -2,8 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+/// Visual variants supported by [AppButton].
+///
+/// Each variant defines a different color scheme and interaction style
+/// (e.g. filled, outlined, or ghost button).
 enum AppButtonVariant { primary, secondary, danger, ghost, dangerGhost }
 
+/// A reusable, variant-based button used across the application.
+///
+/// [AppButton] provides a consistent design system button with built-in
+/// support for loading states, full-width layout, and multiple visual
+/// variants such as primary, secondary, danger, and ghost.
+/// 
+/// Parameters:
+/// - [text]: The text displayed inside the button.
+/// - [onPressed]:  Callback invoked when the button is pressed. If null, the button will be disabled.
+/// - [isLoading]: Whether the button should display a loading indicator instead of text.
+/// - [height]: The height of the button.
+/// - [borderRadius]: The border radius applied to the button shape.
+/// - [variant]: The visual style variant of the button.
+/// - [fullWidth]: Whether the button should expand to the full available width.
+/// - [textStyle]: Optional custom text style that overrides the default button text style.
 class AppButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -26,6 +45,7 @@ class AppButton extends StatelessWidget {
     this.fullWidth = true,
   });
 
+  /// Creates a primary filled button using the app's primary color scheme.
   factory AppButton.primary({
     Key? key,
     required String text,
@@ -49,6 +69,7 @@ class AppButton extends StatelessWidget {
     );
   }
 
+  /// Creates a secondary button with a neutral background and border.
   factory AppButton.secondary({
     Key? key,
     required String text,
@@ -72,6 +93,7 @@ class AppButton extends StatelessWidget {
     );
   }
 
+  /// Creates a danger button used for destructive actions.
   factory AppButton.danger({
     Key? key,
     required String text,
@@ -95,6 +117,7 @@ class AppButton extends StatelessWidget {
     );
   }
 
+  /// Creates a ghost button with no background and minimal styling.
   factory AppButton.ghost({
     Key? key,
     required String text,
@@ -118,6 +141,7 @@ class AppButton extends StatelessWidget {
     );
   }
 
+  /// Creates a ghost-style danger button for destructive text actions.
   factory AppButton.dangerGhost({
     Key? key,
     required String text,
