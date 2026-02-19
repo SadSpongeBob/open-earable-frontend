@@ -60,14 +60,12 @@ class VideoSensorOverlay extends ConsumerWidget {
       child: Container(
         height: 250,
         width: double.infinity,
-        // Using withAlpha for consistent color manipulation
         decoration: BoxDecoration(color: AppColors.fifty.withAlpha(140)),
-        padding: const EdgeInsets.all(12), // Uniform padding
+        padding: const EdgeInsets.all(12),
         child: Material(
           color: Colors.transparent,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            // We use Expanded or just the chart now that there's no Column
             child: SensorChart(
               allowToggleAxes: false,
               deviceId: matchedDeviceId,
