@@ -90,9 +90,8 @@ class LocalMedia {
   /// Returns an exported sensor file for a specific recording and sensor.
   File sensorExportFile(
     String recordingId,
-    String sensorId,
     String sensorName,
-  ) => File(p.join(exportDir.path, recordingId, sensorId, sensorName));
+  ) => File(p.join(exportDir.path, recordingId,"$sensorName.json"));
 
   /// Initializes a [LocalMedia] instance with standard directories.
   /// Creates all directories if they do not exist.
