@@ -4,6 +4,17 @@ import 'package:openearable/features/home/state/wearables_state.dart';
 import 'package:openearable/features/sensors/widgets/selectable_sensor_card.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
+/// A widget that displays all sensor values from connected wearables.
+///
+/// Each sensor is displayed as a [SelectableSensorCard] that allows the user
+/// to select and view detailed sensor data.  
+///
+/// The layout adapts based on the available screen width:
+/// - For narrow screens (width < 600), it shows a simple vertical list of cards.
+/// - For wider screens, it displays a larger, spaced list of cards with separators.
+///
+/// If no sensors are available from connected wearables, a placeholder message
+/// is shown.
 class SensorValues extends ConsumerWidget {
   const SensorValues({super.key});
   
@@ -41,6 +52,10 @@ class SensorValues extends ConsumerWidget {
     );
   }
 
+  /// Builds the sensor layout for small screens (e.g., mobile devices).
+  ///
+  /// Displays a vertical list of [SelectableSensorCard] widgets with padding.
+  /// If no sensors are available, shows a centered placeholder message.
   Widget _buildSmallScreenLayout(BuildContext context, List<Widget> charts) {
     return Padding(
       padding: EdgeInsets.all(10),
@@ -54,6 +69,10 @@ class SensorValues extends ConsumerWidget {
     );
   }
 
+  /// Builds the sensor layout for large screens (e.g., tablets or desktop).
+  ///
+  /// Displays a vertically separated list of [SelectableSensorCard] widgets.
+  /// If no sensors are available, shows a centered placeholder message.
   Widget _buildLargeScreenLayout(BuildContext context, List<Widget> charts) {
     if (charts.isEmpty) {
       return Center(

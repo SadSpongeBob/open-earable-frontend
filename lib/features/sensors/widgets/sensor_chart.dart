@@ -7,6 +7,18 @@ import 'package:open_earable_flutter/open_earable_flutter.dart' hide logger;
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/features/sensors/state/sensor_state.dart';
 
+/// Displays a live line chart of sensor data for a single wearable sensor.
+///
+/// The chart supports multiple axes and allows toggling which axes are visible
+/// when [allowToggleAxes] is true. Each axis is shown with a distinct color.
+/// 
+/// Parameters:
+/// - [allowToggleAxes]: Whether the user can toggle individual sensor axes on or off.
+/// - [deviceId]: The ID of the wearable device that owns the sensor.
+/// - [sensorIndex]: The index of the sensor in the wearable's sensor list.
+/// 
+/// Sensor data is updated in real-time by listening to the corresponding
+/// [SensorDataProvider] for the given [deviceId] and [sensorIndex].
 class SensorChart extends ConsumerStatefulWidget {
   final bool allowToggleAxes;
   final String deviceId;

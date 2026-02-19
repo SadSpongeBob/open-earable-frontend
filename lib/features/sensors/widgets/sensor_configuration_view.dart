@@ -8,9 +8,16 @@ import 'package:openearable/features/sensors/state/sensor_state.dart';
 import 'package:openearable/features/home/state/wearables_state.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
-/// A view that displays the sensor configurations of all connected wearables.
+/// A view that displays sensor configurations for all connected wearables.
+///
+/// Each wearable device is rendered using [SensorConfigurationDeviceRow]. 
+/// Users can review and modify sensor configurations per device, and apply
+/// selected configurations to the wearables by tapping the "Set Configurations" button.
+///
+/// The current selected configurations are provided via [SensorConfigurationProvider].
 /// 
-/// The specific sensor configurations should be made available via the [SensorConfigurationProvider].
+/// Parameters:
+/// - [onSetConfigPressed]: Optional callback invoked when the "Set Configurations" button is pressed.
 class SensorConfigurationView extends ConsumerWidget {
   final VoidCallback? onSetConfigPressed;
 

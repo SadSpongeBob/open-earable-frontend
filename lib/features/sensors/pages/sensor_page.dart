@@ -9,7 +9,19 @@ import 'package:openearable/app/widgets/bluetooth_button.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 import '../../../app/routing/routes.dart';
 
+/// A page that displays sensor configuration and live sensor values.
+///
+/// The layout is split into two sections:
+/// - Left panel: Bluetooth connection, sensor configuration, and navigation
+/// - Right panel: Live sensor charts and values
+///
+/// If [isRecordingSource] is true, the "Go Back" action navigates to the
+/// Recording Page; otherwise it navigates to the Home Page.
 class SensorPage extends StatefulWidget {
+  /// Whether this page was opened from the recording flow.
+  ///
+  /// When true, the back action returns to the Recording page.
+  /// When false, it returns to the Home Page.
   final bool isRecordingSource;
 
   const SensorPage({super.key, this.isRecordingSource = false});
