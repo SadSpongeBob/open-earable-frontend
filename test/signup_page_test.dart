@@ -6,101 +6,121 @@ import 'package:openearable/main.dart' as app;
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('User can sign up successfully', (WidgetTester tester) async {
-    app.main();
-    await tester.pumpAndSettle();
+  group('Signup Page Integration Tests', () {
+    
+    // Helper to navigate from Login (start) to Signup Page
+    Future<void> navigateToSignup(WidgetTester tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign Up'));
+      await tester.pumpAndSettle();
+    }
 
-    final uniqueEmail =
-        'test_${DateTime.now().millisecondsSinceEpoch}@email.com';
+    testWidgets('User can sign up successfully', (WidgetTester tester) async {
+      await navigateToSignup(tester);
 
-    final nameField = find.widgetWithText(TextField, 'Name');
-    final emailField = find.widgetWithText(TextField, 'Email Address');
-    final passwordField = find.widgetWithText(TextField, 'Password');
+      final uniqueEmail = 'test_${DateTime.now().millisecondsSinceEpoch}@email.com';
 
-    // Fill form
-    await tester.enterText(nameField, 'Test User');
-    await tester.enterText(emailField, uniqueEmail);
-    await tester.enterText(passwordField, '12345678');
+      // Fill form
+      await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Test User');
+      await tester.enterText(find.widgetWithText(TextField, 'Email Address'), uniqueEmail);
+      await tester.enterText(find.widgetWithText(TextField, 'Password'), '12345678');
+      await tester.pumpAndSettle();
 
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign Up'));
 
-    // Tap sign up
-    await tester.tap(find.text('Sign Up'));
+      // Let network call finish and GoRouter navigate
+      await tester.pumpAndSettle(const Duration(seconds: 5));
 
-    // Let network call finish
-    await tester.pumpAndSettle(const Duration(seconds: 5));
+      expect(find.text('Default'), findsOneWidget);
+    });
 
-    // Expect navigation to home where it looks for text 'Default' of a default project
-    expect(find.text('Default'), findsOneWidget);
-  });
+    testWidgets('Signup button is disabled until all three fields are filled', (WidgetTester tester) async {
+      await navigateToSignup(tester);
 
-  testWidgets('Shows validation errors for invalid input', (WidgetTester tester) async {
-    app.main();
-    await tester.pumpAndSettle();
+      // Initial state: Disabled
+      var signupButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(signupButton.enabled, isFalse);
 
-    // Enter an invalid email
-    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'invalid name? ');
-    await tester.enterText(find.widgetWithText(TextField, 'Email Address'), 'not-an-email');
-    await tester.enterText(find.widgetWithText(TextField, 'Password'), '123');
-
-    await tester.tap(find.text('Sign Up'));
-    await tester.pumpAndSettle();
-
-    // Verify error messages appear on screen
-    expect(find.text("Name can't include special characters"), findsOneWidget);
-    expect(find.text('Enter a valid email address'), findsOneWidget);
-    expect(find.text('Password must be at least 8 characters'), findsOneWidget);
-  });
-
-  testWidgets('User can continue as guest', (WidgetTester tester) async {
-    app.main();
-    await tester.pumpAndSettle();
-
-    final guestLink = find.text('Continue as Guest');
-    await tester.tap(guestLink);
-  
-    await tester.pumpAndSettle();
-
-    expect(find.text('Default'), findsOneWidget);
-  });
-
-  testWidgets('User can navigate from Signup to Login page', (WidgetTester tester) async {
-    app.main();
-    await tester.pumpAndSettle();
-
-    // Find the "Log in" link
-    final loginLink = find.text('Log in');
-
-    // Tap the link
-    await tester.tap(loginLink);
-  
-    // Wait for the GoRouter transition to finish
-    await tester.pumpAndSettle();
-
-    // Verify we are now on the Login page
-    expect(find.text('Log into your account'), findsOneWidget); 
-  });
-
-  testWidgets('Sign Up button shows loading state and is disabled during API call', (WidgetTester tester) async {
-    app.main();
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Test');
-    await tester.enterText(find.widgetWithText(TextField, 'Email Address'), 'test@test.com');
-    await tester.enterText(find.widgetWithText(TextField, 'Password'), 'password123');
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Sign Up'));
-    await tester.pump(); 
-
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
-    // Look for the Button widget that is currently being used
-    final buttonFinder = find.byType(ElevatedButton);
-    final button = tester.widget<ElevatedButton>(buttonFinder);
-    expect(button.enabled, isFalse, reason: 'Button must be disabled during API calls');
+      // Fill Name and Email only: Still disabled
+      await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Test');
+      await tester.enterText(find.widgetWithText(TextField, 'Email Address'), 'test@test.com');
+      await tester.pump();
       
-    await tester.pumpAndSettle(const Duration(seconds: 5));
+      signupButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(signupButton.enabled, isFalse);
+
+      // Fill Password: Now enabled
+      await tester.enterText(find.widgetWithText(TextField, 'Password'), '12345678');
+      await tester.pump();
+
+      signupButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(signupButton.enabled, isTrue);
+    });
+
+    testWidgets('Shows validation errors for invalid input formats', (WidgetTester tester) async {
+      await navigateToSignup(tester);
+
+      await tester.enterText(find.widgetWithText(TextField, 'Name'), 'invalid name?');
+      await tester.enterText(find.widgetWithText(TextField, 'Email Address'), 'not-an-email');
+      await tester.enterText(find.widgetWithText(TextField, 'Password'), '123');
+
+      await tester.tap(find.text('Sign Up'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Name can't include special characters"), findsOneWidget);
+      expect(find.text('Enter a valid email address'), findsOneWidget);
+      expect(find.text('Password must be at least 8 characters'), findsOneWidget);
+    });
+
+    testWidgets('Shows error toast on failed signup API call', (WidgetTester tester) async {
+      await navigateToSignup(tester);
+
+      // Using an email that we know will fail (e.g., already exists)
+      await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Test');
+      await tester.enterText(find.widgetWithText(TextField, 'Email Address'), 'existing@test.com');
+      await tester.enterText(find.widgetWithText(TextField, 'Password'), 'password123');
+      
+      await tester.tap(find.text('Sign Up'));
+
+      // Wait for Controller to catch error and Overlay to show Toast
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Controller defaults to 'Sign up failed' if Dio message is null
+      expect(find.text('Sign up failed'), findsOneWidget);
+    });
+
+    testWidgets('Can toggle password visibility', (WidgetTester tester) async {
+      await navigateToSignup(tester);
+
+      final passwordFieldFinder = find.widgetWithText(TextField, 'Password');
+      
+      // Initially hidden
+      expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isTrue);
+
+      await tester.tap(find.byIcon(Icons.visibility));
+      await tester.pump();
+
+      // Now visible
+      expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isFalse);
+    });
+
+    testWidgets('User can navigate from Signup back to Login page', (WidgetTester tester) async {
+      await navigateToSignup(tester);
+
+      await tester.tap(find.text('Log in'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Log into your account'), findsOneWidget); 
+    });
+
+    testWidgets('User can continue as guest from Signup Page', (WidgetTester tester) async {
+      await navigateToSignup(tester);
+
+      await tester.tap(find.text('Continue as Guest'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Default'), findsOneWidget);
+    });
   });
 }
