@@ -12,6 +12,7 @@ import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
+import 'package:openearable/api/models/recording/upload_recording_response.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/api/services/s3/s3_service.dart';
 import 'package:openearable/api/services/user/user_preference_storage.dart';
@@ -138,6 +139,26 @@ File writeTempBytesFile(Directory dir, String name, List<int> bytes) {
   return file;
 }
 
+UploadInfo makeUploadInfo({
+  required String filename,
+  required String key,
+  required String uploadUrl,
+  Map<String, String> requiredHeaders = const {},
+}) {
+  return UploadInfo(
+    filename: filename,
+    key: key,
+    uploadUrl: uploadUrl,
+    timestamp: DateTime.utc(2024, 1, 1),
+    requiredHeaders: requiredHeaders,
+  );
+}
+
+Response okResponse() => Response(
+  requestOptions: RequestOptions(path: '/'),
+  statusCode: 200,
+);
+
 void main() {
   setUpAll(() {
     registerFallbackValue(<String, String>{});
@@ -148,6 +169,7 @@ void main() {
     registerFallbackValue(UploadStatus.uploading);
     registerFallbackValue(UploadStatus.completed);
     registerFallbackValue(UploadStatus.failed);
+    registerFallbackValue(MockFile());
     registerFallbackValue(
       UploadRecordingRequest(
         name: 'fallback',
@@ -983,6 +1005,415 @@ void main() {
         expect(result, isNull);
 
         verifyNever(() => recordingService.startUpload(any()));
+      });
+
+      test('uploads sensor files before completing upload', () async {
+        final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.authenticated),
+          initialHomeState: HomeState.initial(),
+        );
+
+        final video = writeTempBytesFile(tempDir, 'video.mp4', [1, 2, 3]);
+        final meta = writeTempFile(
+          tempDir,
+          'meta.json',
+          jsonEncode({
+            'name': 'Test recording',
+            'timestamp': DateTime.utc(2024, 1, 1).toIso8601String(),
+          }),
+        );
+        final sensorFile = writeTempBytesFile(tempDir, 'sensor.json', [
+          4,
+          5,
+          6,
+        ]);
+        final missingThumbnail = File('${tempDir.path}/missing_thumb.jpg');
+
+        final sensor = MockSensor();
+        when(() => sensor.sensorId).thenReturn('s1');
+        when(() => sensor.sensorIndex).thenReturn(0);
+        when(() => sensor.name).thenReturn('Heart rate');
+        when(() => sensor.timeStamp).thenReturn(DateTime.utc(2024, 1, 1));
+        when(() => sensor.localPath).thenReturn(sensorFile.path);
+
+        when(() => localMedia.videoFile('p1', 'r1')).thenReturn(video);
+        when(() => localMedia.recordingMetaFile('p1', 'r1')).thenReturn(meta);
+        when(
+          () => localMedia.thumbnailFile('p1', 'r1'),
+        ).thenReturn(missingThumbnail);
+
+        when(
+          () => recordingService.getLocalRecordingSensors('p1', 'r1'),
+        ).thenAnswer((_) async => [sensor]);
+
+        final uploadResp = UploadRecordingResponse(
+          recordingId: 'remote-r1',
+          name: 'Test recording',
+          projectId: 'p1',
+          videoUpload: makeUploadInfo(
+            filename: 'video.mp4',
+            key: 'video-key',
+            uploadUrl: 'https://example.com/video',
+          ),
+          sensorUploads: [
+            SensorUploadInfo(
+              sensorId: 's1',
+              sensorIndex: 0,
+              name: 'Heart rate',
+              type: SensorType.heartRate,
+              sensor: makeUploadInfo(
+                filename: 'sensor.json',
+                key: 'sensor-key',
+                uploadUrl: 'https://example.com/sensor',
+              ),
+            ),
+          ],
+          thumbnailUpload: null,
+        );
+
+        final completedRecording = MockRecording();
+        when(() => completedRecording.id).thenReturn('remote-r1');
+
+        when(
+          () => recordingService.startUpload(any()),
+        ).thenAnswer((_) async => uploadResp);
+        when(
+          () => recordingService.completeUpload('remote-r1'),
+        ).thenAnswer((_) async => completedRecording);
+
+        when(
+          () => s3Service.uploadFile(
+            putUrl: any(named: 'putUrl'),
+            file: any(named: 'file'),
+            headers: any(named: 'headers'),
+            onProgress: any(named: 'onProgress'),
+          ),
+        ).thenAnswer((_) async => okResponse());
+
+        final controller = buildController(container);
+
+        final result = await controller.uploadRecording(
+          recordingId: 'r1',
+          projectId: 'p1',
+        );
+
+        expect(result, same(completedRecording));
+
+        verify(
+          () => s3Service.uploadFile(
+            putUrl: 'https://example.com/sensor',
+            file: any(named: 'file'),
+            headers: const {},
+          ),
+        ).called(1);
+
+        verify(
+          () => s3Service.uploadFile(
+            putUrl: 'https://example.com/video',
+            file: any(named: 'file'),
+            headers: const {},
+            onProgress: any(named: 'onProgress'),
+          ),
+        ).called(1);
+
+        verify(() => recordingService.completeUpload('remote-r1')).called(1);
+      });
+
+      test('returns null when sensor upload info is missing', () async {
+        final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.authenticated),
+          initialHomeState: HomeState.initial(),
+        );
+
+        final video = writeTempBytesFile(tempDir, 'video.mp4', [1, 2, 3]);
+        final meta = writeTempFile(
+          tempDir,
+          'meta.json',
+          jsonEncode({
+            'name': 'Test recording',
+            'timestamp': DateTime.utc(2024, 1, 1).toIso8601String(),
+          }),
+        );
+        final sensorFile = writeTempBytesFile(tempDir, 'sensor.json', [
+          4,
+          5,
+          6,
+        ]);
+
+        final sensor = MockSensor();
+        when(() => sensor.sensorId).thenReturn('s1');
+        when(() => sensor.sensorIndex).thenReturn(0);
+        when(() => sensor.name).thenReturn('Heart rate');
+        when(() => sensor.timeStamp).thenReturn(DateTime.utc(2024, 1, 1));
+        when(() => sensor.localPath).thenReturn(sensorFile.path);
+
+        when(() => localMedia.videoFile('p1', 'r1')).thenReturn(video);
+        when(() => localMedia.recordingMetaFile('p1', 'r1')).thenReturn(meta);
+        when(
+          () => localMedia.thumbnailFile('p1', 'r1'),
+        ).thenReturn(File('${tempDir.path}/missing_thumb.jpg'));
+
+        when(
+          () => recordingService.getLocalRecordingSensors('p1', 'r1'),
+        ).thenAnswer((_) async => [sensor]);
+
+        final uploadResp = UploadRecordingResponse(
+          recordingId: 'remote-r1',
+          name: 'Test recording',
+          projectId: 'p1',
+          videoUpload: makeUploadInfo(
+            filename: 'video.mp4',
+            key: 'video-key',
+            uploadUrl: 'https://example.com/video',
+          ),
+          sensorUploads: const [],
+          thumbnailUpload: null,
+        );
+
+        when(
+          () => recordingService.startUpload(any()),
+        ).thenAnswer((_) async => uploadResp);
+
+        final controller = buildController(container);
+
+        final result = await controller.uploadRecording(
+          recordingId: 'r1',
+          projectId: 'p1',
+        );
+
+        expect(result, isNull);
+
+        verifyNever(() => recordingService.completeUpload(any()));
+      });
+
+      test('returns null when sensor upload info is missing', () async {
+        final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.authenticated),
+          initialHomeState: HomeState.initial(),
+        );
+
+        final video = writeTempBytesFile(tempDir, 'video.mp4', [1, 2, 3]);
+        final meta = writeTempFile(
+          tempDir,
+          'meta.json',
+          jsonEncode({
+            'name': 'Test recording',
+            'timestamp': DateTime.utc(2024, 1, 1).toIso8601String(),
+          }),
+        );
+        final sensorFile = writeTempBytesFile(tempDir, 'sensor.json', [
+          4,
+          5,
+          6,
+        ]);
+
+        final sensor = MockSensor();
+        when(() => sensor.sensorId).thenReturn('s1');
+        when(() => sensor.sensorIndex).thenReturn(0);
+        when(() => sensor.name).thenReturn('Heart rate');
+        when(() => sensor.timeStamp).thenReturn(DateTime.utc(2024, 1, 1));
+        when(() => sensor.localPath).thenReturn(sensorFile.path);
+
+        when(() => localMedia.videoFile('p1', 'r1')).thenReturn(video);
+        when(() => localMedia.recordingMetaFile('p1', 'r1')).thenReturn(meta);
+        when(
+          () => localMedia.thumbnailFile('p1', 'r1'),
+        ).thenReturn(File('${tempDir.path}/missing_thumb.jpg'));
+
+        when(
+          () => recordingService.getLocalRecordingSensors('p1', 'r1'),
+        ).thenAnswer((_) async => [sensor]);
+
+        final uploadResp = UploadRecordingResponse(
+          recordingId: 'remote-r1',
+          name: 'Test recording',
+          projectId: 'p1',
+          videoUpload: makeUploadInfo(
+            filename: 'video.mp4',
+            key: 'video-key',
+            uploadUrl: 'https://example.com/video',
+          ),
+          sensorUploads: const [],
+          thumbnailUpload: null,
+        );
+
+        when(
+          () => recordingService.startUpload(any()),
+        ).thenAnswer((_) async => uploadResp);
+
+        final controller = buildController(container);
+
+        final result = await controller.uploadRecording(
+          recordingId: 'r1',
+          projectId: 'p1',
+        );
+
+        expect(result, isNull);
+
+        verifyNever(() => recordingService.completeUpload(any()));
+      });
+
+      test(
+        'uploads thumbnail when thumbnail exists and upload info is provided',
+        () async {
+          final container = buildContainer(
+            authState: const AuthState(mode: AuthMode.authenticated),
+            initialHomeState: HomeState.initial(),
+          );
+
+          final video = writeTempBytesFile(tempDir, 'video.mp4', [1, 2, 3]);
+          final meta = writeTempFile(
+            tempDir,
+            'meta.json',
+            jsonEncode({
+              'name': 'Test recording',
+              'timestamp': DateTime.utc(2024, 1, 1).toIso8601String(),
+            }),
+          );
+          final thumbnail = writeTempBytesFile(tempDir, 'thumb.jpg', [7, 8, 9]);
+
+          when(() => localMedia.videoFile('p1', 'r1')).thenReturn(video);
+          when(() => localMedia.recordingMetaFile('p1', 'r1')).thenReturn(meta);
+          when(
+            () => localMedia.thumbnailFile('p1', 'r1'),
+          ).thenReturn(thumbnail);
+
+          when(
+            () => recordingService.getLocalRecordingSensors('p1', 'r1'),
+          ).thenAnswer((_) async => <Sensor>[]);
+
+          final uploadResp = UploadRecordingResponse(
+            recordingId: 'remote-r1',
+            name: 'Test recording',
+            projectId: 'p1',
+            videoUpload: makeUploadInfo(
+              filename: 'video.mp4',
+              key: 'video-key',
+              uploadUrl: 'https://example.com/video',
+            ),
+            sensorUploads: const [],
+            thumbnailUpload: ThumbnailUploadInfo(
+              uploadUrl: 'https://example.com/thumb',
+              requiredHeaders: const {},
+            ),
+          );
+
+          final completedRecording = MockRecording();
+          when(() => completedRecording.id).thenReturn('remote-r1');
+
+          when(
+            () => recordingService.startUpload(any()),
+          ).thenAnswer((_) async => uploadResp);
+          when(
+            () => recordingService.completeUpload('remote-r1'),
+          ).thenAnswer((_) async => completedRecording);
+
+          when(
+            () => s3Service.uploadFile(
+              putUrl: any(named: 'putUrl'),
+              file: any(named: 'file'),
+              headers: any(named: 'headers'),
+              onProgress: any(named: 'onProgress'),
+            ),
+          ).thenAnswer((_) async => okResponse());
+
+          final controller = buildController(container);
+
+          final result = await controller.uploadRecording(
+            recordingId: 'r1',
+            projectId: 'p1',
+          );
+
+          expect(result, same(completedRecording));
+
+          verify(
+            () => s3Service.uploadFile(
+              putUrl: 'https://example.com/thumb',
+              file: any(named: 'file'),
+              headers: const {},
+            ),
+          ).called(1);
+        },
+      );
+
+      test('continues upload when thumbnail upload fails', () async {
+        final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.authenticated),
+          initialHomeState: HomeState.initial(),
+        );
+
+        final video = writeTempBytesFile(tempDir, 'video.mp4', [1, 2, 3]);
+        final meta = writeTempFile(
+          tempDir,
+          'meta.json',
+          jsonEncode({
+            'name': 'Test recording',
+            'timestamp': DateTime.utc(2024, 1, 1).toIso8601String(),
+          }),
+        );
+        final thumbnail = writeTempBytesFile(tempDir, 'thumb.jpg', [7, 8, 9]);
+
+        when(() => localMedia.videoFile('p1', 'r1')).thenReturn(video);
+        when(() => localMedia.recordingMetaFile('p1', 'r1')).thenReturn(meta);
+        when(() => localMedia.thumbnailFile('p1', 'r1')).thenReturn(thumbnail);
+
+        when(
+          () => recordingService.getLocalRecordingSensors('p1', 'r1'),
+        ).thenAnswer((_) async => <Sensor>[]);
+
+        final uploadResp = UploadRecordingResponse(
+          recordingId: 'remote-r1',
+          name: 'Test recording',
+          projectId: 'p1',
+          videoUpload: makeUploadInfo(
+            filename: 'video.mp4',
+            key: 'video-key',
+            uploadUrl: 'https://example.com/video',
+          ),
+          sensorUploads: const [],
+          thumbnailUpload: ThumbnailUploadInfo(
+            uploadUrl: 'https://example.com/thumb',
+            requiredHeaders: const {},
+          ),
+        );
+
+        final completedRecording = MockRecording();
+        when(() => completedRecording.id).thenReturn('remote-r1');
+
+        when(
+          () => recordingService.startUpload(any()),
+        ).thenAnswer((_) async => uploadResp);
+        when(
+          () => recordingService.completeUpload('remote-r1'),
+        ).thenAnswer((_) async => completedRecording);
+
+        when(
+          () => s3Service.uploadFile(
+            putUrl: 'https://example.com/video',
+            file: any(named: 'file'),
+            headers: const {},
+            onProgress: any(named: 'onProgress'),
+          ),
+        ).thenAnswer((_) async => okResponse());
+
+        when(
+          () => s3Service.uploadFile(
+            putUrl: 'https://example.com/thumb',
+            file: any(named: 'file'),
+            headers: const {},
+          ),
+        ).thenThrow(Exception('thumbnail failed'));
+
+        final controller = buildController(container);
+
+        final result = await controller.uploadRecording(
+          recordingId: 'r1',
+          projectId: 'p1',
+        );
+
+        expect(result, same(completedRecording));
+
+        verify(() => recordingService.completeUpload('remote-r1')).called(1);
       });
     });
   });
