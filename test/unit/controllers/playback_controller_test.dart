@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:openearable/api/models/auth/user.dart';
+import 'package:openearable/api/models/project/project_role.dart';
+import 'package:openearable/api/models/project/project_user.dart';
 import 'package:video_player/video_player.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
@@ -106,6 +109,27 @@ void main() {
       final vc = makeMockVideoController(initialized: true);
       expect(() => controller.seekBySeconds(vc, 10), returnsNormally);
     });
+    test('togglePlay does nothing if controller not initialized', () {
+      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final vc = makeMockVideoController(initialized: false);
+
+      controller.togglePlay(vc);
+
+      verifyNever(() => vc.pause());
+      verifyNever(() => vc.play());
+    });
+    test('seekBySeconds does nothing when controller not initialized', () {
+      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final vc = makeMockVideoController(initialized: false);
+
+      controller.seekBySeconds(vc, 10);
+
+      verifyNever(() => vc.seekTo(any()));
+    });
 
     test('togglePlay returns normally for invalid controller', () {
       final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
@@ -189,6 +213,40 @@ void main() {
       expect(sensors.first.sensorId, isNotNull);
 
       verify(() => s3Service.downloadToFile(getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath'))).called(getRec.sensors.length);
+    });
+    test('renameRecording allowed when user is project Owner', () async {
+      final user = User(userId: 'u1', name: '', emailAddress: '', photoUrl: '');
+
+      final container = buildContainer(
+        authState: AuthState(mode: AuthMode.authenticated, user: user),
+      );
+
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording(
+        id: 'r_owner',
+        name: 'owner',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+        projectId: 'p1',
+      );
+
+      when(() => projectService.getProjectUsers('p1')).thenAnswer((_) async => [
+        ProjectUser(userId: 'u1', role: Owner(userId: ''), name: '', emailAddress: '', pictureUrl: ''),
+      ]);
+
+      when(() => recordingService.renameCloud(
+        recordingId: 'r_owner',
+        name: 'new',
+      )).thenAnswer((_) async {});
+
+      await controller.renameRecording(rec, 'new');
+
+      verify(() => recordingService.renameCloud(
+        recordingId: 'r_owner',
+        name: 'new',
+      )).called(1);
     });
 
     test('renameRecording updates home state and keeps id stable', () async {
@@ -413,6 +471,76 @@ void main() {
       expect(File('${tmp.path}/SensorExport.json').existsSync(), isTrue);
 
       await tmp.delete(recursive: true);
+    });
+    test('renameRecording denied when user not part of project', () async {
+      final user = User(userId: 'u1', name: '', emailAddress: '', photoUrl: '');
+
+      final container = buildContainer(
+        authState: AuthState(mode: AuthMode.authenticated, user: user),
+      );
+
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording(
+        id: 'r_not_member',
+        name: 'r',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+        projectId: 'p1',
+      );
+
+      when(() => projectService.getProjectUsers('p1')).thenAnswer((_) async => [
+        ProjectUser(userId: 'someoneElse', role: Viewer(userId: 'someoneElse'), name: '', emailAddress: '', pictureUrl: ''),
+      ]);
+
+      await controller.renameRecording(rec, 'new');
+
+      verifyNever(() => recordingService.renameCloud(
+        recordingId: any(named: 'recordingId'),
+        name: any(named: 'name'),
+      ));
+    });
+    test('getAvailableSensors returns empty if getRecording throws', () async {
+      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording(
+        id: 'rex',
+        name: 'rex',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+      );
+
+      when(() => recordingService.getRecording('rex'))
+          .thenThrow(Exception('network error'));
+
+      final sensors = await controller.getAvailableSensors(rec);
+
+      expect(sensors, isEmpty);
+    });
+    test('exportVideoFolder local returns when sourceDir does not exist', () async {
+      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording.local(
+        id: 'r_missing',
+        name: 'missing',
+        localVideoPath: '/tmp/x.mp4',
+        videoTimestamp: DateTime.now().toUtc(),
+        projectId: 'p',
+      );
+
+      when(() => localMedia.recordingDir('p', 'r_missing'))
+          .thenReturn(Directory('/path/does/not/exist'));
+
+      final tmpExport = await Directory.systemTemp.createTemp('exp_missing');
+      when(() => localMedia.recordingExportDir(any())).thenReturn(tmpExport);
+
+      await controller.exportVideoFolder(rec);
+
+      await tmpExport.delete(recursive: true);
     });
 
     test('getAvailableSensors skips sensors that fail to download', () async {
@@ -674,8 +802,16 @@ void main() {
     final cp2 = tester.widget<CustomPaint>(cpFinder);
     final painter = cp2.painter as dynamic;
     expect(painter.endMs, 150);
-    final windowSamples = painter.data;
     expect(painter.startMs <= painter.endMs, isTrue);
+    // Ensure painter produced some data (handle both ChartData and List cases)
+    final pdata = painter.data;
+    if (pdata is ChartData) {
+      expect(pdata.resTs.isNotEmpty, isTrue);
+    } else if (pdata is List) {
+      expect(pdata.isNotEmpty, isTrue);
+    } else {
+      fail('Unexpected painter.data type: ${pdata.runtimeType}');
+    }
   });
 
   testWidgets('SensorChartPlayer removes listener on dispose', (tester) async {
