@@ -129,7 +129,7 @@ class UploadController {
     );
 
     try {
-      recordingService.deleteLocalRecording(
+      await recordingService.deleteLocalRecording(
         projectId: projectId,
         recordingId: recordingId,
       );
