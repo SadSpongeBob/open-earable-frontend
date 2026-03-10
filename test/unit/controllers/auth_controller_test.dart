@@ -95,11 +95,24 @@ void main() {
       verify(() => session.setLoggedOut(any())).called(1);
       expect(toast.state, isA<ToastEvent>());
     });
+
+    test('sets default error toast on unknown login error', () async {
+      when(() => authService.login(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+      )).thenThrow(Exception('Unexpected'));
+
+      await controller.login(email: 'test@test.com', password: '123');
+
+      verify(() => session.setLoggedOut('Login failed')).called(1);
+      expect(toast.state, isA<ToastEvent>());
+      expect(toast.state!.message, 'Login failed');
+    });
   });
 
   group('AuthController.signup', () {
-  test('sets authenticated session on successful signup', () async {
-    when(() => authService.register(
+    test('sets authenticated session on successful signup', () async {
+      when(() => authService.register(
           email: any(named: 'email'),
           password: any(named: 'password'),
           name: any(named: 'name'),
@@ -108,91 +121,109 @@ void main() {
           refreshToken: 'fake_refresh'
         ));
 
-    when(() => guestStorage.clear()).thenAnswer((_) async {});
-    when(() => userService.getUser()).thenAnswer((_) async => fakeUser);
+      when(() => guestStorage.clear()).thenAnswer((_) async {});
+      when(() => userService.getUser()).thenAnswer((_) async => fakeUser);
 
-    await controller.signup(
-      name: 'Test User',
-      email: 'test@test.com',
-      password: '123456',
-    );
+      await controller.signup(
+        name: 'Test User',
+        email: 'test@test.com',
+        password: '123456',
+      );
 
-    verify(() => session.setLoading()).called(1);
-    verify(() => authService.register(
+      verify(() => session.setLoading()).called(1);
+      verify(() => authService.register(
           email: 'test@test.com',
           password: '123456',
           name: 'Test User',
         )).called(1);
-    verify(() => session.setAuthenticated(fakeUser)).called(1);
-  });
+      verify(() => session.setAuthenticated(fakeUser)).called(1);
+    });
 
-  test('sets error toast on DioException during signup', () async {
-    when(() => authService.register(
+    test('sets error toast on DioException during signup', () async {
+      when(() => authService.register(
           email: any(named: 'email'),
           password: any(named: 'password'),
           name: any(named: 'name'),
         )).thenThrow(DioException(
-      requestOptions: RequestOptions(path: ''),
-      message: 'Sign Up failed',
-    ));
+          requestOptions: RequestOptions(path: ''),
+          message: 'Sign Up failed',
+      ));
 
-    await controller.signup(
-      name: 'Test User',
-      email: 'wrong@test.com',
-      password: 'wrong',
-    );
+      await controller.signup(
+        name: 'Test User',
+        email: 'wrong@test.com',
+        password: 'wrong',
+      );
 
-    verify(() => session.setLoggedOut(any())).called(1);
-    expect(toast.state, isA<ToastEvent>());
-    expect(toast.state!.kind, ToastKind.error);
-    expect(toast.state!.message, 'Sign Up failed');
+      verify(() => session.setLoggedOut(any())).called(1);
+      expect(toast.state, isA<ToastEvent>());
+      expect(toast.state!.kind, ToastKind.error);
+      expect(toast.state!.message, 'Sign Up failed');
+    });
+
+    test('sets default error toast on unknown signup error', () async {
+      when(() => authService.register(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          name: any(named: 'name'),
+        )).thenThrow(Exception('Unexpected'));
+
+      await controller.signup(
+        name: 'Test',
+        email: 'test@test.com',
+        password: '123',
+      );
+
+      verify(() => session.setLoggedOut('Sign up failed')).called(1);
+      expect(toast.state, isA<ToastEvent>());
+      expect(toast.state!.message, 'Sign up failed');
+    });
   });
-});
 
   group('AuthController.bootstrap', () {
-  test('sets guest session if guestStorage says so', () async {
-    when(() => guestStorage.isGuest()).thenAnswer((_) async => true);
+    test('sets guest session if guestStorage says so', () async {
+      when(() => guestStorage.isGuest()).thenAnswer((_) async => true);
 
-    await controller.bootstrap();
+      await controller.bootstrap();
 
-    verify(() => session.setLoading()).called(1);
-    verify(() => session.setGuest()).called(1);
-    verifyNever(() => authService.refresh());
-  });
+      verify(() => session.setLoading()).called(1);
+      verify(() => session.setGuest()).called(1);
+      verifyNever(() => authService.refresh());
+    });
 
-  test('sets guest session if network is offline', () async {
-    when(() => guestStorage.isGuest()).thenAnswer((_) async => false);
+    test('sets guest session if network is offline', () async {
+      when(() => guestStorage.isGuest()).thenAnswer((_) async => false);
     
-    // Override the network status to offline
-    container.updateOverrides([
+      // Override the network status to offline
+      container.updateOverrides([
         networkStatusProvider.overrideWith(
           (ref) => Stream.value(NetworkStatus.offline)
         ),
       ]);
 
-    await controller.bootstrap();
+      await controller.bootstrap();
 
-    verify(() => session.setGuest()).called(1);
-    verifyNever(() => authService.refresh());
-  });
+      verify(() => session.setGuest()).called(1);
+      verifyNever(() => authService.refresh());
+    });
 
-  test('sets authenticated if refresh and getUser succeed', () async {
-    when(() => guestStorage.isGuest()).thenAnswer((_) async => false);
+    test('sets authenticated if refresh and getUser succeed', () async {
+      when(() => guestStorage.isGuest()).thenAnswer((_) async => false);
 
-    // Mock online status
-    container.updateOverrides([
+      // Mock online status
+      container.updateOverrides([
         networkStatusProvider.overrideWith(
           (ref) => Stream.value(NetworkStatus.wifi)
         ),
       ]);
-    when(() => authService.refresh()).thenAnswer((_) async => Tokens(accessToken: 'a', refreshToken: 'r'));
-    when(() => userService.getUser()).thenAnswer((_) async => fakeUser);
+      when(() => authService.refresh()).thenAnswer((_) async => Tokens(accessToken: 'a', refreshToken: 'r'));
+      when(() => userService.getUser()).thenAnswer((_) async => fakeUser);
 
-    await controller.bootstrap();
+      await controller.bootstrap();
 
-    verify(() => session.setAuthenticated(fakeUser)).called(1);
+      verify(() => session.setAuthenticated(fakeUser)).called(1);
+    });
   });
-});
 
   group('AuthController.logout', () {
     test('clears storage and resets home state', () async {
