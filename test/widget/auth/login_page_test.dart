@@ -15,7 +15,11 @@ Future<MockAuthController> mockAuth(WidgetTester tester) async {
       overrides: [
         authControllerProvider.overrideWithValue(mockAuthController),
       ],
-      child: const app.OpenEarableApp(),
+      child: MaterialApp(
+        home: SingleChildScrollView(
+          child: const app.OpenEarableApp(),
+        ),
+      ),
     ),
   );
 
