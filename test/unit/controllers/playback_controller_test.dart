@@ -33,6 +33,7 @@ class MockUploadController extends Mock implements UploadController {}
 class MockProjectService extends Mock implements ProjectService {}
 class MockVideoController extends Mock implements VideoPlayerController {}
 class MockPlaybackController extends Mock implements PlaybackController {}
+class RecordingFake extends Fake implements Recording {}
 MockVideoController makeMockVideoController({
   bool initialized = false,
   bool isPlaying = false,
@@ -68,6 +69,7 @@ DioException dioEx(int status) => DioException(
 void main() {
   setUpAll(() {
     registerFallbackValue(Duration.zero);
+    registerFallbackValue(RecordingFake());
   });
 
   group('PlaybackController - unit', () {
