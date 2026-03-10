@@ -11,6 +11,7 @@ import 'package:openearable/features/home/state/home_state.dart';
 import 'package:openearable/features/playback/state/playback_state.dart';
 import 'package:openearable/features/playback/widgets/playback_bar.dart';
 import 'package:openearable/features/playback/widgets/rename_dialog.dart';
+import 'package:openearable/features/playback/widgets/select_sensors_dialog.dart';
 import 'package:openearable/features/playback/widgets/sensor_playback_bar.dart';
 import 'package:openearable/features/playback/widgets/speed_badge.dart';
 import 'package:video_player/video_player.dart';
@@ -314,5 +315,229 @@ void main() {
         verify(() => fakeVideo.pause()).called(1);
       }
     });
+
+    testWidgets('SelectSensorsDialog returns empty when no sensors available', (tester) async {
+      final goRouter = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () async {
+                    await SelectSensorsDialog.show(context, available: []);
+                  },
+                  child: const Text('OpenDialog'),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: goRouter));
+
+      await tester.tap(find.text('OpenDialog'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No sensors available.'), findsOneWidget);
+
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No sensors available.'), findsNothing);
+    });
+
+    testWidgets('SelectSensorsDialog selection triggers onChanged and onLongPress and returns selection', (tester) async {
+      final s1 = Sensor(sensorIndex: 0, sensorId: 's1', name: 'S1', timeStamp: DateTime.now(), localPath: '/tmp/s1');
+      final s2 = Sensor(sensorIndex: 1, sensorId: 's2', name: 'S2', timeStamp: DateTime.now(), localPath: '/tmp/s2');
+
+      List<Sensor>? lastChanged;
+      Sensor? longPressed;
+
+      final goRouter = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () async {
+                    await SelectSensorsDialog.show(
+                      context,
+                      available: [s1, s2],
+                      initialSelected: [s1],
+                      onChanged: (sel) => lastChanged = sel,
+                      onLongPress: (item) => longPressed = item,
+                    );
+                  },
+                  child: const Text('OpenDialog'),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: goRouter));
+
+      await tester.tap(find.text('OpenDialog'));
+      await tester.pumpAndSettle();
+
+      // Ensure both sensors are visible
+      expect(find.text('S1'), findsOneWidget);
+      expect(find.text('S2'), findsOneWidget);
+
+      // Tap the ListTile for S2
+      await tester.tap(find.widgetWithText(ListTile, 'S2'));
+      await tester.pumpAndSettle();
+
+      expect(lastChanged, isNotNull);
+      expect(lastChanged!.first.sensorId, 's2');
+
+      // Long press on second sensor via gesture
+      await tester.longPress(find.text('S2'));
+      await tester.pumpAndSettle();
+      expect(longPressed, isNotNull);
+      expect(longPressed!.sensorId, 's2');
+
+      // Close dialog and ensure it's dismissed
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select sensor'), findsNothing);
+    });
+
+    testWidgets('SelectSensorsDialog honors initialSelected (returns initialSelected)', (tester) async {
+      final s1 = Sensor(sensorIndex: 0, sensorId: 's1', name: 'S1', timeStamp: DateTime.now(), localPath: '/tmp/s1');
+      final s2 = Sensor(sensorIndex: 1, sensorId: 's2', name: 'S2', timeStamp: DateTime.now(), localPath: '/tmp/s2');
+
+      final completer = Completer<List<Sensor>?>();
+
+      final goRouter = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () async {
+                    final res = await SelectSensorsDialog.show(
+                      context,
+                      available: [s1, s2],
+                      initialSelected: [s2],
+                    );
+                    completer.complete(res);
+                  },
+                  child: const Text('OpenDialog'),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: goRouter));
+
+      await tester.tap(find.text('OpenDialog'));
+      await tester.pumpAndSettle();
+
+      // Close dialog immediately; initialSelected should be returned
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      final result = await completer.future.timeout(const Duration(seconds: 1));
+      expect(result, isNotNull);
+      expect(result!.first.sensorId, 's2');
+    });
+
+    testWidgets('SelectSensorsDialog list height is clamped when many sensors', (tester) async {
+      final sensors = List.generate(10, (i) => Sensor(sensorIndex: i, sensorId: 's$i', name: 'S$i', timeStamp: DateTime.now(), localPath: '/tmp/s$i'));
+
+      final goRouter = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () async {
+                    await SelectSensorsDialog.show(context, available: sensors);
+                  },
+                  child: const Text('OpenDialog'),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: goRouter));
+
+      await tester.tap(find.text('OpenDialog'));
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byType(ListView);
+      expect(listFinder, findsOneWidget);
+      final size = tester.getSize(listFinder);
+      expect(size.height <= 240.0, isTrue);
+
+      // Close dialog to avoid leaving it open
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('SelectSensorsDialog onChanged called for each selection change', (tester) async {
+      final sensors = [
+        Sensor(sensorIndex: 0, sensorId: 's0', name: 'S0', timeStamp: DateTime.now(), localPath: '/tmp/s0'),
+        Sensor(sensorIndex: 1, sensorId: 's1', name: 'S1', timeStamp: DateTime.now(), localPath: '/tmp/s1'),
+        Sensor(sensorIndex: 2, sensorId: 's2', name: 'S2', timeStamp: DateTime.now(), localPath: '/tmp/s2'),
+      ];
+      final changes = <String>[];
+
+      final goRouter = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () async {
+                    await SelectSensorsDialog.show(
+                      context,
+                      available: sensors,
+                      onChanged: (sel) => changes.add(sel.isEmpty ? 'none' : sel.first.sensorId),
+                    );
+                  },
+                  child: const Text('OpenDialog'),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: goRouter));
+
+      await tester.tap(find.text('OpenDialog'));
+      await tester.pumpAndSettle();
+
+      // tap S0, S1, S2 by tapping the center of their ListTile areas to avoid ambiguous ancestor matches
+      for (final s in sensors) {
+        final tileFinder = find.widgetWithText(ListTile, s.name);
+        expect(tileFinder, findsOneWidget);
+        final center = tester.getCenter(tileFinder);
+        await tester.tapAt(center);
+        await tester.pumpAndSettle();
+      }
+
+      expect(changes.length, sensors.length);
+      expect(changes, ['s0', 's1', 's2']);
+
+      // Close dialog to avoid leaving it open
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+    });
   });
 }
+

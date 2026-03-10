@@ -32,6 +32,7 @@ class MockS3Service extends Mock implements S3Service {}
 class MockUploadController extends Mock implements UploadController {}
 class MockProjectService extends Mock implements ProjectService {}
 class MockVideoController extends Mock implements VideoPlayerController {}
+class MockPlaybackController extends Mock implements PlaybackController {}
 MockVideoController makeMockVideoController({
   bool initialized = false,
   bool isPlaying = false,
@@ -1599,6 +1600,16 @@ void main() {
       final s3Service = MockS3Service();
       final uploadController = MockUploadController();
       final projectService = MockProjectService();
+      final mockPlaybackController = MockPlaybackController();
+      when(() => mockPlaybackController.getAvailableSensors(any())).thenAnswer((_) async => <Sensor>[]);
+
+      final rec = Recording(
+        id: 'vc_test',
+        name: 'vc_test',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+      );
 
       final container = ProviderContainer(overrides: [
         localMediaProvider.overrideWithValue(localMedia),
@@ -1609,31 +1620,11 @@ void main() {
             TestSessionNotifier(const AuthState(mode: AuthMode.guest))),
         uploadControllerProvider.overrideWithValue(uploadController),
         homeStateProvider.overrideWith((ref) => HomeStateNotifier()),
+        videoPlayerControllerProvider(rec).overrideWith((ref) async => makeMockVideoController(initialized: true)),
+        playbackControllerProvider.overrideWithValue(mockPlaybackController),
       ]);
 
       addTearDown(container.dispose);
-
-      final rec = Recording(
-        id: 'vc_test',
-        name: 'vc_test',
-        source: RecordingSource.cloud,
-        videoTimestamp: DateTime.now().toUtc(),
-        uploadStatus: UploadStatus.pending,
-      );
-
-      final getRec = GetRecordingResponse(
-        recordingId: 'vc_test',
-        name: 'vc_test',
-        videoUrl: 'https://example.com/test.mp4',
-        videoTimestamp: DateTime.now().toUtc(),
-        sensors: [],
-        projectId: null,
-        userId: 'u',
-        uploadStatus: UploadStatus.pending,
-      );
-
-      when(() => recordingService.getRecording('vc_test')).thenAnswer((
-          _) async => getRec);
 
       final vc = await container.read(
           videoPlayerControllerProvider(rec).future);
@@ -1651,19 +1642,8 @@ void main() {
       final s3Service = MockS3Service();
       final uploadController = MockUploadController();
       final projectService = MockProjectService();
-
-      final container = ProviderContainer(overrides: [
-        localMediaProvider.overrideWithValue(localMedia),
-        recordingServiceProvider.overrideWithValue(recordingService),
-        s3ServiceProvider.overrideWithValue(s3Service),
-        projectServiceProvider.overrideWithValue(projectService),
-        sessionProvider.overrideWith((ref) =>
-            TestSessionNotifier(const AuthState(mode: AuthMode.guest))),
-        uploadControllerProvider.overrideWithValue(uploadController),
-        homeStateProvider.overrideWith((ref) => HomeStateNotifier()),
-      ]);
-
-      addTearDown(container.dispose);
+      final mockPlaybackController2 = MockPlaybackController();
+      when(() => mockPlaybackController2.getAvailableSensors(any())).thenAnswer((_) async => <Sensor>[]);
 
       final tmp = await Directory.systemTemp.createTemp('vlocal_test');
       final file = File('${tmp.path}/vlocal.mp4');
@@ -1677,11 +1657,27 @@ void main() {
         projectId: null,
       );
 
-      final vc = await container.read(
-          videoPlayerControllerProvider(rec).future);
+      final container = ProviderContainer(overrides: [
+        localMediaProvider.overrideWithValue(localMedia),
+        recordingServiceProvider.overrideWithValue(recordingService),
+        s3ServiceProvider.overrideWithValue(s3Service),
+        projectServiceProvider.overrideWithValue(projectService),
+        sessionProvider.overrideWith((ref) =>
+            TestSessionNotifier(const AuthState(mode: AuthMode.guest))),
+        uploadControllerProvider.overrideWithValue(uploadController),
+        homeStateProvider.overrideWith((ref) => HomeStateNotifier()),
+        videoPlayerControllerProvider(rec).overrideWith((ref) async => makeMockVideoController(initialized: true)),
+        playbackControllerProvider.overrideWithValue(mockPlaybackController2),
+      ]);
+
+      addTearDown(() async {
+        await tmp.delete(recursive: true);
+        container.dispose();
+      });
+
+      final vc = await container.read(videoPlayerControllerProvider(rec).future);
       expect(vc, isA<VideoPlayerController>());
 
-      await tmp.delete(recursive: true);
       videoPlayerControllerSkipInitForTests = false;
     });
   });
