@@ -249,27 +249,85 @@ void main() {
       )).called(1);
     });
 
-    test('renameRecording updates home state and keeps id stable', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));final controller = container.read(playbackControllerProvider);
+    test('renameRecording allowed when user is project Editor', () async {
+      final user = User(userId: 'u1', name: '', emailAddress: '', photoUrl: '');
 
-      final rec = Recording.local(
-        id: 'r1',
-        name: 'old',
-        localVideoPath: '/tmp/v.mp4',
-        videoTimestamp: DateTime.now().toUtc(),
-        projectId: 'p',
+      final container = buildContainer(
+        authState: AuthState(mode: AuthMode.authenticated, user: user),
       );
 
-      when(() => recordingService.renameLocal(projectId: any(named: 'projectId'), recordingId: any(named: 'recordingId'), newName: any(named: 'newName')))
-          .thenAnswer((_) async => Future.value());
+      final controller = container.read(playbackControllerProvider);
 
-      final homeNotifier = container.read(homeStateProvider.notifier);
-      homeNotifier.addRecording(rec);
+      final rec = Recording(
+        id: 'r_editor',
+        name: 'editor',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+        projectId: 'p_edit',
+      );
 
-      await controller.renameRecording(rec, 'new');
+      when(() => projectService.getProjectUsers('p_edit')).thenAnswer((_) async => [
+        ProjectUser(userId: 'u1', role: Editor(userId: 'u1'), name: '', emailAddress: '', pictureUrl: ''),
+      ]);
 
-      final state = container.read(homeStateProvider);
-      expect(state.recordings.where((r) => r.id == 'r1').first.name, 'new');
+      when(() => recordingService.renameCloud(recordingId: 'r_editor', name: 'newEditorName')).thenAnswer((_) async => Future.value());
+
+      await controller.renameRecording(rec, 'newEditorName');
+
+      verify(() => recordingService.renameCloud(recordingId: 'r_editor', name: 'newEditorName')).called(1);
+    });
+
+    test('renameRecording denied when user is project Viewer', () async {
+      final user = User(userId: 'u1', name: '', emailAddress: '', photoUrl: '');
+
+      final container = buildContainer(
+        authState: AuthState(mode: AuthMode.authenticated, user: user),
+      );
+
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording(
+        id: 'r_viewer',
+        name: 'viewer',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+        projectId: 'p_view',
+      );
+
+      when(() => projectService.getProjectUsers('p_view')).thenAnswer((_) async => [
+        ProjectUser(userId: 'u1', role: Viewer(userId: 'u1'), name: '', emailAddress: '', pictureUrl: ''),
+      ]);
+
+      await controller.renameRecording(rec, 'attemptRename');
+
+      verifyNever(() => recordingService.renameCloud(recordingId: any(named: 'recordingId'), name: any(named: 'name')));
+    });
+
+    test('renameRecording denied when projectService throws non-Dio exception', () async {
+      final user = User(userId: 'u1', name: '', emailAddress: '', photoUrl: '');
+
+      final container = buildContainer(
+        authState: AuthState(mode: AuthMode.authenticated, user: user),
+      );
+
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording(
+        id: 'r_err',
+        name: 'err',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+        projectId: 'p_err',
+      );
+
+      when(() => projectService.getProjectUsers('p_err')).thenThrow(Exception('boom'));
+
+      await controller.renameRecording(rec, 'newNameOnError');
+
+      verifyNever(() => recordingService.renameCloud(recordingId: any(named: 'recordingId'), name: any(named: 'name')));
     });
 
     test('deleteRecording removes recording from home state', () async {
@@ -718,6 +776,7 @@ void main() {
     });
   });
 
+
   group('SensorChartController - unit', () {
     test('SensorChartController.windowFor returns correct samples', () {
       final samples = List.generate(5, (i) => SensorSample(timestampMs: i * 30, x: i.toDouble(), y: i.toDouble(), z: i.toDouble()));
@@ -865,4 +924,5 @@ void main() {
     final painterFinal = cpFinal.painter as dynamic;
     expect(painterFinal.endMs, 300);
   });
+
 }
