@@ -64,11 +64,13 @@ void main() {
 
   group('AuthController.login', () {
     test('sets authenticated session on successful login', () async {
-      when(() => authService.login(email: any(named: 'email'), password: any(named: 'password')))
-          .thenAnswer((_) async => Tokens(
-  accessToken: 'fake_access',
-  refreshToken: 'fake_refresh',
-));
+      when(() => authService.login(
+        email: any(named: 'email'),
+        password: any(named: 'password')
+      )).thenAnswer((_) async => Tokens(
+        accessToken: 'fake_access',
+        refreshToken: 'fake_refresh',
+      ));
       when(() => guestStorage.clear()).thenAnswer((_) async {});
       when(() => userService.getUser()).thenAnswer((_) async => fakeUser);
 
@@ -80,8 +82,10 @@ void main() {
     });
 
     test('sets error toast on DioException', () async {
-      when(() => authService.login(email: any(named: 'email'), password: any(named: 'password')))
-          .thenThrow(DioException(
+      when(() => authService.login(
+        email: any(named: 'email'), 
+        password: any(named: 'password')
+      )).thenThrow(DioException(
         requestOptions: RequestOptions(path: ''),
         message: 'Invalid credentials',
       ));
@@ -99,7 +103,10 @@ void main() {
           email: any(named: 'email'),
           password: any(named: 'password'),
           name: any(named: 'name'),
-        )).thenAnswer((_) async => Tokens(accessToken: 'fake_access', refreshToken: 'fake_refresh'));
+        )).thenAnswer((_) async => Tokens(
+          accessToken: 'fake_access', 
+          refreshToken: 'fake_refresh'
+        ));
 
     when(() => guestStorage.clear()).thenAnswer((_) async {});
     when(() => userService.getUser()).thenAnswer((_) async => fakeUser);
@@ -171,6 +178,7 @@ void main() {
 
   test('sets authenticated if refresh and getUser succeed', () async {
     when(() => guestStorage.isGuest()).thenAnswer((_) async => false);
+
     // Mock online status
     container.updateOverrides([
         networkStatusProvider.overrideWith(
@@ -187,29 +195,29 @@ void main() {
 });
 
   group('AuthController.logout', () {
-  test('clears storage and resets home state', () async {
-    when(() => authService.logout()).thenAnswer((_) async {});
-    when(() => guestStorage.clear()).thenAnswer((_) async {});
+    test('clears storage and resets home state', () async {
+      when(() => authService.logout()).thenAnswer((_) async {});
+      when(() => guestStorage.clear()).thenAnswer((_) async {});
 
-    await controller.logout(message: 'Good bye!');
+      await controller.logout(message: 'Good bye!');
 
-    verify(() => authService.logout()).called(1);
-    verify(() => guestStorage.clear()).called(1);
-    verify(() => homeState.setProjectsLoaded(false)).called(1);
-    verify(() => session.setLoggedOut('Good bye!')).called(1);
+      verify(() => authService.logout()).called(1);
+      verify(() => guestStorage.clear()).called(1);
+      verify(() => homeState.setProjectsLoaded(false)).called(1);
+      verify(() => session.setLoggedOut('Good bye!')).called(1);
+    });
   });
-});
 
-group('AuthController.guestLogin', () {
-  test('logs out and sets guest storage flag', () async {
-    when(() => authService.logout()).thenAnswer((_) async {});
-    when(() => guestStorage.setGuest(true)).thenAnswer((_) async {});
+  group('AuthController.guestLogin', () {
+    test('logs out and sets guest storage flag', () async {
+      when(() => authService.logout()).thenAnswer((_) async {});
+      when(() => guestStorage.setGuest(true)).thenAnswer((_) async {});
 
-    await controller.guestLogin();
+      await controller.guestLogin();
 
-    verify(() => authService.logout()).called(1);
-    verify(() => guestStorage.setGuest(true)).called(1);
-    verify(() => session.setGuest()).called(1);
+      verify(() => authService.logout()).called(1);
+      verify(() => guestStorage.setGuest(true)).called(1);
+      verify(() => session.setGuest()).called(1);
+    });
   });
-});
 }
