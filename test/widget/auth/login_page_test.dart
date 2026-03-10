@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
-import '../test/mocks/mock_auth_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 import 'package:openearable/main.dart' as app;
+
+class MockAuthController extends Mock implements AuthController {}
 
 Future<MockAuthController> mockAuth(WidgetTester tester) async {
   final mockAuthController = MockAuthController();
@@ -25,9 +25,9 @@ Future<MockAuthController> mockAuth(WidgetTester tester) async {
 }
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Login Page Integration Tests', () {
+  group('Login Page Widget Tests', () {
 
     Finder emailField() => find.widgetWithText(TextField, 'Email Address');
     Finder passwordField() => find.widgetWithText(TextField, 'Password');
