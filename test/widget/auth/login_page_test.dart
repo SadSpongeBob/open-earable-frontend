@@ -33,6 +33,12 @@ void main() {
     Finder passwordField() => find.widgetWithText(TextField, 'Password');
     
     testWidgets('User can login successfully with valid credentials', (WidgetTester tester) async {
+      tester.binding.window.physicalSizeTestValue = const Size(1080, 1920);
+      tester.binding.window.devicePixelRatioTestValue = 1.0;
+      addTearDown(() {
+        tester.binding.window.clearPhysicalSizeTestValue();
+        tester.binding.window.clearDevicePixelRatioTestValue();
+      });
       final mockAuthController = await mockAuth(tester);
 
       when(() => mockAuthController.login(
