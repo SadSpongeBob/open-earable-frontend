@@ -1,82 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:mocktail/mocktail.dart';
+import '../test/mocks/mock_auth_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:openearable/main.dart' as app;
+
+Future<MockAuthController> mockAuth(WidgetTester tester) async {
+  final mockAuthController = MockAuthController();
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        authControllerProvider.overrideWithValue(mockAuthController),
+      ],
+      child: const app.OpenEarableApp(),
+    ),
+  );
+
+  await tester.pumpAndSettle();
+
+  return mockAuthController;
+}
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Login Page Integration Tests', () {
+
+    Finder emailField() => find.widgetWithText(TextField, 'Email Address');
+    Finder passwordField() => find.widgetWithText(TextField, 'Password');
     
     testWidgets('User can login successfully with valid credentials', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      final mockAuthController = await mockAuth(tester);
 
-      final emailField = find.widgetWithText(TextField, 'Email Address');
-      final passwordField = find.widgetWithText(TextField, 'Password');
+      when(() => mockAuthController.login(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+      )).thenAnswer((_) async {});
 
       // Fill valid credentials
-      await tester.enterText(emailField, 'existing_user@test.com');
-      await tester.enterText(passwordField, 'password123');
+      await tester.enterText(emailField(), 'existing_user@test.com');
+      await tester.enterText(passwordField(), 'password123');
       await tester.pumpAndSettle();
 
       // Tap Login button
       await tester.tap(find.text('Log In'));
       
-      // Allow time for API response and navigation
-      await tester.pumpAndSettle(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
 
       // Verify we arrived at the Home Page
       expect(find.text('Default'), findsOneWidget);
     });
 
     testWidgets('Login button is disabled until form is filled', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await mockAuth(tester);
 
       // Check button state when empty
       var loginButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(loginButton.enabled, isFalse);
 
       // Fill only email
-      await tester.enterText(find.widgetWithText(TextField, 'Email Address'), 'test@test.com');
+      await tester.enterText(emailField(), 'test@test.com');
       await tester.pump();
       
       loginButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(loginButton.enabled, isFalse);
 
       // Fill password - button should enable
-      await tester.enterText(find.widgetWithText(TextField, 'Password'), '12345678');
+      await tester.enterText(passwordField(), '12345678');
       await tester.pump();
 
       loginButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(loginButton.enabled, isTrue);
     });
 
-  testWidgets('Shows error toast on invalid credentials', (WidgetTester tester) async {
-    app.main();
-    await tester.pumpAndSettle();
+    testWidgets('Shows error toast on invalid credentials', (WidgetTester tester) async {
+      final mockAuthController = await mockAuth(tester);
 
-    await tester.enterText(find.widgetWithText(TextField, 'Email Address'), 'wrong@email.com');
-    await tester.enterText(find.widgetWithText(TextField, 'Password'), 'wrongpassword');
+      when(() => mockAuthController.login(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+      )).thenThrow(Exception('Login failed'));
+
+      await tester.enterText(emailField(), 'wrong@email.com');
+      await tester.enterText(passwordField(), 'wrongpassword');
   
-    await tester.tap(find.text('Log In'));
+      await tester.tap(find.text('Log In'));
 
-    await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
 
-    // If the DioException has no message, the controller defaults to 'Login failed'
-    final errorFinder = find.text('Login failed');
+      // If the DioException has no message, the controller defaults to 'Login failed'
+      final errorFinder = find.text('Login failed');
   
-    expect(errorFinder, findsOneWidget);
-  });
+      expect(errorFinder, findsOneWidget);
+    });
 
     /// Test for the first tap of a toggle visibility
     testWidgets('Can toggle password visibility', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-
-      final passwordFieldFinder = find.widgetWithText(TextField, 'Password');
-      TextField passwordWidget = tester.widget<TextField>(passwordFieldFinder);
+      await mockAuth(tester);
+      TextField passwordWidget = tester.widget<TextField>(passwordField());
       
       expect(passwordWidget.obscureText, isTrue);
 
@@ -85,13 +109,12 @@ void main() {
       await tester.pump();
 
       // Now visible
-      passwordWidget = tester.widget<TextField>(passwordFieldFinder);
+      passwordWidget = tester.widget<TextField>(passwordField());
       expect(passwordWidget.obscureText, isFalse);
     });
 
     testWidgets('User can navigate from Login to Signup page', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await mockAuth(tester);
 
       // Find the "Sign Up" link
       final signupLink = find.text('Sign Up');
@@ -107,8 +130,10 @@ void main() {
     });
 
     testWidgets('User can continue as guest from Login page', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      final mockAuthController = await mockAuth(tester);
+
+      when(() => mockAuthController.guestLogin())
+        .thenAnswer((_) async {});
 
       final guestLink = find.text('Continue as Guest');
       await tester.tap(guestLink);
