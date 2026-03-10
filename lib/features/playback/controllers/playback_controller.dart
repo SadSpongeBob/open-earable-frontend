@@ -64,7 +64,14 @@ final videoPlayerControllerProvider = FutureProvider.autoDispose
         vc = VideoPlayerController.file(file);
       }
 
-      await vc.initialize();
+      // Allow tests to skip platform-dependent initialization and playback.
+      // When the flag is true, we SKIP calling initialize() and play(), but
+      // still execute the rest of the provider body (sensor loading, state
+      // updates and onDispose) so unit tests can assert provider behavior
+      // without needing platform channels.
+      if (!videoPlayerControllerSkipInitForTests) {
+        await vc.initialize();
+      }
 
       try {
         final playbackController = ref.read(playbackControllerProvider);
@@ -337,3 +344,7 @@ class PlaybackController {
     return sensors;
   }
 }
+
+/// Test-only flag: when true, provider will skip initialize/play. Default false.
+/// Tests must reset this flag after use.
+bool videoPlayerControllerSkipInitForTests = false;

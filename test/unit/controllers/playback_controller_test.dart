@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:openearable/api/models/auth/user.dart';
 import 'package:openearable/api/models/project/project_role.dart';
 import 'package:openearable/api/models/project/project_user.dart';
+import 'package:openearable/app/ui/toast_event.dart';
 import 'package:video_player/video_player.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/auth/auth_state.dart';
@@ -97,20 +98,23 @@ void main() {
     }
 
     test('provider returns a controller instance', () {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
       expect(controller, isNotNull);
     });
 
     test('seekBySeconds handles invalid controller gracefully', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final vc = makeMockVideoController(initialized: true);
       expect(() => controller.seekBySeconds(vc, 10), returnsNormally);
     });
     test('togglePlay does nothing if controller not initialized', () {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final vc = makeMockVideoController(initialized: false);
@@ -121,7 +125,8 @@ void main() {
       verifyNever(() => vc.play());
     });
     test('seekBySeconds does nothing when controller not initialized', () {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final vc = makeMockVideoController(initialized: false);
@@ -132,15 +137,18 @@ void main() {
     });
 
     test('togglePlay returns normally for invalid controller', () {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final vc = makeMockVideoController(initialized: true, isPlaying: false);
       expect(() => controller.togglePlay(vc), returnsNormally);
     });
 
-    test('getAvailableSensors returns local sensors when recording is local', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+    test(
+        'getAvailableSensors returns local sensors when recording is local', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording.local(
@@ -152,9 +160,14 @@ void main() {
       );
 
       when(() => recordingService.getLocalRecordingSensors('p1', 'r1'))
-          .thenAnswer((_) async => [
-                Sensor(sensorIndex: 0, sensorId: 's1', name: 'Accel', timeStamp: DateTime.now(), localPath: '/tmp/s1')
-              ]);
+          .thenAnswer((_) async =>
+      [
+        Sensor(sensorIndex: 0,
+            sensorId: 's1',
+            name: 'Accel',
+            timeStamp: DateTime.now(),
+            localPath: '/tmp/s1')
+      ]);
 
       final sensors = await controller.getAvailableSensors(rec);
 
@@ -162,8 +175,10 @@ void main() {
       expect(sensors.first.sensorId, 's1');
     });
 
-    test('getAvailableSensors downloads cloud sensors and returns them', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+    test(
+        'getAvailableSensors downloads cloud sensors and returns them', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording(
@@ -195,9 +210,12 @@ void main() {
         uploadStatus: UploadStatus.pending,
       );
 
-      when(() => recordingService.getRecording('rcloud')).thenAnswer((_) async => getRec);
+      when(() => recordingService.getRecording('rcloud')).thenAnswer((
+          _) async => getRec);
 
-      when(() => s3Service.downloadToFile(getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+      when(() =>
+          s3Service.downloadToFile(
+          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .thenAnswer((inv) async {
         final path = inv.namedArguments[#filePath] as String;
         final f = File(path);
@@ -206,13 +224,17 @@ void main() {
         return;
       });
 
-      when(() => localMedia.recordingTempSensors(any())).thenReturn(File('${Directory.systemTemp.path}/tmp_sensor.json'));
+      when(() => localMedia.recordingTempSensors(any())).thenReturn(
+          File('${Directory.systemTemp.path}/tmp_sensor.json'));
 
       final sensors = await controller.getAvailableSensors(rec);
       expect(sensors, isNotEmpty);
       expect(sensors.first.sensorId, isNotNull);
 
-      verify(() => s3Service.downloadToFile(getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath'))).called(getRec.sensors.length);
+      verify(() =>
+          s3Service.downloadToFile(
+          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+          .called(getRec.sensors.length);
     });
     test('renameRecording allowed when user is project Owner', () async {
       final user = User(userId: 'u1', name: '', emailAddress: '', photoUrl: '');
@@ -232,21 +254,28 @@ void main() {
         projectId: 'p1',
       );
 
-      when(() => projectService.getProjectUsers('p1')).thenAnswer((_) async => [
-        ProjectUser(userId: 'u1', role: Owner(userId: ''), name: '', emailAddress: '', pictureUrl: ''),
+      when(() => projectService.getProjectUsers('p1')).thenAnswer((_) async =>
+      [
+        ProjectUser(userId: 'u1',
+            role: Owner(userId: ''),
+            name: '',
+            emailAddress: '',
+            pictureUrl: ''),
       ]);
 
-      when(() => recordingService.renameCloud(
-        recordingId: 'r_owner',
-        name: 'new',
-      )).thenAnswer((_) async {});
+      when(() =>
+          recordingService.renameCloud(
+            recordingId: 'r_owner',
+            name: 'new',
+          )).thenAnswer((_) async {});
 
       await controller.renameRecording(rec, 'new');
 
-      verify(() => recordingService.renameCloud(
-        recordingId: 'r_owner',
-        name: 'new',
-      )).called(1);
+      verify(() =>
+          recordingService.renameCloud(
+            recordingId: 'r_owner',
+            name: 'new',
+          )).called(1);
     });
 
     test('renameRecording allowed when user is project Editor', () async {
@@ -267,15 +296,26 @@ void main() {
         projectId: 'p_edit',
       );
 
-      when(() => projectService.getProjectUsers('p_edit')).thenAnswer((_) async => [
-        ProjectUser(userId: 'u1', role: Editor(userId: 'u1'), name: '', emailAddress: '', pictureUrl: ''),
+      when(() => projectService.getProjectUsers('p_edit')).thenAnswer((
+          _) async =>
+      [
+        ProjectUser(userId: 'u1',
+            role: Editor(userId: 'u1'),
+            name: '',
+            emailAddress: '',
+            pictureUrl: ''),
       ]);
 
-      when(() => recordingService.renameCloud(recordingId: 'r_editor', name: 'newEditorName')).thenAnswer((_) async => Future.value());
+      when(() =>
+          recordingService.renameCloud(
+          recordingId: 'r_editor', name: 'newEditorName')).thenAnswer((
+          _) async => Future.value());
 
       await controller.renameRecording(rec, 'newEditorName');
 
-      verify(() => recordingService.renameCloud(recordingId: 'r_editor', name: 'newEditorName')).called(1);
+      verify(() =>
+          recordingService.renameCloud(
+          recordingId: 'r_editor', name: 'newEditorName')).called(1);
     });
 
     test('renameRecording denied when user is project Viewer', () async {
@@ -296,16 +336,26 @@ void main() {
         projectId: 'p_view',
       );
 
-      when(() => projectService.getProjectUsers('p_view')).thenAnswer((_) async => [
-        ProjectUser(userId: 'u1', role: Viewer(userId: 'u1'), name: '', emailAddress: '', pictureUrl: ''),
+      when(() => projectService.getProjectUsers('p_view')).thenAnswer((
+          _) async =>
+      [
+        ProjectUser(userId: 'u1',
+            role: Viewer(userId: 'u1'),
+            name: '',
+            emailAddress: '',
+            pictureUrl: ''),
       ]);
 
       await controller.renameRecording(rec, 'attemptRename');
 
-      verifyNever(() => recordingService.renameCloud(recordingId: any(named: 'recordingId'), name: any(named: 'name')));
+      verifyNever(() =>
+          recordingService.renameCloud(
+          recordingId: any(named: 'recordingId'),
+          name: any(named: 'name')));
     });
 
-    test('renameRecording denied when projectService throws non-Dio exception', () async {
+    test(
+        'renameRecording denied when projectService throws non-Dio exception', () async {
       final user = User(userId: 'u1', name: '', emailAddress: '', photoUrl: '');
 
       final container = buildContainer(
@@ -323,15 +373,20 @@ void main() {
         projectId: 'p_err',
       );
 
-      when(() => projectService.getProjectUsers('p_err')).thenThrow(Exception('boom'));
+      when(() => projectService.getProjectUsers('p_err')).thenThrow(
+          Exception('boom'));
 
       await controller.renameRecording(rec, 'newNameOnError');
 
-      verifyNever(() => recordingService.renameCloud(recordingId: any(named: 'recordingId'), name: any(named: 'name')));
+      verifyNever(() =>
+          recordingService.renameCloud(
+          recordingId: any(named: 'recordingId'),
+          name: any(named: 'name')));
     });
 
     test('deleteRecording removes recording from home state', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording.local(
@@ -344,18 +399,28 @@ void main() {
 
       final home = container.read(homeStateProvider.notifier);
       home.addRecording(rec);
-      expect(container.read(homeStateProvider).recordings.any((r) => r.id == 'rdel'), isTrue);
+      expect(container
+          .read(homeStateProvider)
+          .recordings
+          .any((r) => r.id == 'rdel'), isTrue);
 
-      when(() => recordingService.deleteLocalRecording(projectId: any(named: 'projectId'), recordingId: any(named: 'recordingId')))
+      when(() =>
+          recordingService.deleteLocalRecording(
+          projectId: any(named: 'projectId'),
+          recordingId: any(named: 'recordingId')))
           .thenAnswer((_) async => true);
 
       await controller.deleteRecording(rec);
 
-      expect(container.read(homeStateProvider).recordings.any((r) => r.id == 'rdel'), isFalse);
+      expect(container
+          .read(homeStateProvider)
+          .recordings
+          .any((r) => r.id == 'rdel'), isFalse);
     });
 
     test('cloud sensor download flow handles empty/successful files', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording(
@@ -386,52 +451,72 @@ void main() {
         uploadStatus: UploadStatus.pending,
       );
 
-      when(() => recordingService.getRecording('rcloud2')).thenAnswer((_) async => getRec);
+      when(() => recordingService.getRecording('rcloud2')).thenAnswer((
+          _) async => getRec);
 
-      when(() => s3Service.downloadToFile(getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+      when(() =>
+          s3Service.downloadToFile(
+          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .thenAnswer((inv) async {
         final path = inv.namedArguments[#filePath] as String;
         final f = File(path);
         await f.create(recursive: true);
-        await f.writeAsString('[{"timestampMs": ${DateTime.now().toUtc().millisecondsSinceEpoch}, "values": {"Accelerometer": [0.1,0.2,0.3]}}]');
+        await f.writeAsString('[{"timestampMs": ${DateTime
+            .now()
+            .toUtc()
+            .millisecondsSinceEpoch}, "values": {"Accelerometer": [0.1,0.2,0.3]}}]');
       });
 
-      when(() => localMedia.recordingTempSensors(any())).thenReturn(File('${Directory.systemTemp.path}/tmp_sensor2.json'));
+      when(() => localMedia.recordingTempSensors(any())).thenReturn(
+          File('${Directory.systemTemp.path}/tmp_sensor2.json'));
 
       final sensors = await controller.getAvailableSensors(rec);
 
       expect(sensors, isNotEmpty);
-      verify(() => s3Service.downloadToFile(getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath'))).called(1);
+      verify(() =>
+          s3Service.downloadToFile(
+          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+          .called(1);
     });
 
     test('seekBySeconds clamps to start and end', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
-      final vcStart = makeMockVideoController(initialized: true, duration: const Duration(seconds: 60), position: const Duration(seconds: 5));
+      final vcStart = makeMockVideoController(initialized: true,
+          duration: const Duration(seconds: 60),
+          position: const Duration(seconds: 5));
       controller.seekBySeconds(vcStart, -10);
       verify(() => vcStart.seekTo(Duration.zero)).called(1);
 
-      final vcEnd = makeMockVideoController(initialized: true, duration: const Duration(seconds: 60), position: const Duration(seconds: 58));
+      final vcEnd = makeMockVideoController(initialized: true,
+          duration: const Duration(seconds: 60),
+          position: const Duration(seconds: 58));
       controller.seekBySeconds(vcEnd, 10);
       verify(() => vcEnd.seekTo(const Duration(seconds: 60))).called(1);
     });
 
     test('togglePlay pauses when playing and plays when paused', () {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
-      final playing = makeMockVideoController(initialized: true, isPlaying: true);
+      final playing = makeMockVideoController(
+          initialized: true, isPlaying: true);
       controller.togglePlay(playing);
       verify(() => playing.pause()).called(1);
 
-      final paused = makeMockVideoController(initialized: true, isPlaying: false);
+      final paused = makeMockVideoController(
+          initialized: true, isPlaying: false);
       controller.togglePlay(paused);
       verify(() => paused.play()).called(1);
     });
 
-    test('deleteRecording cloud calls deleteCloudRecording and removes from home', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+    test(
+        'deleteRecording cloud calls deleteCloudRecording and removes from home', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording(
@@ -444,18 +529,27 @@ void main() {
 
       final home = container.read(homeStateProvider.notifier);
       home.addRecording(rec);
-      expect(container.read(homeStateProvider).recordings.any((r) => r.id == 'rc_del_cloud'), isTrue);
+      expect(container
+          .read(homeStateProvider)
+          .recordings
+          .any((r) => r.id == 'rc_del_cloud'), isTrue);
 
-      when(() => recordingService.deleteCloudRecording('rc_del_cloud')).thenAnswer((_) async => Future.value());
+      when(() => recordingService.deleteCloudRecording('rc_del_cloud'))
+          .thenAnswer((_) async => Future.value());
 
       await controller.deleteRecording(rec);
 
-      expect(container.read(homeStateProvider).recordings.any((r) => r.id == 'rc_del_cloud'), isFalse);
-      verify(() => recordingService.deleteCloudRecording('rc_del_cloud')).called(1);
+      expect(container
+          .read(homeStateProvider)
+          .recordings
+          .any((r) => r.id == 'rc_del_cloud'), isFalse);
+      verify(() => recordingService.deleteCloudRecording('rc_del_cloud'))
+          .called(1);
     });
 
     test('renameRecording cloud updates home state', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording(
@@ -469,16 +563,28 @@ void main() {
       final home = container.read(homeStateProvider.notifier);
       home.addRecording(rec);
 
-      when(() => recordingService.renameCloud(recordingId: 'rc_rename_cloud', name: 'newName')).thenAnswer((_) async => Future.value());
+      when(() =>
+          recordingService.renameCloud(
+          recordingId: 'rc_rename_cloud', name: 'newName')).thenAnswer((
+          _) async => Future.value());
 
       await controller.renameRecording(rec, 'newName');
 
-      expect(container.read(homeStateProvider).recordings.where((r) => r.id == 'rc_rename_cloud').first.name, 'newName');
-      verify(() => recordingService.renameCloud(recordingId: 'rc_rename_cloud', name: 'newName')).called(1);
+      expect(container
+          .read(homeStateProvider)
+          .recordings
+          .where((r) => r.id == 'rc_rename_cloud')
+          .first
+          .name, 'newName');
+      verify(() =>
+          recordingService.renameCloud(
+          recordingId: 'rc_rename_cloud', name: 'newName')).called(1);
     });
 
-    test('exportVideoFolder cloud downloads video and sensors to export dir', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+    test(
+        'exportVideoFolder cloud downloads video and sensors to export dir', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording(
@@ -509,14 +615,20 @@ void main() {
         uploadStatus: UploadStatus.pending,
       );
 
-      when(() => recordingService.getRecording('rcloud_exp')).thenAnswer((_) async => getRec);
+      when(() => recordingService.getRecording('rcloud_exp')).thenAnswer((
+          _) async => getRec);
 
       final tmp = await Directory.systemTemp.createTemp('exp_test');
       when(() => localMedia.recordingExportDir('export-me')).thenReturn(tmp);
-      when(() => localMedia.videoExportFile('rcloud_exp')).thenReturn(File('${tmp.path}/video.mp4'));
-      when(() => localMedia.sensorExportFile('rcloud_exp', 'SensorExport')).thenReturn(File('${tmp.path}/SensorExport.json'));
+      when(() => localMedia.videoExportFile('rcloud_exp')).thenReturn(
+          File('${tmp.path}/video.mp4'));
+      when(() => localMedia.sensorExportFile('rcloud_exp', 'SensorExport'))
+          .thenReturn(File('${tmp.path}/SensorExport.json'));
 
-      when(() => s3Service.downloadToFile(getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath'))).thenAnswer((inv) async {
+      when(() =>
+          s3Service.downloadToFile(
+          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+          .thenAnswer((inv) async {
         final path = inv.namedArguments[#filePath] as String;
         final f = File(path);
         await f.create(recursive: true);
@@ -548,19 +660,26 @@ void main() {
         projectId: 'p1',
       );
 
-      when(() => projectService.getProjectUsers('p1')).thenAnswer((_) async => [
-        ProjectUser(userId: 'someoneElse', role: Viewer(userId: 'someoneElse'), name: '', emailAddress: '', pictureUrl: ''),
+      when(() => projectService.getProjectUsers('p1')).thenAnswer((_) async =>
+      [
+        ProjectUser(userId: 'someoneElse',
+            role: Viewer(userId: 'someoneElse'),
+            name: '',
+            emailAddress: '',
+            pictureUrl: ''),
       ]);
 
       await controller.renameRecording(rec, 'new');
 
-      verifyNever(() => recordingService.renameCloud(
-        recordingId: any(named: 'recordingId'),
-        name: any(named: 'name'),
-      ));
+      verifyNever(() =>
+          recordingService.renameCloud(
+            recordingId: any(named: 'recordingId'),
+            name: any(named: 'name'),
+          ));
     });
     test('getAvailableSensors returns empty if getRecording throws', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording(
@@ -578,8 +697,10 @@ void main() {
 
       expect(sensors, isEmpty);
     });
-    test('exportVideoFolder local returns when sourceDir does not exist', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+    test(
+        'exportVideoFolder local returns when sourceDir does not exist', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording.local(
@@ -602,7 +723,8 @@ void main() {
     });
 
     test('getAvailableSensors skips sensors that fail to download', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording(
@@ -633,11 +755,16 @@ void main() {
         uploadStatus: UploadStatus.pending,
       );
 
-      when(() => recordingService.getRecording('rcloud_fail')).thenAnswer((_) async => getRec);
+      when(() => recordingService.getRecording('rcloud_fail')).thenAnswer((
+          _) async => getRec);
 
-      when(() => s3Service.downloadToFile(getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath'))).thenThrow(Exception('download failed'));
+      when(() =>
+          s3Service.downloadToFile(
+          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+          .thenThrow(Exception('download failed'));
 
-      when(() => localMedia.recordingTempSensors(any())).thenReturn(File('${Directory.systemTemp.path}/tmp_fail.json'));
+      when(() => localMedia.recordingTempSensors(any())).thenReturn(
+          File('${Directory.systemTemp.path}/tmp_fail.json'));
 
       final sensors = await controller.getAvailableSensors(rec);
 
@@ -645,7 +772,8 @@ void main() {
     });
 
     test('renameRecording denied if projectService returns 403', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.authenticated, user: null));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.authenticated, user: null));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording(
@@ -657,14 +785,19 @@ void main() {
         projectId: 'proj403',
       );
 
-      when(() => projectService.getProjectUsers('proj403')).thenThrow(dioEx(403));
+      when(() => projectService.getProjectUsers('proj403')).thenThrow(
+          dioEx(403));
 
       await controller.renameRecording(rec, 'new');
-      verifyNever(() => recordingService.renameCloud(recordingId: any(named: 'recordingId'), name: any(named: 'name')));
+      verifyNever(() =>
+          recordingService.renameCloud(
+          recordingId: any(named: 'recordingId'),
+          name: any(named: 'name')));
     });
 
     test('exportVideoFolder local copies non-meta files', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final tmpBase = await Directory.systemTemp.createTemp('lm_base');
@@ -707,7 +840,8 @@ void main() {
     });
 
     test('exportVideoFolder cloud propagates download exceptions', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording(
@@ -738,22 +872,30 @@ void main() {
         uploadStatus: UploadStatus.pending,
       );
 
-      when(() => recordingService.getRecording('rcloud_err')).thenAnswer((_) async => getRec);
+      when(() => recordingService.getRecording('rcloud_err')).thenAnswer((
+          _) async => getRec);
 
-      when(() => s3Service.downloadToFile(getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath'))).thenThrow(DioException(requestOptions: RequestOptions(path: '/')));
+      when(() =>
+          s3Service.downloadToFile(
+          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+          .thenThrow(DioException(requestOptions: RequestOptions(path: '/')));
 
       final tmp = await Directory.systemTemp.createTemp('exp_err');
       when(() => localMedia.recordingExportDir(any())).thenReturn(tmp);
-      when(() => localMedia.videoExportFile('rcloud_err')).thenReturn(File('${tmp.path}/video.mp4'));
-      when(() => localMedia.sensorExportFile('rcloud_err', any())).thenReturn(File('${tmp.path}/s.json'));
+      when(() => localMedia.videoExportFile('rcloud_err')).thenReturn(
+          File('${tmp.path}/video.mp4'));
+      when(() => localMedia.sensorExportFile('rcloud_err', any())).thenReturn(
+          File('${tmp.path}/s.json'));
 
-      expect(() => controller.exportVideoFolder(rec), throwsA(isA<DioException>()));
+      expect(() => controller.exportVideoFolder(rec),
+          throwsA(isA<DioException>()));
 
       await tmp.delete(recursive: true);
     });
 
     test('renameRecording for default project calls local rename', () async {
-      final container = buildContainer(authState: const AuthState(mode: AuthMode.guest));
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
       final controller = container.read(playbackControllerProvider);
 
       final rec = Recording.local(
@@ -764,7 +906,11 @@ void main() {
         projectId: LocalMedia.defaultProjectId,
       );
 
-      when(() => recordingService.renameLocal(projectId: LocalMedia.defaultProjectId, recordingId: 'rdef', newName: 'nn'))
+      when(() =>
+          recordingService.renameLocal(
+          projectId: LocalMedia.defaultProjectId,
+          recordingId: 'rdef',
+          newName: 'nn'))
           .thenAnswer((_) async => Future.value());
 
       final home = container.read(homeStateProvider.notifier);
@@ -772,14 +918,474 @@ void main() {
 
       await controller.renameRecording(rec, 'nn');
 
-      verify(() => recordingService.renameLocal(projectId: LocalMedia.defaultProjectId, recordingId: 'rdef', newName: 'nn')).called(1);
+      verify(() =>
+          recordingService.renameLocal(
+          projectId: LocalMedia.defaultProjectId,
+          recordingId: 'rdef',
+          newName: 'nn')).called(1);
+    });
+
+    test(
+        'deleteRecording shows No permission toast when user cannot manage', () async {
+      final localMedia = MockLocalMedia();
+      final recordingService = MockRecordingService();
+      final s3Service = MockS3Service();
+      final uploadController = MockUploadController();
+      final projectService = MockProjectService();
+      final homeNotifier = HomeStateNotifier();
+
+      final authState = AuthState(mode: AuthMode.authenticated,
+          user: User(userId: 'u1', name: '', emailAddress: '', photoUrl: ''));
+
+      when(() => projectService.getProjectUsers('p_no')).thenAnswer((_) async =>
+      [
+        ProjectUser(userId: 'other',
+            role: Viewer(userId: 'other'),
+            name: '',
+            emailAddress: '',
+            pictureUrl: ''),
+      ]);
+
+      final toasts = <ToastEvent>[];
+      final controller = PlaybackController(
+        localMedia: localMedia,
+        recordingService: recordingService,
+        s3Service: s3Service,
+        uploadController: uploadController,
+        homeStateNotifier: homeNotifier,
+        projectService: projectService,
+        authState: authState,
+        toast: (e) => toasts.add(e),
+      );
+
+      final rec = Recording(
+        id: 'r_no',
+        name: 'no',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+        projectId: 'p_no',
+      );
+
+      await controller.deleteRecording(rec);
+
+      expect(toasts.length, 1);
+      expect(toasts.first, isA<ToastEvent>());
+      verifyNever(() => recordingService.deleteCloudRecording(any()));
+    });
+
+    test(
+        'renameRecording shows No permission toast when user cannot manage', () async {
+      final localMedia = MockLocalMedia();
+      final recordingService = MockRecordingService();
+      final s3Service = MockS3Service();
+      final uploadController = MockUploadController();
+      final projectService = MockProjectService();
+      final homeNotifier = HomeStateNotifier();
+
+      final authState = AuthState(mode: AuthMode.authenticated,
+          user: User(userId: 'u1', name: '', emailAddress: '', photoUrl: ''));
+
+      when(() => projectService.getProjectUsers('p_no2')).thenAnswer((
+          _) async =>
+      [
+        ProjectUser(userId: 'other',
+            role: Viewer(userId: 'other'),
+            name: '',
+            emailAddress: '',
+            pictureUrl: ''),
+      ]);
+
+      final toasts = <ToastEvent>[];
+      final controller = PlaybackController(
+        localMedia: localMedia,
+        recordingService: recordingService,
+        s3Service: s3Service,
+        uploadController: uploadController,
+        homeStateNotifier: homeNotifier,
+        projectService: projectService,
+        authState: authState,
+        toast: (e) => toasts.add(e),
+      );
+
+      final rec = Recording(
+        id: 'r_no2',
+        name: 'no2',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+        projectId: 'p_no2',
+      );
+
+      await controller.renameRecording(rec, 'newname');
+
+      expect(toasts.length, 1);
+      expect(toasts.first, isA<ToastEvent>());
+      verifyNever(() =>
+          recordingService.renameCloud(
+          recordingId: any(named: 'recordingId'),
+          name: any(named: 'name')));
+    });
+
+    test('renameRecording allowed when user is guest', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording(
+        id: 'r_guest_rename',
+        name: 'guest',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+        projectId: 'p_guest',
+      );
+
+      when(() =>
+          recordingService.renameCloud(
+          recordingId: 'r_guest_rename', name: 'gnew')).thenAnswer((
+          _) async {});
+
+      await controller.renameRecording(rec, 'gnew');
+
+      verify(() =>
+          recordingService.renameCloud(
+          recordingId: 'r_guest_rename', name: 'gnew')).called(1);
+    });
+
+    test('deleteRecording allowed when user is guest', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording(
+        id: 'r_guest_del',
+        name: 'guestdel',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+      );
+
+      final home = container.read(homeStateProvider.notifier);
+      home.addRecording(rec);
+
+      when(() => recordingService.deleteCloudRecording('r_guest_del'))
+          .thenAnswer((_) async => Future.value());
+
+      await controller.deleteRecording(rec);
+
+      expect(container
+          .read(homeStateProvider)
+          .recordings
+          .any((r) => r.id == 'r_guest_del'), isFalse);
+      verify(() => recordingService.deleteCloudRecording('r_guest_del')).called(
+          1);
+    });
+
+    test(
+        'getAvailableSensors local uses default project id when projectId is null', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording.local(
+        id: 'rlocal_def',
+        name: 'localdef',
+        localVideoPath: '/tmp/x.mp4',
+        videoTimestamp: DateTime.now().toUtc(),
+      );
+
+      when(() =>
+          recordingService.getLocalRecordingSensors(
+          LocalMedia.defaultProjectId, 'rlocal_def'))
+          .thenAnswer((_) async =>
+      [
+        Sensor(sensorIndex: 0,
+            sensorId: 'sdef',
+            name: 'd',
+            timeStamp: DateTime.now(),
+            localPath: '/tmp/s')
+      ]);
+
+      final sensors = await controller.getAvailableSensors(rec);
+      expect(sensors, isNotEmpty);
+      expect(sensors.first.sensorId, 'sdef');
+    });
+
+    test(
+        'exportVideoFolder cloud downloads only video when no sensors present', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording(
+        id: 'rcloud_only',
+        name: 'cloud-only',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+      );
+
+      final getRec = GetRecordingResponse(
+        recordingId: 'rcloud_only',
+        name: 'cloud-only',
+        videoUrl: 'https://example.com/videoonly.mp4',
+        videoTimestamp: DateTime.now().toUtc(),
+        sensors: [],
+        projectId: null,
+        userId: 'u',
+        uploadStatus: UploadStatus.pending,
+      );
+
+      when(() => recordingService.getRecording('rcloud_only')).thenAnswer((
+          _) async => getRec);
+
+      final tmp = await Directory.systemTemp.createTemp('exp_only');
+      when(() => localMedia.recordingExportDir('cloud-only')).thenReturn(tmp);
+      when(() => localMedia.videoExportFile('rcloud_only')).thenReturn(
+          File('${tmp.path}/video.mp4'));
+
+      when(() =>
+          s3Service.downloadToFile(
+          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+          .thenAnswer((inv) async {
+        final path = inv.namedArguments[#filePath] as String;
+        final f = File(path);
+        await f.create(recursive: true);
+        await f.writeAsString('ok');
+      });
+
+      await controller.exportVideoFolder(rec);
+
+      expect(File('${tmp.path}/video.mp4').existsSync(), isTrue);
+      await tmp.delete(recursive: true);
+    });
+
+    test('renameRecording denied when auth user is null (no myId)', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.authenticated, user: null));
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording(
+        id: 'r_no_myid',
+        name: 'no-myid',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+        projectId: 'p_nomid',
+      );
+
+      when(() => projectService.getProjectUsers('p_nomid')).thenAnswer((
+          _) async =>
+      [
+        ProjectUser(userId: 'someone',
+            role: Owner(userId: 'someone'),
+            name: '',
+            emailAddress: '',
+            pictureUrl: ''),
+      ]);
+
+      await controller.renameRecording(rec, 'newname');
+
+      verifyNever(() =>
+          recordingService.renameCloud(
+          recordingId: any(named: 'recordingId'),
+          name: any(named: 'name')));
+    });
+
+    test(
+        'renameRecording denied when projectService throws DioException non-403', () async {
+      final user = User(
+          userId: 'u123', name: '', emailAddress: '', photoUrl: '');
+      final container = buildContainer(
+          authState: AuthState(mode: AuthMode.authenticated, user: user));
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording(
+        id: 'r_dio_500',
+        name: 'dio500',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+        projectId: 'p500',
+      );
+
+      final dioErr = DioException(requestOptions: RequestOptions(path: '/'),
+          response: Response(
+              requestOptions: RequestOptions(path: '/'), statusCode: 500));
+      when(() => projectService.getProjectUsers('p500')).thenThrow(dioErr);
+
+      await controller.renameRecording(rec, 'new');
+
+      verifyNever(() =>
+          recordingService.renameCloud(
+          recordingId: any(named: 'recordingId'),
+          name: any(named: 'name')));
+    });
+
+    test(
+        'getAvailableSensors returns only successfully downloaded sensors when some fail', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final sensor1 = GetSensorResponse(
+        sensorId: 's_ok',
+        sensorIndex: 0,
+        name: 'OK',
+        url: 'https://example.com/ok.json',
+        type: SensorType.accelerometer,
+        timestamp: DateTime.now().toUtc(),
+      );
+      final sensor2 = GetSensorResponse(
+        sensorId: 's_bad',
+        sensorIndex: 1,
+        name: 'BAD',
+        url: 'https://example.com/bad.json',
+        type: SensorType.accelerometer,
+        timestamp: DateTime.now().toUtc(),
+      );
+
+      final getRec = GetRecordingResponse(
+        recordingId: 'r_mixed',
+        name: 'mixed',
+        videoUrl: 'https://example.com/v.mp4',
+        videoTimestamp: DateTime.now().toUtc(),
+        sensors: [sensor1, sensor2],
+        projectId: null,
+        userId: 'u',
+        uploadStatus: UploadStatus.pending,
+      );
+
+      when(() => recordingService.getRecording('r_mixed')).thenAnswer((
+          _) async => getRec);
+
+      // success for s_ok, fail for s_bad
+      when(() =>
+          s3Service.downloadToFile(
+          getUrl: sensor1.url, filePath: any(named: 'filePath'))).thenAnswer((
+          inv) async {
+        final path = inv.namedArguments[#filePath] as String;
+        final f = File(path);
+        await f.create(recursive: true);
+        await f.writeAsString('[]');
+      });
+      when(() =>
+          s3Service.downloadToFile(
+          getUrl: sensor2.url, filePath: any(named: 'filePath'))).thenThrow(
+          Exception('download bad'));
+
+      when(() => localMedia.recordingTempSensors('s_ok')).thenReturn(
+          File('${Directory.systemTemp.path}/tmp_ok.json'));
+      when(() => localMedia.recordingTempSensors('s_bad')).thenReturn(
+          File('${Directory.systemTemp.path}/tmp_bad.json'));
+
+      final out = await controller.getAvailableSensors(Recording(id: 'r_mixed',
+          name: 'mixed',
+          source: RecordingSource.cloud,
+          videoTimestamp: DateTime.now().toUtc(),
+          uploadStatus: UploadStatus.pending));
+
+      expect(out.length, 1);
+      expect(out.first.sensorId, 's_ok');
+      verify(() =>
+          s3Service.downloadToFile(
+          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+          .called(2);
+    });
+
+    test('exportVideoFolder cloud downloads video and all sensors', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final s1 = GetSensorResponse(sensorId: 'a',
+          sensorIndex: 0,
+          name: 'A',
+          url: 'https://x/a.json',
+          type: SensorType.accelerometer,
+          timestamp: DateTime.now().toUtc());
+      final s2 = GetSensorResponse(sensorId: 'b',
+          sensorIndex: 1,
+          name: 'B',
+          url: 'https://x/b.json',
+          type: SensorType.accelerometer,
+          timestamp: DateTime.now().toUtc());
+
+      final getRec = GetRecordingResponse(recordingId: 'rex',
+          name: 'rex',
+          videoUrl: 'https://x/video.mp4',
+          videoTimestamp: DateTime.now().toUtc(),
+          sensors: [s1, s2],
+          projectId: null,
+          userId: 'u',
+          uploadStatus: UploadStatus.pending);
+
+      when(() => recordingService.getRecording('rex')).thenAnswer((
+          _) async => getRec);
+
+      final tmp = await Directory.systemTemp.createTemp('exp_multi');
+      when(() => localMedia.recordingExportDir('rex')).thenReturn(tmp);
+      when(() => localMedia.videoExportFile('rex')).thenReturn(
+          File('${tmp.path}/video.mp4'));
+      when(() => localMedia.sensorExportFile('rex', 'A')).thenReturn(
+          File('${tmp.path}/A.json'));
+      when(() => localMedia.sensorExportFile('rex', 'B')).thenReturn(
+          File('${tmp.path}/B.json'));
+
+      when(() =>
+          s3Service.downloadToFile(
+          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+          .thenAnswer((inv) async {
+        final path = inv.namedArguments[#filePath] as String;
+        final f = File(path);
+        await f.create(recursive: true);
+        await f.writeAsString('ok');
+      });
+
+      await controller.exportVideoFolder(Recording(id: 'rex',
+          name: 'rex',
+          source: RecordingSource.cloud,
+          videoTimestamp: DateTime.now().toUtc(),
+          uploadStatus: UploadStatus.pending));
+
+      expect(File('${tmp.path}/video.mp4').existsSync(), isTrue);
+      expect(File('${tmp.path}/A.json').existsSync(), isTrue);
+      expect(File('${tmp.path}/B.json').existsSync(), isTrue);
+
+      await tmp.delete(recursive: true);
+    });
+
+    test(
+        'deleteRecording local rethrows when deleteLocalRecording throws', () async {
+      final container = buildContainer(
+          authState: const AuthState(mode: AuthMode.guest));
+      final controller = container.read(playbackControllerProvider);
+
+      final rec = Recording.local(id: 'r_throw_local',
+          name: 't',
+          localVideoPath: '/tmp/x.mp4',
+          videoTimestamp: DateTime.now().toUtc(),
+          projectId: 'p');
+
+      when(() =>
+          recordingService.deleteLocalRecording(
+          projectId: any(named: 'projectId'), recordingId: 'r_throw_local'))
+          .thenThrow(Exception('boom'));
+
+      expect(() async => await controller.deleteRecording(rec),
+          throwsA(isA<Exception>()));
     });
   });
 
 
   group('SensorChartController - unit', () {
     test('SensorChartController.windowFor returns correct samples', () {
-      final samples = List.generate(5, (i) => SensorSample(timestampMs: i * 30, x: i.toDouble(), y: i.toDouble(), z: i.toDouble()));
+      final samples = List.generate(5, (i) =>
+          SensorSample(timestampMs: i * 30,
+          x: i.toDouble(),
+          y: i.toDouble(),
+          z: i.toDouble()));
       final ctrl = SensorChartController(samples: samples, windowMs: 100);
 
       final window = ctrl.windowFor(150);
@@ -801,7 +1407,8 @@ void main() {
       expect(cd.rx[2], closeTo(100.0, 1e-6));
     });
 
-    test('Integration: window + ChartData produces monotonic timestamps and bounded values', () {
+    test(
+        'Integration: window + ChartData produces monotonic timestamps and bounded values', () {
       final samples = List.generate(11, (i) {
         final t = i * 30;
         final v = t / 100.0;
@@ -811,20 +1418,34 @@ void main() {
       final ctrl = SensorChartController(samples: samples, windowMs: 120);
       final currentMs = 210;
       final windowSamples = ctrl.windowFor(currentMs);
-      expect(windowSamples.every((s) => s.timestampMs >= 90 && s.timestampMs <= 210), isTrue);
+      expect(windowSamples.every((s) =>
+      s.timestampMs >= 90 &&
+          s.timestampMs <= 210), isTrue);
 
       final cd = ChartData.fromSamples(windowSamples, 90, 210, stepMs: 30);
       expect(cd.resTs, [90, 120, 150, 180, 210]);
       expect(cd.rx.length, cd.resTs.length);
-      final minOriginal = windowSamples.map((s) => s.x).reduce((a, b) => a < b ? a : b);
-      final maxOriginal = windowSamples.map((s) => s.x).reduce((a, b) => a > b ? a : b);
+      final minOriginal = windowSamples.map((s) => s.x).reduce((a, b) =>
+      a < b
+          ? a
+          : b);
+      final maxOriginal = windowSamples.map((s) => s.x).reduce((a, b) =>
+      a > b
+          ? a
+          : b);
       expect(cd.minV, lessThan(maxOriginal + 1e-6));
       expect(cd.maxV, greaterThan(minOriginal - 1e-6));
     });
   });
 
-  testWidgets('SensorChartPlayer updates _currentMs when controller position changes', (tester) async {
-    final samples = List.generate(11, (i) => SensorSample(timestampMs: i * 30, x: i.toDouble(), y: i.toDouble(), z: i.toDouble()));
+  testWidgets(
+      'SensorChartPlayer updates _currentMs when controller position changes', (
+      tester) async {
+    final samples = List.generate(11, (i) =>
+        SensorSample(timestampMs: i * 30,
+        x: i.toDouble(),
+        y: i.toDouble(),
+        z: i.toDouble()));
 
     final vc = MockVideoController();
     VideoPlayerValue currentValue = VideoPlayerValue(
@@ -845,17 +1466,23 @@ void main() {
     });
     when(() => vc.value).thenAnswer((_) => currentValue);
 
-    await tester.pumpWidget(MaterialApp(home: SensorChartPlayer(controller: vc, samples: samples)));
+    await tester.pumpWidget(
+        MaterialApp(home: SensorChartPlayer(controller: vc, samples: samples)));
     await tester.pumpAndSettle();
 
-    final cpFinder = find.descendant(of: find.byType(SensorChartPlayer), matching: find.byType(CustomPaint));
+    final cpFinder = find.descendant(
+        of: find.byType(SensorChartPlayer), matching: find.byType(CustomPaint));
     expect(cpFinder, findsOneWidget);
     final cp = tester.widget<CustomPaint>(cpFinder);
     final painterInitial = cp.painter as dynamic;
     expect(painterInitial.endMs, 0);
 
-    currentValue = VideoPlayerValue(duration: const Duration(seconds: 60), position: const Duration(milliseconds: 150), isInitialized: true, isPlaying: true);
-    for (final l in listeners) l();
+    currentValue = VideoPlayerValue(duration: const Duration(seconds: 60),
+        position: const Duration(milliseconds: 150),
+        isInitialized: true,
+        isPlaying: true);
+    for (final l in listeners)
+      l();
     await tester.pumpAndSettle();
 
     final cp2 = tester.widget<CustomPaint>(cpFinder);
@@ -874,15 +1501,28 @@ void main() {
   });
 
   testWidgets('SensorChartPlayer removes listener on dispose', (tester) async {
-    final samples = List.generate(5, (i) => SensorSample(timestampMs: i * 30, x: i.toDouble(), y: i.toDouble(), z: i.toDouble()));
+    final samples = List.generate(5, (i) =>
+        SensorSample(timestampMs: i * 30,
+        x: i.toDouble(),
+        y: i.toDouble(),
+        z: i.toDouble()));
     final vc = MockVideoController();
-    VideoPlayerValue currentValue = VideoPlayerValue(duration: const Duration(seconds: 60), position: Duration.zero, isInitialized: true, isPlaying: false);
+    VideoPlayerValue currentValue = VideoPlayerValue(
+        duration: const Duration(seconds: 60),
+        position: Duration.zero,
+        isInitialized: true,
+        isPlaying: false);
     final listeners = <VoidCallback>[];
-    when(() => vc.addListener(any())).thenAnswer((inv) { listeners.add(inv.positionalArguments[0] as VoidCallback); });
-    when(() => vc.removeListener(any())).thenAnswer((inv) { listeners.remove(inv.positionalArguments[0] as VoidCallback); });
+    when(() => vc.addListener(any())).thenAnswer((inv) {
+      listeners.add(inv.positionalArguments[0] as VoidCallback);
+    });
+    when(() => vc.removeListener(any())).thenAnswer((inv) {
+      listeners.remove(inv.positionalArguments[0] as VoidCallback);
+    });
     when(() => vc.value).thenAnswer((_) => currentValue);
 
-    await tester.pumpWidget(MaterialApp(home: SensorChartPlayer(controller: vc, samples: samples)));
+    await tester.pumpWidget(
+        MaterialApp(home: SensorChartPlayer(controller: vc, samples: samples)));
     await tester.pumpAndSettle();
 
     expect(listeners.isNotEmpty, isTrue);
@@ -893,31 +1533,58 @@ void main() {
     expect(listeners.isEmpty, isTrue);
   });
 
-  testWidgets('SensorChartPlayer reflects final position after rapid updates', (tester) async {
-    final samples = List.generate(20, (i) => SensorSample(timestampMs: i * 30, x: i.toDouble(), y: i.toDouble(), z: i.toDouble()));
+  testWidgets('SensorChartPlayer reflects final position after rapid updates', (
+      tester) async {
+    final samples = List.generate(20, (i) =>
+        SensorSample(timestampMs: i * 30,
+        x: i.toDouble(),
+        y: i.toDouble(),
+        z: i.toDouble()));
     final vc = MockVideoController();
-    VideoPlayerValue currentValue = VideoPlayerValue(duration: const Duration(seconds: 60), position: Duration.zero, isInitialized: true, isPlaying: false);
+    VideoPlayerValue currentValue = VideoPlayerValue(
+        duration: const Duration(seconds: 60),
+        position: Duration.zero,
+        isInitialized: true,
+        isPlaying: false);
     final listeners = <VoidCallback>[];
-    when(() => vc.addListener(any())).thenAnswer((inv) { listeners.add(inv.positionalArguments[0] as VoidCallback); });
-    when(() => vc.removeListener(any())).thenAnswer((inv) { listeners.remove(inv.positionalArguments[0] as VoidCallback); });
+    when(() => vc.addListener(any())).thenAnswer((inv) {
+      listeners.add(inv.positionalArguments[0] as VoidCallback);
+    });
+    when(() => vc.removeListener(any())).thenAnswer((inv) {
+      listeners.remove(inv.positionalArguments[0] as VoidCallback);
+    });
     when(() => vc.value).thenAnswer((_) => currentValue);
 
-    await tester.pumpWidget(MaterialApp(home: SensorChartPlayer(controller: vc, samples: samples)));
+    await tester.pumpWidget(
+        MaterialApp(home: SensorChartPlayer(controller: vc, samples: samples)));
     await tester.pumpAndSettle();
 
-    final cpFinder = find.descendant(of: find.byType(SensorChartPlayer), matching: find.byType(CustomPaint));
+    final cpFinder = find.descendant(
+        of: find.byType(SensorChartPlayer), matching: find.byType(CustomPaint));
     expect(cpFinder, findsOneWidget);
 
-    currentValue = VideoPlayerValue(duration: const Duration(seconds: 60), position: const Duration(milliseconds: 100), isInitialized: true, isPlaying: true);
-    for (final l in List<VoidCallback>.from(listeners)) l();
+    currentValue = VideoPlayerValue(duration: const Duration(seconds: 60),
+        position: const Duration(milliseconds: 100),
+        isInitialized: true,
+        isPlaying: true);
+    for (final l in List<VoidCallback>.from(listeners))
+      l();
     await tester.pump();
 
-    currentValue = VideoPlayerValue(duration: const Duration(seconds: 60), position: const Duration(milliseconds: 200), isInitialized: true, isPlaying: true);
-    for (final l in List<VoidCallback>.from(listeners)) l();
+    currentValue = VideoPlayerValue(duration: const Duration(seconds: 60),
+        position: const Duration(milliseconds: 200),
+        isInitialized: true,
+        isPlaying: true);
+    for (final l in List<VoidCallback>.from(listeners))
+      l();
     await tester.pump();
 
-    currentValue = VideoPlayerValue(duration: const Duration(seconds: 60), position: const Duration(milliseconds: 300), isInitialized: true, isPlaying: true);
-    for (final l in List<VoidCallback>.from(listeners)) l();
+    currentValue = VideoPlayerValue(duration: const Duration(seconds: 60),
+        position: const Duration(milliseconds: 300),
+        isInitialized: true,
+        isPlaying: true);
+    for (final l in List<VoidCallback>.from(listeners))
+      l();
     await tester.pumpAndSettle();
 
     final cpFinal = tester.widget<CustomPaint>(cpFinder);
@@ -925,4 +1592,100 @@ void main() {
     expect(painterFinal.endMs, 300);
   });
 
+  group('videoPlayerControllerProvider smoke - test-hook', () {
+    test(
+        'videoPlayerControllerProvider returns network controller when skip-init hook enabled', () async {
+      videoPlayerControllerSkipInitForTests = true;
+
+      final localMedia = MockLocalMedia();
+      final recordingService = MockRecordingService();
+      final s3Service = MockS3Service();
+      final uploadController = MockUploadController();
+      final projectService = MockProjectService();
+
+      final container = ProviderContainer(overrides: [
+        localMediaProvider.overrideWithValue(localMedia),
+        recordingServiceProvider.overrideWithValue(recordingService),
+        s3ServiceProvider.overrideWithValue(s3Service),
+        projectServiceProvider.overrideWithValue(projectService),
+        sessionProvider.overrideWith((ref) =>
+            TestSessionNotifier(const AuthState(mode: AuthMode.guest))),
+        uploadControllerProvider.overrideWithValue(uploadController),
+        homeStateProvider.overrideWith((ref) => HomeStateNotifier()),
+      ]);
+
+      addTearDown(container.dispose);
+
+      final rec = Recording(
+        id: 'vc_test',
+        name: 'vc_test',
+        source: RecordingSource.cloud,
+        videoTimestamp: DateTime.now().toUtc(),
+        uploadStatus: UploadStatus.pending,
+      );
+
+      final getRec = GetRecordingResponse(
+        recordingId: 'vc_test',
+        name: 'vc_test',
+        videoUrl: 'https://example.com/test.mp4',
+        videoTimestamp: DateTime.now().toUtc(),
+        sensors: [],
+        projectId: null,
+        userId: 'u',
+        uploadStatus: UploadStatus.pending,
+      );
+
+      when(() => recordingService.getRecording('vc_test')).thenAnswer((
+          _) async => getRec);
+
+      final vc = await container.read(
+          videoPlayerControllerProvider(rec).future);
+      expect(vc, isA<VideoPlayerController>());
+
+      videoPlayerControllerSkipInitForTests = false;
+    });
+
+    test(
+        'videoPlayerControllerProvider returns file controller for local recording when skip-init hook enabled', () async {
+      videoPlayerControllerSkipInitForTests = true;
+
+      final localMedia = MockLocalMedia();
+      final recordingService = MockRecordingService();
+      final s3Service = MockS3Service();
+      final uploadController = MockUploadController();
+      final projectService = MockProjectService();
+
+      final container = ProviderContainer(overrides: [
+        localMediaProvider.overrideWithValue(localMedia),
+        recordingServiceProvider.overrideWithValue(recordingService),
+        s3ServiceProvider.overrideWithValue(s3Service),
+        projectServiceProvider.overrideWithValue(projectService),
+        sessionProvider.overrideWith((ref) =>
+            TestSessionNotifier(const AuthState(mode: AuthMode.guest))),
+        uploadControllerProvider.overrideWithValue(uploadController),
+        homeStateProvider.overrideWith((ref) => HomeStateNotifier()),
+      ]);
+
+      addTearDown(container.dispose);
+
+      final tmp = await Directory.systemTemp.createTemp('vlocal_test');
+      final file = File('${tmp.path}/vlocal.mp4');
+      await file.writeAsString('x');
+
+      final rec = Recording.local(
+        id: 'vl_test',
+        name: 'vl_test',
+        localVideoPath: file.path,
+        videoTimestamp: DateTime.now().toUtc(),
+        projectId: null,
+      );
+
+      final vc = await container.read(
+          videoPlayerControllerProvider(rec).future);
+      expect(vc, isA<VideoPlayerController>());
+
+      await tmp.delete(recursive: true);
+      videoPlayerControllerSkipInitForTests = false;
+    });
+  });
 }
