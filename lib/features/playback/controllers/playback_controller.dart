@@ -77,16 +77,18 @@ final videoPlayerControllerProvider = FutureProvider.autoDispose
         final playbackController = ref.read(playbackControllerProvider);
         sensors.addAll(await playbackController.getAvailableSensors(recording));
 
-        ref
-            .read(playbackProvider(recording.id).notifier)
-            .setAvailableSensors(sensors);
+        if (ref.mounted) {
+          ref.read(playbackProvider(recording.id).notifier).setAvailableSensors(sensors);
+        }
       } catch (e) {
         if (kDebugMode) {
           debugPrint(
             "Sensor initialization failed for recordingId=${recording.id}, error=$e",
           );
         }
-        emitToast(ref, ToastEvent.error("Sensors could not be initialized"));
+        if (ref.mounted) {
+          emitToast(ref, ToastEvent.error("Sensors could not be initialized"));
+        }
       }
 
       await vc.play();

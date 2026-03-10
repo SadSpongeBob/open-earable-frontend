@@ -215,7 +215,7 @@ void main() {
 
       when(() =>
           s3Service.downloadToFile(
-          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+              getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .thenAnswer((inv) async {
         final path = inv.namedArguments[#filePath] as String;
         final f = File(path);
@@ -233,7 +233,7 @@ void main() {
 
       verify(() =>
           s3Service.downloadToFile(
-          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+              getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .called(getRec.sensors.length);
     });
     test('renameRecording allowed when user is project Owner', () async {
@@ -308,14 +308,14 @@ void main() {
 
       when(() =>
           recordingService.renameCloud(
-          recordingId: 'r_editor', name: 'newEditorName')).thenAnswer((
+              recordingId: 'r_editor', name: 'newEditorName')).thenAnswer((
           _) async => Future.value());
 
       await controller.renameRecording(rec, 'newEditorName');
 
       verify(() =>
           recordingService.renameCloud(
-          recordingId: 'r_editor', name: 'newEditorName')).called(1);
+              recordingId: 'r_editor', name: 'newEditorName')).called(1);
     });
 
     test('renameRecording denied when user is project Viewer', () async {
@@ -350,8 +350,8 @@ void main() {
 
       verifyNever(() =>
           recordingService.renameCloud(
-          recordingId: any(named: 'recordingId'),
-          name: any(named: 'name')));
+              recordingId: any(named: 'recordingId'),
+              name: any(named: 'name')));
     });
 
     test(
@@ -380,8 +380,8 @@ void main() {
 
       verifyNever(() =>
           recordingService.renameCloud(
-          recordingId: any(named: 'recordingId'),
-          name: any(named: 'name')));
+              recordingId: any(named: 'recordingId'),
+              name: any(named: 'name')));
     });
 
     test('deleteRecording removes recording from home state', () async {
@@ -406,8 +406,8 @@ void main() {
 
       when(() =>
           recordingService.deleteLocalRecording(
-          projectId: any(named: 'projectId'),
-          recordingId: any(named: 'recordingId')))
+              projectId: any(named: 'projectId'),
+              recordingId: any(named: 'recordingId')))
           .thenAnswer((_) async => true);
 
       await controller.deleteRecording(rec);
@@ -456,7 +456,7 @@ void main() {
 
       when(() =>
           s3Service.downloadToFile(
-          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+              getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .thenAnswer((inv) async {
         final path = inv.namedArguments[#filePath] as String;
         final f = File(path);
@@ -472,7 +472,7 @@ void main() {
       expect(sensors, isNotEmpty);
       verify(() =>
           s3Service.downloadToFile(
-          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+              getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .called(1);
     });
 
@@ -562,7 +562,7 @@ void main() {
 
       when(() =>
           recordingService.renameCloud(
-          recordingId: 'rc_rename_cloud', name: 'newName')).thenAnswer((
+              recordingId: 'rc_rename_cloud', name: 'newName')).thenAnswer((
           _) async => Future.value());
 
       await controller.renameRecording(rec, 'newName');
@@ -575,7 +575,7 @@ void main() {
           .name, 'newName');
       verify(() =>
           recordingService.renameCloud(
-          recordingId: 'rc_rename_cloud', name: 'newName')).called(1);
+              recordingId: 'rc_rename_cloud', name: 'newName')).called(1);
     });
 
     test(
@@ -624,7 +624,7 @@ void main() {
 
       when(() =>
           s3Service.downloadToFile(
-          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+              getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .thenAnswer((inv) async {
         final path = inv.namedArguments[#filePath] as String;
         final f = File(path);
@@ -757,7 +757,7 @@ void main() {
 
       when(() =>
           s3Service.downloadToFile(
-          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+              getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .thenThrow(Exception('download failed'));
 
       when(() => localMedia.recordingTempSensors(any())).thenReturn(
@@ -788,8 +788,8 @@ void main() {
       await controller.renameRecording(rec, 'new');
       verifyNever(() =>
           recordingService.renameCloud(
-          recordingId: any(named: 'recordingId'),
-          name: any(named: 'name')));
+              recordingId: any(named: 'recordingId'),
+              name: any(named: 'name')));
     });
 
     test('exportVideoFolder local copies non-meta files', () async {
@@ -874,7 +874,7 @@ void main() {
 
       when(() =>
           s3Service.downloadToFile(
-          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+              getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .thenThrow(DioException(requestOptions: RequestOptions(path: '/')));
 
       final tmp = await Directory.systemTemp.createTemp('exp_err');
@@ -905,9 +905,9 @@ void main() {
 
       when(() =>
           recordingService.renameLocal(
-          projectId: LocalMedia.defaultProjectId,
-          recordingId: 'rdef',
-          newName: 'nn'))
+              projectId: LocalMedia.defaultProjectId,
+              recordingId: 'rdef',
+              newName: 'nn'))
           .thenAnswer((_) async => Future.value());
 
       final home = container.read(homeStateProvider.notifier);
@@ -917,9 +917,9 @@ void main() {
 
       verify(() =>
           recordingService.renameLocal(
-          projectId: LocalMedia.defaultProjectId,
-          recordingId: 'rdef',
-          newName: 'nn')).called(1);
+              projectId: LocalMedia.defaultProjectId,
+              recordingId: 'rdef',
+              newName: 'nn')).called(1);
     });
 
     test(
@@ -1020,8 +1020,8 @@ void main() {
       expect(toasts.first, isA<ToastEvent>());
       verifyNever(() =>
           recordingService.renameCloud(
-          recordingId: any(named: 'recordingId'),
-          name: any(named: 'name')));
+              recordingId: any(named: 'recordingId'),
+              name: any(named: 'name')));
     });
 
     test('renameRecording allowed when user is guest', () async {
@@ -1040,14 +1040,14 @@ void main() {
 
       when(() =>
           recordingService.renameCloud(
-          recordingId: 'r_guest_rename', name: 'gnew')).thenAnswer((
+              recordingId: 'r_guest_rename', name: 'gnew')).thenAnswer((
           _) async {});
 
       await controller.renameRecording(rec, 'gnew');
 
       verify(() =>
           recordingService.renameCloud(
-          recordingId: 'r_guest_rename', name: 'gnew')).called(1);
+              recordingId: 'r_guest_rename', name: 'gnew')).called(1);
     });
 
     test('deleteRecording allowed when user is guest', () async {
@@ -1094,7 +1094,7 @@ void main() {
 
       when(() =>
           recordingService.getLocalRecordingSensors(
-          LocalMedia.defaultProjectId, 'rlocal_def'))
+              LocalMedia.defaultProjectId, 'rlocal_def'))
           .thenAnswer((_) async =>
       [
         Sensor(sensorIndex: 0,
@@ -1144,7 +1144,7 @@ void main() {
 
       when(() =>
           s3Service.downloadToFile(
-          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+              getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .thenAnswer((inv) async {
         final path = inv.namedArguments[#filePath] as String;
         final f = File(path);
@@ -1186,8 +1186,8 @@ void main() {
 
       verifyNever(() =>
           recordingService.renameCloud(
-          recordingId: any(named: 'recordingId'),
-          name: any(named: 'name')));
+              recordingId: any(named: 'recordingId'),
+              name: any(named: 'name')));
     });
 
     test(
@@ -1216,8 +1216,8 @@ void main() {
 
       verifyNever(() =>
           recordingService.renameCloud(
-          recordingId: any(named: 'recordingId'),
-          name: any(named: 'name')));
+              recordingId: any(named: 'recordingId'),
+              name: any(named: 'name')));
     });
 
     test(
@@ -1260,7 +1260,7 @@ void main() {
       // success for s_ok, fail for s_bad
       when(() =>
           s3Service.downloadToFile(
-          getUrl: sensor1.url, filePath: any(named: 'filePath'))).thenAnswer((
+              getUrl: sensor1.url, filePath: any(named: 'filePath'))).thenAnswer((
           inv) async {
         final path = inv.namedArguments[#filePath] as String;
         final f = File(path);
@@ -1269,7 +1269,7 @@ void main() {
       });
       when(() =>
           s3Service.downloadToFile(
-          getUrl: sensor2.url, filePath: any(named: 'filePath'))).thenThrow(
+              getUrl: sensor2.url, filePath: any(named: 'filePath'))).thenThrow(
           Exception('download bad'));
 
       when(() => localMedia.recordingTempSensors('s_ok')).thenReturn(
@@ -1287,7 +1287,7 @@ void main() {
       expect(out.first.sensorId, 's_ok');
       verify(() =>
           s3Service.downloadToFile(
-          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+              getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .called(2);
     });
 
@@ -1332,7 +1332,7 @@ void main() {
 
       when(() =>
           s3Service.downloadToFile(
-          getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
+              getUrl: any(named: 'getUrl'), filePath: any(named: 'filePath')))
           .thenAnswer((inv) async {
         final path = inv.namedArguments[#filePath] as String;
         final f = File(path);
@@ -1367,7 +1367,7 @@ void main() {
 
       when(() =>
           recordingService.deleteLocalRecording(
-          projectId: any(named: 'projectId'), recordingId: 'r_throw_local'))
+              projectId: any(named: 'projectId'), recordingId: 'r_throw_local'))
           .thenThrow(Exception('boom'));
 
       expect(() async => await controller.deleteRecording(rec),
@@ -1380,9 +1380,9 @@ void main() {
     test('SensorChartController.windowFor returns correct samples', () {
       final samples = List.generate(5, (i) =>
           SensorSample(timestampMs: i * 30,
-          x: i.toDouble(),
-          y: i.toDouble(),
-          z: i.toDouble()));
+              x: i.toDouble(),
+              y: i.toDouble(),
+              z: i.toDouble()));
       final ctrl = SensorChartController(samples: samples, windowMs: 100);
 
       final window = ctrl.windowFor(150);
@@ -1440,9 +1440,9 @@ void main() {
       tester) async {
     final samples = List.generate(11, (i) =>
         SensorSample(timestampMs: i * 30,
-        x: i.toDouble(),
-        y: i.toDouble(),
-        z: i.toDouble()));
+            x: i.toDouble(),
+            y: i.toDouble(),
+            z: i.toDouble()));
 
     final vc = MockVideoController();
     VideoPlayerValue currentValue = VideoPlayerValue(
@@ -1500,9 +1500,9 @@ void main() {
   testWidgets('SensorChartPlayer removes listener on dispose', (tester) async {
     final samples = List.generate(5, (i) =>
         SensorSample(timestampMs: i * 30,
-        x: i.toDouble(),
-        y: i.toDouble(),
-        z: i.toDouble()));
+            x: i.toDouble(),
+            y: i.toDouble(),
+            z: i.toDouble()));
     final vc = MockVideoController();
     VideoPlayerValue currentValue = VideoPlayerValue(
         duration: const Duration(seconds: 60),
@@ -1534,9 +1534,9 @@ void main() {
       tester) async {
     final samples = List.generate(20, (i) =>
         SensorSample(timestampMs: i * 30,
-        x: i.toDouble(),
-        y: i.toDouble(),
-        z: i.toDouble()));
+            x: i.toDouble(),
+            y: i.toDouble(),
+            z: i.toDouble()));
     final vc = MockVideoController();
     VideoPlayerValue currentValue = VideoPlayerValue(
         duration: const Duration(seconds: 60),
@@ -1929,4 +1929,3 @@ void main() {
   });
 
 }
-
