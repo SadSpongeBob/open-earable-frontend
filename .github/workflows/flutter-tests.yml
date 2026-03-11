@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -23,7 +24,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run tests with coverage
+      # UNIT TESTS
+      - name: Run unit tests with coverage
         run: flutter test --coverage
 
       - name: Install lcov
@@ -37,3 +39,7 @@ jobs:
         with:
           name: coverage-report
           path: coverage/html
+
+      # INTEGRATION TESTS
+      - name: Run integration tests
+        run: flutter test integration_test
