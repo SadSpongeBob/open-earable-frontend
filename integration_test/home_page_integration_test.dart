@@ -13,7 +13,6 @@ import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
 import 'package:openearable/api/models/recording/upload_recording_response.dart';
-
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
@@ -25,6 +24,25 @@ import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/features/home/widgets/project_grid.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:go_router/go_router.dart';
+
+class _SettingsStub extends StatelessWidget {
+  const _SettingsStub();
+  @override
+  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('SettingsPage')));
+}
+
+class _SensorStub extends StatelessWidget {
+  const _SensorStub();
+  @override
+  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('SensorPage')));
+}
+
+class _RecordingStub extends StatelessWidget {
+  const _RecordingStub();
+  @override
+  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('RecordingPage')));
+}
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -190,6 +208,381 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Recording A'), findsOneWidget);
     });
+
+    group('Project Management', () {
+      testWidgets('add project', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _MutableFakeProjectService([
+          ProjectMetadata.local('p1', 'Project One'),
+        ]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: null));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
+        await tester.pumpAndSettle();
+
+        final addTile = find.byWidgetPredicate((w) {
+          if (w is Image && w.image is AssetImage) {
+            return (w.image as AssetImage).assetName.contains('add_folder');
+          }
+          return false;
+        });
+        expect(addTile, findsOneWidget);
+        await tester.tap(addTile);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Add Project'), findsOneWidget);
+
+        await tester.enterText(find.byType(TextField), 'New Project');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Add'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('New Project'), findsOneWidget);
+      });
+
+      testWidgets('enter project selection mode with long press', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _MutableFakeProjectService([
+          ProjectMetadata.local('p1', 'Project One'),
+          ProjectMetadata.local('p2', 'Project Two'),
+        ]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: null));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
+        await tester.pumpAndSettle();
+
+        final projectTile = find.text('Project One');
+        expect(projectTile, findsOneWidget);
+        await tester.longPress(projectTile);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Done'), findsOneWidget);
+      });
+
+      testWidgets('exit project selection mode with done', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _MutableFakeProjectService([
+          ProjectMetadata.local('p1', 'Project One'),
+        ]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: 'http://example.com/photo.jpg'));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
+        await tester.pumpAndSettle();
+
+        await tester.longPress(find.text('Project One'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Done'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Done'), findsNothing);
+      });
+
+      testWidgets('duplicate selected project', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _MutableFakeProjectService([
+          ProjectMetadata.local('p1', 'Project One'),
+        ]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: 'http://example.com/photo.jpg'));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
+        await tester.pumpAndSettle();
+
+        await tester.longPress(find.text('Project One'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Duplicate'));
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Copy'), findsWidgets);
+      });
+
+      testWidgets('rename selected project', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _MutableFakeProjectService([
+          ProjectMetadata.local('p1', 'Project One'),
+        ]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: 'http://example.com/photo.jpg'));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
+        await tester.pumpAndSettle();
+
+        await tester.longPress(find.text('Project One'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Rename'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(TextField), 'Renamed');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Ok'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Renamed'), findsOneWidget);
+      });
+
+      testWidgets('delete selected project', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _MutableFakeProjectService([
+          ProjectMetadata.local('p1', 'Project One'),
+          ProjectMetadata.local('p2', 'Project Two'),
+        ]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: 'http://example.com/photo.jpg'));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
+        await tester.pumpAndSettle();
+
+        await tester.longPress(find.text('Project One'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Delete'));
+        await tester.pumpAndSettle();
+        expect(find.text('Delete'), findsWidgets); // dialog Delete button
+        await tester.tap(find.text('Delete').last);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Project One'), findsNothing);
+      });
+    });
+
+    group('Navigation / Right Bar', () {
+      testWidgets('tap settings button navigates to settings', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _FakeProjectService([ProjectMetadata.local('p1', 'Project A')]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: null));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        final router = GoRouter(routes: [
+          GoRoute(path: '/', builder: (c, s) => ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage()))),
+          GoRoute(path: '/settings', builder: (c, s) => const _SettingsStub()),
+        ]);
+
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.pumpAndSettle();
+
+        final settingsBtn = find.bySemanticsLabel('Settings');
+        expect(settingsBtn, findsOneWidget);
+        await tester.tap(settingsBtn);
+        await tester.pumpAndSettle();
+
+        expect(find.text('SettingsPage'), findsOneWidget);
+      });
+
+      testWidgets('tap sensor/wavesound button navigates to sensor page', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _FakeProjectService([ProjectMetadata.local('p1', 'Project A')]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: null));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        final router = GoRouter(routes: [
+          GoRoute(path: '/', builder: (c, s) => ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage()))),
+          GoRoute(path: '/settings', builder: (c, s) => const _SettingsStub()),
+          GoRoute(path: '/sensor', builder: (c, s) => const _SensorStub()),
+        ]);
+
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.pumpAndSettle();
+
+        final sensorBtn = find.bySemanticsLabel('Show sensor chart overlay');
+        expect(sensorBtn, findsOneWidget);
+        await tester.tap(sensorBtn);
+        await tester.pumpAndSettle();
+
+        expect(find.text('SensorPage'), findsOneWidget);
+      });
+
+      testWidgets('tap shutter button navigates to recording page', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _FakeProjectService([ProjectMetadata.local('p1', 'Project A')]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: null));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        final router = GoRouter(routes: [
+          GoRoute(path: '/', builder: (c, s) => ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage()))),
+          GoRoute(path: '/settings', builder: (c, s) => const _SettingsStub()),
+          GoRoute(path: '/sensor', builder: (c, s) => const _SensorStub()),
+          GoRoute(path: '/recording', builder: (c, s) => const _RecordingStub()),
+        ]);
+
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.pumpAndSettle();
+
+        final recordingBtn = find.bySemanticsLabel('Record');
+        expect(recordingBtn, findsOneWidget);
+        await tester.tap(recordingBtn);
+        await tester.pumpAndSettle();
+
+        expect(find.text('RecordingPage'), findsOneWidget);
+      });
+    });
+
+    group('Bluetooth Popup', () {
+      testWidgets('bluetooth popup opens', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _FakeProjectService([ProjectMetadata.local('p1', 'Project A')]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: null));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
+        await tester.pumpAndSettle();
+
+        final btBtn = find.bySemanticsLabel('Connect Bluetooth device');
+        expect(btBtn, findsOneWidget);
+        await tester.tap(btBtn);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Devices'), findsOneWidget);
+      });
+
+      testWidgets('bluetooth popup closes', (tester) async {
+        final localMedia = LocalMedia(tmp, tmp, tmp);
+        final projectService = _FakeProjectService([ProjectMetadata.local('p1', 'Project A')]);
+        final recordingService = _FakeRecordingService();
+
+        final authNotifier = SessionNotifier();
+        authNotifier.setAuthenticated(User(userId: 'u1', name: 'T', emailAddress: 't@t.com', photoUrl: null));
+        final homeStateNotifier = HomeStateNotifier();
+
+        final overrides = <Override>[
+          localMediaProvider.overrideWithValue(localMedia),
+          projectServiceProvider.overrideWithValue(projectService),
+          recordingServiceProvider.overrideWithValue(recordingService),
+          sessionProvider.overrideWith((ref) => authNotifier),
+          homeStateProvider.overrideWith((ref) => homeStateNotifier),
+        ];
+
+        await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
+        await tester.pumpAndSettle();
+
+        final btBtn = find.bySemanticsLabel('Connect Bluetooth device');
+        expect(btBtn, findsOneWidget);
+        await tester.tap(btBtn);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Devices'), findsOneWidget);
+
+        await tester.tapAt(const Offset(0, 0));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Devices'), findsNothing);
+      });
+    });
   });
 }
 
@@ -307,4 +700,36 @@ class _FakeRecordingService implements RecordingService {
   @override
   Future<void> updateLocalUploadStatus(String projectId, String recordingId, UploadStatus uploadStatus) => throw UnimplementedError();
 
+}
+
+class _MutableFakeProjectService extends _FakeProjectService {
+  _MutableFakeProjectService(super.projects);
+
+  @override
+  Future<ProjectMetadata> createLocalProject({required String name, String? id}) async {
+    final newId = id ?? 'p${_projects.length + 1}';
+    final meta = ProjectMetadata.local(newId, name);
+    _projects.add(meta);
+    return meta;
+  }
+
+  @override
+  Future<void> updateLocalProject({required ProjectMetadata project, String? oldProjectId}) async {
+    final index = _projects.indexWhere((p) => p.id == (oldProjectId ?? project.id));
+    if (index >= 0) {
+      _projects[index] = project;
+    } else {
+      _projects.add(project);
+    }
+  }
+
+  @override
+  Future<void> deleteLocalProject(String projectId) async {
+    _projects.removeWhere((p) => p.id == projectId);
+  }
+
+  @override
+  Future<void> duplicateLocalProject(String projectId, ProjectMetadata newProject) async {
+    _projects.add(newProject);
+  }
 }
