@@ -159,9 +159,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        "Don’t have an account yet? ",
-                        style: AppTextStyles.footerRegular,
+                      Flexible( // <-- makes Text respect available width
+                        child: Text(
+                          "Don’t have an account yet? ",
+                          style: AppTextStyles.footerRegular,
+                          softWrap: true,
+                        ),
                       ),
                       GestureDetector(
                         onTap: () => context.go(Routes.signup),
