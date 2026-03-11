@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-//import 'package:integration_test/integration_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:openearable/api/services/auth/auth_service.dart';
@@ -14,16 +14,13 @@ import 'package:dio/dio.dart';
 class MockAuthService extends Mock implements AuthService {}
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Request Reset Page Integration Tests', () {
+  group('Request Reset Password Page Integration Tests', () {
     late MockAuthService mockAuthService;
 
     // Helper to setup the app and navigate to the page
     Future<void> setupRequestResetPage(WidgetTester tester) async {
-      final dpi = tester.view.devicePixelRatio;
-        tester.view.physicalSize = Size(2560 * dpi, 1800 * dpi);
-
       mockAuthService = MockAuthService();
 
       await tester.pumpWidget(

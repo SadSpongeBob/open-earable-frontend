@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-//import 'package:integration_test/integration_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:go_router/go_router.dart';
@@ -15,19 +15,16 @@ class MockAuthService extends Mock implements AuthService {}
 class MockGoRouter extends Mock implements GoRouter {}
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Reset Password Page Integration Tests', () {
-    late MockAuthService mockAuth;
+    late MockAuthService mockAuthService;
     late MockGoRouter mockRouter;
     const testToken = "fake-auth-token-123";
 
     // Helper to start the app directly on the Reset Password page
     Future<void> setupResetPasswordPage(WidgetTester tester) async {
-      final dpi = tester.view.devicePixelRatio;
-        tester.view.physicalSize = Size(2560 * dpi, 1800 * dpi);
-
-      mockAuth = MockAuthService();
+      mockAuthService = MockAuthService();
       mockRouter = MockGoRouter();
 
       when(() => mockRouter.go(any())).thenReturn(null);
@@ -35,7 +32,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            authServiceProvider.overrideWithValue(mockAuth),
+            authServiceProvider.overrideWithValue(mockAuthService),
           ],
           child: MaterialApp(
             home: InheritedGoRouter(
@@ -54,7 +51,7 @@ void main() {
 
       expect(find.text('Reset Password'), findsOneWidget);
 
-      when(() => mockAuth.updatePassword(
+      when(() => mockAuthService.updatePassword(
             password: any(named: 'password'),
             authToken: any(named: 'authToken'),
           )).thenAnswer((_) async => Response(requestOptions: RequestOptions(), statusCode: 200));
@@ -129,7 +126,7 @@ void main() {
     testWidgets('Shows error toast on API failure', (WidgetTester tester) async {
       await setupResetPasswordPage(tester);
 
-      when(() => mockAuth.updatePassword(
+      when(() => mockAuthService.updatePassword(
             password: any(named: 'password'),
             authToken: any(named: 'authToken'),
           )).thenThrow(DioException(
