@@ -119,9 +119,12 @@ class _SensorPageState extends State<SensorPage> {
                                     Icons.arrow_back_ios_new_rounded,
                                     size: 17,
                                   ),
-                                  const Text(
-                                    " Go Back",
-                                    style: AppTextStyles.footerMedium,
+                                  Flexible(
+                                    child: Text(
+                                      " Go Back",
+                                      style: AppTextStyles.footerMedium,
+                                      softWrap: true,
+                                    ),
                                   ),
                                 ],
                               ),
