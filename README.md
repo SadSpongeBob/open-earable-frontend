@@ -167,7 +167,7 @@ The project includes **unit/widget tests** and **integration tests**.
 
 ### Unit & Widget Tests
 
-Run unit and widget tests with:
+Run unit tests with:
 
 ```bash
    flutter test
@@ -175,10 +175,18 @@ Run unit and widget tests with:
 
 ### Integration Tests
 Integration tests are located in the `integration_test/` directory.
-Run integration tests with:
+Before running them, make sure a device or emulator is connected and running.
+
+Run all integration tests with:
 
 ```bash
    flutter test integration_test/
+```
+
+Run a specific integration test with:
+
+```bash
+   flutter test integration_test/your_test_file.dart
 ```
 
 ---
