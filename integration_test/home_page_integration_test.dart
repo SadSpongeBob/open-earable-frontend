@@ -24,6 +24,7 @@ import 'package:openearable/api/models/project/project_metadata.dart';
 import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/features/home/widgets/project_grid.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,8 @@ void main() {
     late Directory tmp;
 
     setUpAll(() async {
+      IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+      dotenv.testLoad(fileInput: 'API_BASE_URL=http://167.71.50.147:8080\n');
       tmp = await Directory.systemTemp.createTemp('openearable_integration');
     });
 
@@ -43,16 +46,13 @@ void main() {
 
     testWidgets('home page loads', (tester) async {
       final localMedia = LocalMedia(tmp, tmp, tmp);
-
-      // A minimal fake project service returning two cloud projects.
       final projectService = _FakeProjectService([
-        ProjectMetadata.cloud('p1', 'Project 1'),
-        ProjectMetadata.cloud('p2', 'Project 2'),
+        ProjectMetadata.local('select1', 'Select Me'),
+        ProjectMetadata.local('select2', 'Other'),
       ]);
 
       final recordingService = _FakeRecordingService();
 
-      // Use an authenticated session so cloud projects are loaded.
       final authNotifier = SessionNotifier();
       authNotifier.setAuthenticated(User(
         userId: 'u1',
@@ -78,10 +78,8 @@ void main() {
         ),
       );
 
-      // Wait for HomePage.init to run and projects to load.
       await tester.pumpAndSettle();
 
-      // Verify that the main home regions exist.
       expect(find.byType(HomePage), findsOneWidget);
       expect(find.byType(RecordingGrid), findsOneWidget);
       expect(find.byType(ProjectBar), findsOneWidget);
@@ -124,7 +122,6 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // The project names should be visible in the project grid.
       expect(find.text('Project A'), findsOneWidget);
       expect(find.text('Project B'), findsOneWidget);
     });
@@ -133,11 +130,30 @@ void main() {
       final localMedia = LocalMedia(tmp, tmp, tmp);
 
       final projectService = _FakeProjectService([
-        ProjectMetadata.cloud('select1', 'Select Me'),
-        ProjectMetadata.cloud('select2', 'Other'),
+        ProjectMetadata.local('select1', 'Select Me'),
+        ProjectMetadata.local('select2', 'Other'),
       ]);
 
-      final recordingService = _FakeRecordingService();
+      final recordingService = _FakeRecordingService({
+        'select1': [
+          Recording.local(
+            id: 'r1',
+            name: 'Recording A',
+            localVideoPath: '${tmp.path}/r1.mp4',
+            videoTimestamp: DateTime.now(),
+            projectId: 'select1',
+          ),
+        ],
+        'select2': [
+          Recording.local(
+            id: 'r2',
+            name: 'Recording B',
+            localVideoPath: '${tmp.path}/r2.mp4',
+            videoTimestamp: DateTime.now(),
+            projectId: 'select2',
+          ),
+        ],
+      });
 
       final authNotifier = SessionNotifier();
       authNotifier.setAuthenticated(User(
@@ -147,7 +163,6 @@ void main() {
         photoUrl: null,
       ));
 
-      // Use a dedicated HomeStateNotifier instance so test can observe changes.
       final homeStateNotifier = HomeStateNotifier();
 
       final overrides = <Override>[
@@ -166,34 +181,45 @@ void main() {
       );
 
       await tester.pumpAndSettle();
+      final textFinder = find.text('Select Me');
+      expect(textFinder, findsOneWidget);
+      final tileInkWell = find.ancestor(of: textFinder, matching: find.byType(InkWell));
+      expect(tileInkWell, findsOneWidget);
+      await tester.tap(tileInkWell);
 
-      // Tap the 'Select Me' project tile.
-      final tileFinder = find.text('Select Me');
-      expect(tileFinder, findsOneWidget);
-
-      await tester.tap(tileFinder);
       await tester.pumpAndSettle();
-
-      // The HomeStateNotifier should reflect the open project id.
-      expect(homeStateNotifier.state.openProjectId, equals('select1'));
+      expect(find.text('Recording A'), findsOneWidget);
     });
   });
 }
 
-// Minimal fake implementations for services used by HomeController.
 class _FakeProjectService implements ProjectService {
   final List<ProjectMetadata> _projects;
 
   _FakeProjectService(this._projects);
 
   @override
-  Future<List<ProjectMetadata>> getProjects() async => List.of(_projects);
+  Future<List<ProjectMetadata>> getProjects() async =>
+      _projects.where((p) => p.projectSource == ProjectSource.cloud).toList();
 
   @override
-  Future<List<ProjectMetadata>> getLocalProjects() async => [];
+  Future<List<ProjectMetadata>> getLocalProjects() async =>
+      _projects.where((p) => p.projectSource == ProjectSource.local).toList();
 
   @override
-  Future<Project> getProject(String projectId) => throw UnimplementedError();
+  Future<Project> getProject(String projectId) async {
+    final meta = _projects.firstWhere((p) => p.id == projectId, orElse: () {
+      throw Exception('Project not found: $projectId');
+    });
+
+    return Project(
+      id: meta.id,
+      name: meta.name,
+      ownerId: 'u1',
+      recordings: const [],
+      users: const [],
+    );
+  }
 
   @override
   Future<Project> createProject(String name) => throw UnimplementedError();
@@ -240,8 +266,14 @@ class _FakeProjectService implements ProjectService {
 }
 
 class _FakeRecordingService implements RecordingService {
+  final Map<String, List<Recording>> _localRecordings;
+
+  _FakeRecordingService([Map<String, List<Recording>> initialRecordings = const {}])
+      : _localRecordings = Map.from(initialRecordings);
+
   @override
-  Future<List<Recording>> getLocalProjectRecordings(String projectId) async => [];
+  Future<List<Recording>> getLocalProjectRecordings(String projectId) async =>
+      List.of(_localRecordings[projectId] ?? []);
 
   @override
   Future<Recording> completeUpload(String recordingId) => throw UnimplementedError();
