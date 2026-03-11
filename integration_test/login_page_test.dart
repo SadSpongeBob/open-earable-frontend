@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:go_router/go_router.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openearable/features/auth/controllers/auth_controller.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
@@ -26,9 +27,6 @@ class MockLocalMedia extends Mock implements LocalMedia {}
 class MockUserService extends Mock implements UserService {}
 
 Future<MockAuthController> mockAuth(WidgetTester tester) async {
-  final dpi = tester.view.devicePixelRatio;
-      tester.view.physicalSize = Size(2560 * dpi, 1800 * dpi);
-
   final mockAuthController = MockAuthController();
   final mockProjectService = MockProjectService();
   final mockRecordingService = MockRecordingService();
@@ -58,9 +56,9 @@ Future<MockAuthController> mockAuth(WidgetTester tester) async {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Login Page Widget Tests', () {
+  group('Login Page Integration Tests', () {
 
     Finder emailField() => find.widgetWithText(TextField, 'Email Address');
     Finder passwordField() => find.widgetWithText(TextField, 'Password');
