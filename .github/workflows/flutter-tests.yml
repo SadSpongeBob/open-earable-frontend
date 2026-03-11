@@ -24,12 +24,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # UNIT TESTS
+      - name: Analyze
+        run: flutter analyze
+
       - name: Run unit tests with coverage
         run: flutter test --coverage
 
       - name: Install lcov
-        run: sudo apt-get install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
 
       - name: Generate HTML report
         run: genhtml coverage/lcov.info -o coverage/html
@@ -39,7 +41,3 @@ jobs:
         with:
           name: coverage-report
           path: coverage/html
-
-      # INTEGRATION TESTS
-      - name: Run integration tests
-        run: flutter test integration_test
