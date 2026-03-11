@@ -23,6 +23,8 @@ import 'package:openearable/api/services/recording/recording_service.dart';
 import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/features/home/pages/home_page.dart';
 import 'package:openearable/features/home/state/home_provider.dart';
+import 'package:openearable/features/home/state/wearables_provider.dart';
+import 'package:openearable/features/home/state/wearables_state.dart';
 import 'package:openearable/features/home/widgets/project_grid.dart';
 import 'package:openearable/features/home/widgets/recording_grid.dart';
 
@@ -83,6 +85,7 @@ Future<void> _pumpHome(
         homeStateProvider.overrideWith(
               (ref) => homeStateNotifier ?? HomeStateNotifier(),
         ),
+        wearablesProvider.overrideWith((ref) => _NoScanWearablesProvider()),
       ],
       child: const MaterialApp(home: HomePage()),
     ),
@@ -114,6 +117,7 @@ Future<void> _pumpRouterHome(
     recordingServiceProvider.overrideWithValue(recordingService),
     sessionProvider.overrideWith((ref) => authNotifier),
     homeStateProvider.overrideWith((ref) => HomeStateNotifier()),
+    wearablesProvider.overrideWith((ref) => _NoScanWearablesProvider()),
   ];
 
   final router = GoRouter(
@@ -525,7 +529,13 @@ void main() {
     });
   });
 }
+class _NoScanWearablesProvider extends WearablesProvider {
+  @override
+  void startScanning() {}
 
+  @override
+  void stopScanning() {}
+}
 class _FakeProjectService implements ProjectService {
   final List<ProjectMetadata> _projects;
 
