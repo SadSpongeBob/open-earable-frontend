@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
+import 'package:integration_test/integration_test.dart';
 
 import 'package:openearable/features/sensors/pages/sensor_page.dart';
 import 'package:openearable/app/routing/routes.dart';
@@ -30,7 +31,7 @@ class MockSensorConfigurationStorage extends Mock implements SensorConfiguration
 class FakeWearable extends Fake implements Wearable {}
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() {
     registerFallbackValue(FakeWearable());
