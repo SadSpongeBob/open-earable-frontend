@@ -173,8 +173,6 @@ Run unit and widget tests with:
    flutter test
 ```
 
----
-
 ### Integration Tests
 Integration tests are located in the `integration_test/` directory.
 Run integration tests with:
