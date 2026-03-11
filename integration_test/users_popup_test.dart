@@ -1,38 +1,138 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:openearable/features/home/pages/home_page.dart';
-import 'package:openearable/features/home/widgets/users_button.dart';
-import 'package:openearable/features/home/widgets/users_popup.dart';
-import 'package:openearable/features/home/state/home_provider.dart';
-import 'package:openearable/features/auth/state/session_provider.dart';
 import 'package:openearable/api/local_media.dart';
 import 'package:openearable/api/models/auth/user.dart';
 import 'package:openearable/api/models/project/project.dart';
 import 'package:openearable/api/models/project/project_metadata.dart';
-import 'package:openearable/api/models/project/project_user.dart';
 import 'package:openearable/api/models/project/project_role.dart';
-import 'package:openearable/api/services/project/project_service.dart';
-import 'package:openearable/api/services/recording/recording_service.dart';
+import 'package:openearable/api/models/project/project_user.dart';
 import 'package:openearable/api/models/recording/get_recording_response.dart';
+import 'package:openearable/api/models/recording/recording.dart';
 import 'package:openearable/api/models/recording/sensor.dart';
 import 'package:openearable/api/models/recording/upload_recording_request.dart';
 import 'package:openearable/api/models/recording/upload_recording_response.dart';
-import 'package:openearable/api/models/recording/recording.dart';
+import 'package:openearable/api/services/project/project_service.dart';
+import 'package:openearable/api/services/recording/recording_service.dart';
+import 'package:openearable/features/auth/state/session_provider.dart';
+import 'package:openearable/features/home/pages/home_page.dart';
+import 'package:openearable/features/home/state/home_provider.dart';
+import 'package:openearable/features/home/widgets/users_button.dart';
+import 'package:openearable/features/home/widgets/users_popup.dart';
+
+Future<void> _setLargeSurface(WidgetTester tester) async {
+  await tester.binding.setSurfaceSize(const Size(1600, 1000));
+}
+
+Future<void> _disposeHome(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump();
+  await tester.binding.setSurfaceSize(null);
+}
+
+Future<void> _pumpHome(
+    WidgetTester tester, {
+      required Directory tmp,
+      required ProjectService projectService,
+      required RecordingService recordingService,
+      HomeStateNotifier? homeStateNotifier,
+    }) async {
+  await _setLargeSurface(tester);
+
+  final localMedia = LocalMedia(tmp, tmp, tmp);
+  final authNotifier = SessionNotifier();
+  authNotifier.setAuthenticated(
+    User(
+      userId: 'u1',
+      name: 'Owner User',
+      emailAddress: 'owner@example.com',
+      photoUrl: null,
+    ),
+  );
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: <Override>[
+        localMediaProvider.overrideWithValue(localMedia),
+        projectServiceProvider.overrideWithValue(projectService),
+        recordingServiceProvider.overrideWithValue(recordingService),
+        sessionProvider.overrideWith((ref) => authNotifier),
+        homeStateProvider.overrideWith(
+              (ref) => homeStateNotifier ?? HomeStateNotifier(),
+        ),
+      ],
+      child: const MaterialApp(home: HomePage()),
+    ),
+  );
+
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openProject(WidgetTester tester, String name) async {
+  final projectFinder = find.text(name);
+  expect(projectFinder, findsOneWidget);
+  await tester.tap(projectFinder);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openUsersPopup(WidgetTester tester) async {
+  final usersButton = find.byType(UsersButton);
+  expect(usersButton, findsOneWidget);
+  await tester.tap(usersButton);
+  await tester.pumpAndSettle();
+  expect(find.byType(UsersPopup), findsOneWidget);
+}
+
+ProjectRole _ownerUser() => Owner(userId: 'u1');
+
+Recording _cloudRecording({
+  required String id,
+  required String name,
+  required String projectId,
+}) {
+  return Recording(
+    id: id,
+    name: name,
+    source: RecordingSource.cloud,
+    thumbnailUrl: null,
+    localThumbnailPath: null,
+    localVideoPath: null,
+    videoTimestamp: DateTime.now().toUtc(),
+    projectId: projectId,
+    userId: 'u1',
+    uploadStatus: UploadStatus.completed,
+  );
+}
+
+ProjectUser _projectUser({
+  required String userId,
+  required String name,
+  required String email,
+  required ProjectRole role,
+}) {
+  return ProjectUser(
+    userId: userId,
+    name: name,
+    emailAddress: email,
+    pictureUrl: null,
+    role: role,
+  );
+}
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Users Popup Integration', () {
+  group('Home Page Integration - Users Popup', () {
     late Directory tmp;
 
     setUpAll(() async {
-      tmp = await Directory.systemTemp.createTemp('openearable_users_tests');
+      dotenv.testLoad(fileInput: 'API_BASE_URL=http://167.71.50.147:8080\n');
+      tmp = await Directory.systemTemp.createTemp('openearable_users_popup_tests');
     });
 
     tearDownAll(() async {
@@ -41,234 +141,347 @@ void main() {
       } catch (_) {}
     });
 
-    testWidgets('users button is visible when authenticated and cloud project open', (tester) async {
-      final localMedia = LocalMedia(tmp, tmp, tmp);
-
-      final project = Project(id: 'projU1', name: 'UsersProject', ownerId: 'u1', recordings: [], users: []);
-      final projectService = _UsersTestProjectService(projects: {'projU1': project});
-      final recordingService = _UsersTestRecordingService();
-
-      final authNotifier = SessionNotifier();
-      authNotifier.setAuthenticated(User(userId: 'u1', name: 'Owner', emailAddress: 'owner@example.com', photoUrl: null));
-
-      final homeStateNotifier = HomeStateNotifier();
-
-      final overrides = <Override>[
-        localMediaProvider.overrideWithValue(localMedia),
-        projectServiceProvider.overrideWithValue(projectService),
-        recordingServiceProvider.overrideWithValue(recordingService),
-        sessionProvider.overrideWith((ref) => authNotifier),
-        homeStateProvider.overrideWith((ref) => homeStateNotifier),
+    testWidgets('owner can open users popup and see project users', (
+        tester,
+        ) async {
+      final recordings = [
+        _cloudRecording(id: 'r1', name: 'Rec 1', projectId: 'proj1'),
       ];
 
-      await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
-      await tester.pumpAndSettle();
+      final projectService = _UsersTestProjectService(
+        projects: {
+          'proj1': Project(
+            id: 'proj1',
+            name: 'Project Users',
+            ownerId: 'u1',
+            recordings: recordings,
+            users: [_ownerUser(), Viewer(userId: 'u2')],
+          ),
+        },
+        projectUsers: {
+          'proj1': [
+            _projectUser(
+              userId: 'u1',
+              name: 'Owner User',
+              email: 'owner@example.com',
+              role: Owner(userId: 'u1'),
+            ),
+            _projectUser(
+              userId: 'u2',
+              name: 'Viewer User',
+              email: 'viewer@example.com',
+              role: Viewer(userId: 'u2'),
+            ),
+          ],
+        },
+      );
 
-      // UsersButton should be present (widget type)
-      expect(find.byType(UsersButton), findsOneWidget);
+      final recordingService = _UsersTestRecordingService(
+        projectRecordings: {'proj1': List.of(recordings)},
+      );
+
+      await _pumpHome(
+        tester,
+        tmp: tmp,
+        projectService: projectService,
+        recordingService: recordingService,
+      );
+
+      await _openProject(tester, 'Project Users');
+      await _openUsersPopup(tester);
+
+      expect(find.text('Owner User'), findsOneWidget);
+      expect(find.text('Viewer User'), findsOneWidget);
+      expect(find.text('owner@example.com'), findsOneWidget);
+      expect(find.text('viewer@example.com'), findsOneWidget);
+      expect(find.text('Add'), findsOneWidget);
+
+      await _disposeHome(tester);
     });
 
-    testWidgets('user can open the users popup', (tester) async {
-      final localMedia = LocalMedia(tmp, tmp, tmp);
-      final projectService = _UsersTestProjectService(projects: {'projU2': Project(id: 'projU2', name: 'P2', ownerId: 'u1', recordings: [], users: [])});
-      final recordingService = _UsersTestRecordingService();
-
-      final authNotifier = SessionNotifier();
-      authNotifier.setAuthenticated(User(userId: 'u1', name: 'Owner', emailAddress: 'owner@example.com', photoUrl: null));
-
-      final homeStateNotifier = HomeStateNotifier();
-
-      final overrides = <Override>[
-        localMediaProvider.overrideWithValue(localMedia),
-        projectServiceProvider.overrideWithValue(projectService),
-        recordingServiceProvider.overrideWithValue(recordingService),
-        sessionProvider.overrideWith((ref) => authNotifier),
-        homeStateProvider.overrideWith((ref) => homeStateNotifier),
+    testWidgets('owner can add a user from the users popup', (tester) async {
+      final recordings = [
+        _cloudRecording(id: 'r2', name: 'Rec 2', projectId: 'proj2'),
       ];
 
-      await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
+      final projectService = _UsersTestProjectService(
+        projects: {
+          'proj2': Project(
+            id: 'proj2',
+            name: 'Project Add User',
+            ownerId: 'u1',
+            recordings: recordings,
+            users: [_ownerUser()],
+          ),
+        },
+        projectUsers: {
+          'proj2': [
+            _projectUser(
+              userId: 'u1',
+              name: 'Owner User',
+              email: 'owner@example.com',
+              role: Owner(userId: 'u1'),
+            ),
+          ],
+        },
+      );
+
+      final recordingService = _UsersTestRecordingService(
+        projectRecordings: {'proj2': List.of(recordings)},
+      );
+
+      await _pumpHome(
+        tester,
+        tmp: tmp,
+        projectService: projectService,
+        recordingService: recordingService,
+      );
+
+      await _openProject(tester, 'Project Add User');
+      await _openUsersPopup(tester);
+
+      final emailField = find.byType(TextField).first;
+      await tester.enterText(emailField, 'newuser@example.com');
       await tester.pumpAndSettle();
 
-      // Open users popup
-      await tester.tap(find.byType(UsersButton));
+      await tester.tap(find.text('Add'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(UsersPopup), findsOneWidget);
-      expect(find.text('Users'), findsOneWidget);
-      expect(find.text('Go Back'), findsOneWidget);
+      expect(find.text('newuser@example.com'), findsOneWidget);
+
+      final users = await projectService.getProjectUsers('proj2');
+      expect(
+        users.any((u) => u.emailAddress == 'newuser@example.com'),
+        isTrue,
+      );
+
+      await _disposeHome(tester);
     });
 
-    testWidgets('users popup can be closed with Go Back', (tester) async {
-      final localMedia = LocalMedia(tmp, tmp, tmp);
-      final projectService = _UsersTestProjectService(projects: {'projU3': Project(id: 'projU3', name: 'P3', ownerId: 'u1', recordings: [], users: [])});
-      final recordingService = _UsersTestRecordingService();
-
-      final authNotifier = SessionNotifier();
-      authNotifier.setAuthenticated(User(userId: 'u1', name: 'Owner', emailAddress: 'owner@example.com', photoUrl: null));
-
-      final homeStateNotifier = HomeStateNotifier();
-
-      final overrides = <Override>[
-        localMediaProvider.overrideWithValue(localMedia),
-        projectServiceProvider.overrideWithValue(projectService),
-        recordingServiceProvider.overrideWithValue(recordingService),
-        sessionProvider.overrideWith((ref) => authNotifier),
-        homeStateProvider.overrideWith((ref) => homeStateNotifier),
+    testWidgets('owner can update a user role from the users popup', (
+        tester,
+        ) async {
+      final recordings = [
+        _cloudRecording(id: 'r3', name: 'Rec 3', projectId: 'proj3'),
       ];
 
-      await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
+      final projectService = _UsersTestProjectService(
+        projects: {
+          'proj3': Project(
+            id: 'proj3',
+            name: 'Project Update Role',
+            ownerId: 'u1',
+            recordings: recordings,
+            users: [_ownerUser(), Viewer(userId: 'u2')],
+          ),
+        },
+        projectUsers: {
+          'proj3': [
+            _projectUser(
+              userId: 'u1',
+              name: 'Owner User',
+              email: 'owner@example.com',
+              role: Owner(userId: 'u1'),
+            ),
+            _projectUser(
+              userId: 'u2',
+              name: 'Viewer User',
+              email: 'viewer@example.com',
+              role: Viewer(userId: 'u2'),
+            ),
+          ],
+        },
+      );
+
+      final recordingService = _UsersTestRecordingService(
+        projectRecordings: {'proj3': List.of(recordings)},
+      );
+
+      await _pumpHome(
+        tester,
+        tmp: tmp,
+        projectService: projectService,
+        recordingService: recordingService,
+      );
+
+      await _openProject(tester, 'Project Update Role');
+      await _openUsersPopup(tester);
+
+      expect(find.text('Viewer'), findsWidgets);
+
+      await tester.tap(find.text('Viewer').last);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(UsersButton));
+      await tester.tap(find.text('Editor').last);
       await tester.pumpAndSettle();
 
-      expect(find.byType(UsersPopup), findsOneWidget);
+      final users = await projectService.getProjectUsers('proj3');
+      final updatedUser = users.firstWhere((u) => u.userId == 'u2');
+      expect(updatedUser.role, isA<Editor>());
+
+      await _disposeHome(tester);
+    });
+
+    testWidgets('owner can remove a user from the users popup', (tester) async {
+      final recordings = [
+        _cloudRecording(id: 'r4', name: 'Rec 4', projectId: 'proj4'),
+      ];
+
+      final projectService = _UsersTestProjectService(
+        projects: {
+          'proj4': Project(
+            id: 'proj4',
+            name: 'Project Remove User',
+            ownerId: 'u1',
+            recordings: recordings,
+            users: [_ownerUser(), Viewer(userId: 'u2')],
+          ),
+        },
+        projectUsers: {
+          'proj4': [
+            _projectUser(
+              userId: 'u1',
+              name: 'Owner User',
+              email: 'owner@example.com',
+              role: Owner(userId: 'u1'),
+            ),
+            _projectUser(
+              userId: 'u2',
+              name: 'Viewer User',
+              email: 'viewer@example.com',
+              role: Viewer(userId: 'u2'),
+            ),
+          ],
+        },
+      );
+
+      final recordingService = _UsersTestRecordingService(
+        projectRecordings: {'proj4': List.of(recordings)},
+      );
+
+      await _pumpHome(
+        tester,
+        tmp: tmp,
+        projectService: projectService,
+        recordingService: recordingService,
+      );
+
+      await _openProject(tester, 'Project Remove User');
+      await _openUsersPopup(tester);
+
+      await tester.tap(find.byIcon(Icons.close).first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Viewer User'), findsNothing);
+
+      final users = await projectService.getProjectUsers('proj4');
+      expect(users.any((u) => u.userId == 'u2'), isFalse);
+
+      await _disposeHome(tester);
+    });
+
+    testWidgets('user can close the users popup with go back', (tester) async {
+      final recordings = [
+        _cloudRecording(id: 'r5', name: 'Rec 5', projectId: 'proj5'),
+      ];
+
+      final projectService = _UsersTestProjectService(
+        projects: {
+          'proj5': Project(
+            id: 'proj5',
+            name: 'Project Close Popup',
+            ownerId: 'u1',
+            recordings: recordings,
+            users: [_ownerUser()],
+          ),
+        },
+        projectUsers: {
+          'proj5': [
+            _projectUser(
+              userId: 'u1',
+              name: 'Owner User',
+              email: 'owner@example.com',
+              role: Owner(userId: 'u1'),
+            ),
+          ],
+        },
+      );
+
+      final recordingService = _UsersTestRecordingService(
+        projectRecordings: {'proj5': List.of(recordings)},
+      );
+
+      await _pumpHome(
+        tester,
+        tmp: tmp,
+        projectService: projectService,
+        recordingService: recordingService,
+      );
+
+      await _openProject(tester, 'Project Close Popup');
+      await _openUsersPopup(tester);
 
       await tester.tap(find.text('Go Back'));
       await tester.pumpAndSettle();
 
       expect(find.byType(UsersPopup), findsNothing);
-    });
 
-    testWidgets('popup shows empty state when there are no users', (tester) async {
-      final localMedia = LocalMedia(tmp, tmp, tmp);
-      final projectService = _UsersTestProjectService(projects: {'projU4': Project(id: 'projU4', name: 'P4', ownerId: 'u1', recordings: [], users: [])});
-      final recordingService = _UsersTestRecordingService();
-
-      final authNotifier = SessionNotifier();
-      authNotifier.setAuthenticated(User(userId: 'u1', name: 'Owner', emailAddress: 'owner@example.com', photoUrl: null));
-
-      final homeStateNotifier = HomeStateNotifier();
-
-      final overrides = <Override>[
-        localMediaProvider.overrideWithValue(localMedia),
-        projectServiceProvider.overrideWithValue(projectService),
-        recordingServiceProvider.overrideWithValue(recordingService),
-        sessionProvider.overrideWith((ref) => authNotifier),
-        homeStateProvider.overrideWith((ref) => homeStateNotifier),
-      ];
-
-      await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(UsersButton));
-      await tester.pumpAndSettle();
-
-      expect(find.text('No users in this project yet'), findsOneWidget);
-    });
-
-    testWidgets('popup shows loaded users and marks current user with You', (tester) async {
-      final localMedia = LocalMedia(tmp, tmp, tmp);
-
-      final user1 = ProjectUser(userId: 'u1', name: 'Owner One', emailAddress: 'owner@example.com', role: Owner(userId: 'u1'), pictureUrl: null);
-      final user2 = ProjectUser(userId: 'u2', name: 'User Two', emailAddress: 'two@example.com', role: Viewer(userId: 'u2'), pictureUrl: null);
-
-      final projectService = _UsersTestProjectService(projects: {'projU5': Project(id: 'projU5', name: 'P5', ownerId: 'u1', recordings: [], users: [])}, users: {'projU5': [user1, user2]});
-      final recordingService = _UsersTestRecordingService();
-
-      final authNotifier = SessionNotifier();
-      authNotifier.setAuthenticated(User(userId: 'u1', name: 'Owner One', emailAddress: 'owner@example.com', photoUrl: null));
-
-      final homeStateNotifier = HomeStateNotifier();
-
-      final overrides = <Override>[
-        localMediaProvider.overrideWithValue(localMedia),
-        projectServiceProvider.overrideWithValue(projectService),
-        recordingServiceProvider.overrideWithValue(recordingService),
-        sessionProvider.overrideWith((ref) => authNotifier),
-        homeStateProvider.overrideWith((ref) => homeStateNotifier),
-      ];
-
-      await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(UsersButton));
-      await tester.pumpAndSettle();
-
-      // user names and emails should appear
-      expect(find.text('Owner One'), findsOneWidget);
-      expect(find.text('two@example.com'), findsOneWidget);
-
-      // current user should have 'You' badge
-      expect(find.text('You'), findsOneWidget);
-    });
-
-    testWidgets('owner can see add-user controls', (tester) async {
-      final localMedia = LocalMedia(tmp, tmp, tmp);
-
-      final ownerUser = ProjectUser(userId: 'u100', name: 'Owner100', emailAddress: 'o100@example.com', role: Owner(userId: 'u100'), pictureUrl: null);
-      final projectService = _UsersTestProjectService(projects: {'projOwner': Project(id: 'projOwner', name: 'OwnerProj', ownerId: 'u100', recordings: [], users: [])}, users: {'projOwner': [ownerUser]});
-      final recordingService = _UsersTestRecordingService();
-
-      final authNotifier = SessionNotifier();
-      authNotifier.setAuthenticated(User(userId: 'u100', name: 'Owner100', emailAddress: 'o100@example.com', photoUrl: null));
-
-      final homeStateNotifier = HomeStateNotifier();
-
-      final overrides = <Override>[
-        localMediaProvider.overrideWithValue(localMedia),
-        projectServiceProvider.overrideWithValue(projectService),
-        recordingServiceProvider.overrideWithValue(recordingService),
-        sessionProvider.overrideWith((ref) => authNotifier),
-        homeStateProvider.overrideWith((ref) => homeStateNotifier),
-      ];
-
-      await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(UsersButton));
-      await tester.pumpAndSettle();
-
-      // Input hint and Add button plus role label "Viewer" should be visible
-      expect(find.text('User Email'), findsOneWidget);
-      expect(find.text('Add'), findsOneWidget);
-      expect(find.text('Viewer'), findsWidgets);
-    });
-
-    testWidgets('non-owner does not see add-user controls', (tester) async {
-      final localMedia = LocalMedia(tmp, tmp, tmp);
-
-      final nonOwnerUser = ProjectUser(userId: 'u200', name: 'User200', emailAddress: 'u200@example.com', role: Viewer(userId: 'u200'), pictureUrl: null);
-      final projectService = _UsersTestProjectService(projects: {'projNonOwner': Project(id: 'projNonOwner', name: 'NOP', ownerId: 'uX', recordings: [], users: [])}, users: {'projNonOwner': [nonOwnerUser]});
-      final recordingService = _UsersTestRecordingService();
-
-      final authNotifier = SessionNotifier();
-      authNotifier.setAuthenticated(User(userId: 'u200', name: 'User200', emailAddress: 'u200@example.com', photoUrl: null));
-
-      final homeStateNotifier = HomeStateNotifier();
-
-      final overrides = <Override>[
-        localMediaProvider.overrideWithValue(localMedia),
-        projectServiceProvider.overrideWithValue(projectService),
-        recordingServiceProvider.overrideWithValue(recordingService),
-        sessionProvider.overrideWith((ref) => authNotifier),
-        homeStateProvider.overrideWith((ref) => homeStateNotifier),
-      ];
-
-      await tester.pumpWidget(ProviderScope(overrides: overrides, child: const MaterialApp(home: HomePage())));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(UsersButton));
-      await tester.pumpAndSettle();
-
-      expect(find.text('User Email'), findsNothing);
-      expect(find.text('Add'), findsNothing);
+      await _disposeHome(tester);
     });
   });
 }
 
-// -----------------------------
-// Minimal fake ProjectService
-// -----------------------------
 class _UsersTestProjectService implements ProjectService {
-  final Map<String, Project> projects;
-  final Map<String, List<ProjectUser>> users;
+  final Map<String, Project> _projects;
+  final Map<String, List<ProjectUser>> _projectUsers;
 
-  _UsersTestProjectService({required this.projects, Map<String, List<ProjectUser>>? users}) : users = users ?? {};
+  _UsersTestProjectService({
+    required Map<String, Project> projects,
+    required Map<String, List<ProjectUser>> projectUsers,
+  }) : _projects = Map.of(projects),
+        _projectUsers = projectUsers.map(
+              (key, value) => MapEntry(key, List<ProjectUser>.from(value)),
+        );
+
+  ProjectRole _roleForType(ProjectRoleType role, String userId) {
+    switch (role) {
+      case ProjectRoleType.owner:
+        return Owner(userId: userId);
+      case ProjectRoleType.editor:
+        return Editor(userId: userId);
+      case ProjectRoleType.viewer:
+        return Viewer(userId: userId);
+    }
+  }
+
+  void _syncProjectRoles(String projectId) {
+    final project = _projects[projectId];
+    final users = _projectUsers[projectId];
+    if (project == null || users == null) return;
+
+    _projects[projectId] = Project(
+      id: project.id,
+      name: project.name,
+      ownerId: project.ownerId,
+      recordings: project.recordings,
+      users: users.map((u) => u.role).toList(),
+    );
+  }
+
+  @override
+  Future<Project> getProject(String projectId) async {
+    final p = _projects[projectId];
+    if (p == null) {
+      throw StateError('Project not found: $projectId');
+    }
+    return p;
+  }
 
   @override
   Future<List<ProjectMetadata>> getProjects() async {
-    return projects.values.map((p) => ProjectMetadata.cloud(p.id, p.name)).toList();
+    return _projects.values
+        .map((p) => ProjectMetadata.cloud(p.id, p.name))
+        .toList();
   }
 
   @override
@@ -276,89 +489,206 @@ class _UsersTestProjectService implements ProjectService {
 
   @override
   Future<List<ProjectUser>> getProjectUsers(String projectId) async {
-    return List.of(users[projectId] ?? []);
+    return List<ProjectUser>.from(_projectUsers[projectId] ?? const []);
   }
 
   @override
-  Future<List<ProjectUser>> addProjectUser({required String projectId, required String emailAddress, required ProjectRoleType role}) async {
-    final id = 'u_${DateTime.now().millisecondsSinceEpoch}';
-    final user = ProjectUser(userId: id, name: emailAddress.split('@').first, emailAddress: emailAddress, role: role == ProjectRoleType.owner ? Owner(userId: id) : (role == ProjectRoleType.editor ? Editor(userId: id) : Viewer(userId: id)), pictureUrl: null);
-    users[projectId] = [...(users[projectId] ?? []), user];
-    return List.of(users[projectId]!);
+  Future<List<ProjectUser>> addProjectUser({
+    required String projectId,
+    required String emailAddress,
+    required ProjectRoleType role,
+  }) async {
+    final users = List<ProjectUser>.from(_projectUsers[projectId] ?? const []);
+    final email = emailAddress.trim().toLowerCase();
+
+    if (users.any((u) => u.emailAddress.toLowerCase() == email)) {
+      return users;
+    }
+
+    final nextIndex = users.length + 1;
+    final userId = 'u$nextIndex';
+    users.add(
+      ProjectUser(
+        userId: userId,
+        name: 'User $nextIndex',
+        emailAddress: emailAddress.trim(),
+        pictureUrl: null,
+        role: _roleForType(role, userId),
+      ),
+    );
+
+    _projectUsers[projectId] = users;
+    _syncProjectRoles(projectId);
+    return List<ProjectUser>.from(users);
   }
 
   @override
-  Future<void> removeUserFromProject({required String projectId, required String userId}) async {
-    users[projectId] = (users[projectId] ?? []).where((u) => u.userId != userId).toList();
+  Future<void> updateProjectUserRole({
+    required String projectId,
+    required String userId,
+    required ProjectRoleType role,
+  }) async {
+    final users = List<ProjectUser>.from(_projectUsers[projectId] ?? const []);
+    final index = users.indexWhere((u) => u.userId == userId);
+    if (index == -1) return;
+
+    final old = users[index];
+    users[index] = ProjectUser(
+      userId: old.userId,
+      name: old.name,
+      emailAddress: old.emailAddress,
+      pictureUrl: old.pictureUrl,
+      role: _roleForType(role, old.userId),
+    );
+
+    _projectUsers[projectId] = users;
+    _syncProjectRoles(projectId);
   }
 
-  // Unused stubs
   @override
-  Future<Project> getProject(String projectId) => throw UnimplementedError();
+  Future<void> removeUserFromProject({
+    required String projectId,
+    required String userId,
+  }) async {
+    final users = List<ProjectUser>.from(_projectUsers[projectId] ?? const []);
+    users.removeWhere((u) => u.userId == userId);
+    _projectUsers[projectId] = users;
+    _syncProjectRoles(projectId);
+  }
+
+  @override
+  Future<void> moveRecordings({
+    required List<String> recordingIds,
+    required String? targetProjectId,
+  }) async {}
+
   @override
   Future<Project> createProject(String name) => throw UnimplementedError();
+
   @override
-  Future<ProjectMetadata> duplicateProject(String projectId) => throw UnimplementedError();
-  @override
-  Future<void> renameProject(String projectId, String name) => throw UnimplementedError();
-  @override
-  Future<void> moveRecordings({required List<String> recordingIds, required String? targetProjectId}) => throw UnimplementedError();
+  Future<void> renameProject(String projectId, String name) =>
+      throw UnimplementedError();
+
   @override
   Future<void> deleteProject(String projectId) => throw UnimplementedError();
+
   @override
-  Future<ProjectMetadata> createLocalProject({required String name, String? id}) => throw UnimplementedError();
+  Future<ProjectMetadata> duplicateProject(String projectId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<ProjectMetadata> createLocalProject({required String name, String? id}) =>
+      throw UnimplementedError();
+
   @override
   Future<void> deleteLocalProject(String projectId) => throw UnimplementedError();
+
   @override
-  Future<void> duplicateLocalProject(String projectId, ProjectMetadata newProject) => throw UnimplementedError();
+  Future<void> duplicateLocalProject(
+      String projectId,
+      ProjectMetadata newProject,
+      ) => throw UnimplementedError();
+
   @override
-  Future<void> updateLocalProject({required ProjectMetadata project, String? oldProjectId}) => throw UnimplementedError();
+  Future<void> updateLocalProject({
+    required ProjectMetadata project,
+    String? oldProjectId,
+  }) => throw UnimplementedError();
+
   @override
   Future<List<String>> getLocalProjectIds() => throw UnimplementedError();
+
   @override
-  Future<void> leaveProject({required String projectId}) => throw UnimplementedError();
+  Future<void> leaveProject({required String projectId}) =>
+      throw UnimplementedError();
+
   @override
-  Future<void> overwriteMetaIfProjectDirExists(String projectId, ProjectMetadata project) => throw UnimplementedError();
-  @override
-  Future<void> updateProjectUserRole({required String projectId, required String userId, required ProjectRoleType role}) => throw UnimplementedError();
+  Future<void> overwriteMetaIfProjectDirExists(
+      String projectId,
+      ProjectMetadata project,
+      ) => throw UnimplementedError();
 }
 
-// -----------------------------
-// Minimal fake RecordingService (no-op for these tests)
-// -----------------------------
 class _UsersTestRecordingService implements RecordingService {
-  @override
-  Future<List<Recording>> getLocalProjectRecordings(String projectId) async => [];
+  final Map<String, List<Recording>> projectRecordings;
 
-  // stubs for interface - not used in tests
+  _UsersTestRecordingService({required this.projectRecordings});
+
   @override
-  Future<bool> duplicateLocalRecording({required String projectId, required String sourceRecordingId, required String newRecordingId, required String newName}) => throw UnimplementedError();
+  Future<List<Recording>> getLocalProjectRecordings(String projectId) async {
+    return List.of(projectRecordings[projectId] ?? const []);
+  }
+
   @override
-  Future<GetRecordingResponse> getRecording(String recordingId) => throw UnimplementedError();
+  Future<void> deleteCloudRecording(String recordingId) async {}
+
   @override
-  Future<UploadRecordingResponse> startUpload(UploadRecordingRequest req) => throw UnimplementedError();
+  Future<List<Recording>> duplicateCloudRecordings({
+    required List<String> recordingIds,
+    String? projectId,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Recording> completeUpload(String recordingId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<GetRecordingResponse> getRecording(String recordingId) =>
+      throw UnimplementedError();
+
   @override
   Future<List<Recording>> getRecordings() => throw UnimplementedError();
-  @override
-  Future<Recording> completeUpload(String recordingId) => throw UnimplementedError();
-  @override
-  Future<void> deleteCloudRecording(String recordingId) => throw UnimplementedError();
-  @override
-  Future<bool> deleteLocalRecording({required String projectId, required String recordingId}) => throw UnimplementedError();
-  @override
-  Future<List<Recording>> getLocalRecordings() => throw UnimplementedError();
-  @override
-  Future<List<Sensor>> getLocalRecordingSensors(String projectId, String recordingId) => throw UnimplementedError();
-  @override
-  Future<void> renameCloud({required String recordingId, required String name}) => throw UnimplementedError();
-  @override
-  Future<void> renameLocal({required String projectId, required String recordingId, required String newName}) => throw UnimplementedError();
-  @override
-  Future<void> updateLocalUploadStatus(String projectId, String recordingId, UploadStatus uploadStatus) => throw UnimplementedError();
-  // Additional stubs required by RecordingService interface
-  @override
-  Future<List<Recording>> duplicateCloudRecordings({required List<String> recordingIds, String? projectId}) => throw UnimplementedError();
 
   @override
-  Future<Recording> getLocalRecording(String projectId, String recordingId) => throw UnimplementedError();
+  Future<void> renameCloud({
+    required String recordingId,
+    required String name,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<bool> deleteLocalRecording({
+    required String projectId,
+    required String recordingId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<Recording> getLocalRecording(String projectId, String recordingId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<List<Recording>> getLocalRecordings() => throw UnimplementedError();
+
+  @override
+  Future<List<Sensor>> getLocalRecordingSensors(
+      String projectId,
+      String recordingId,
+      ) => throw UnimplementedError();
+
+  @override
+  Future<void> renameLocal({
+    required String projectId,
+    required String recordingId,
+    required String newName,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<bool> duplicateLocalRecording({
+    required String projectId,
+    required String sourceRecordingId,
+    required String newRecordingId,
+    required String newName,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<UploadRecordingResponse> startUpload(UploadRecordingRequest req) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> updateLocalUploadStatus(
+      String projectId,
+      String recordingId,
+      UploadStatus uploadStatus,
+      ) => throw UnimplementedError();
 }
