@@ -8,18 +8,18 @@ import 'package:openearable/api/services/auth/auth_service.dart';
 import 'package:openearable/features/auth/pages/reset_password_page.dart';
 import 'package:openearable/app/widgets/app_button.dart';
 import 'package:openearable/app/routing/routes.dart';
-import 'package:openearable/app/routing/router_provider.dart';
 import 'package:openearable/api/client_dio.dart';
-import 'package:openearable/main.dart' as app;
 import 'package:dio/dio.dart';
 
 class MockAuthService extends Mock implements AuthService {}
+class MockGoRouter extends Mock implements GoRouter {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Reset Password Page Integration Tests', () {
     late MockAuthService mockAuth;
+    late MockGoRouter mockRouter;
     const testToken = "fake-auth-token-123";
 
     // Helper to start the app directly on the Reset Password page
@@ -28,36 +28,31 @@ void main() {
         tester.view.physicalSize = Size(2560 * dpi, 1800 * dpi);
 
       mockAuth = MockAuthService();
+      mockRouter = MockGoRouter();
+
+      when(() => mockRouter.go(any())).thenReturn(null);
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             authServiceProvider.overrideWithValue(mockAuth),
           ],
-          child: const app.OpenEarableApp(),
+          child: MaterialApp(
+            home: InheritedGoRouter(
+              goRouter: mockRouter,
+              child: ResetPasswordPage(authToken: testToken),
+            ),
+          ),
         ),
       );
-
-      await tester.pump();
-
-      final container = ProviderScope.containerOf(tester.element(find.byType(app.OpenEarableApp)));
-      final router = container.read(routerProvider);
-
-      // 3. Navigate using the router instance
-      router.go(
-        Uri(
-          path: Routes.resetPassword, 
-          queryParameters: {'token': testToken}
-        ).toString()
-      );
       
-      // Wait for navigation and allow the "pumpAndSettle" timeout issue to be avoided
-      await tester.pump(const Duration(seconds: 1));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
     }
 
     testWidgets('Successfully resets password and redirects to login', (WidgetTester tester) async {
       await setupResetPasswordPage(tester);
+
+      expect(find.text('Reset Password'), findsOneWidget);
 
       when(() => mockAuth.updatePassword(
             password: any(named: 'password'),
@@ -74,21 +69,20 @@ void main() {
       // Tap Reset button
       await tester.tap(resetButton);
       
-      // Wait for async call and Dialog animation
       await tester.pump(const Duration(milliseconds: 800));
 
       // Verify Dialog
       expect(find.text('Password Reset'), findsOneWidget);
       expect(find.text('Your password has been reset successfully'), findsOneWidget);
 
-      // Tap 'Ok' (Case-sensitive check!)
+      // Tap 'Ok'
       await tester.tap(find.text('Ok'));
       
       // Wait for navigation back to login
       await tester.pump(const Duration(seconds: 1));
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.textContaining('Log into'), findsOneWidget);
+      verify(() => mockRouter.go(Routes.login)).called(1);
     });
 
     testWidgets('Reset button is disabled until password is typed', (WidgetTester tester) async {
@@ -107,13 +101,12 @@ void main() {
     testWidgets('Shows validation error for short password', (WidgetTester tester) async {
       await setupResetPasswordPage(tester);
 
-      await tester.enterText(find.widgetWithText(TextField, 'Password'), '123'); // Too short
+      await tester.enterText(find.widgetWithText(TextField, 'Password'), '123');
       await tester.pump();
 
       await tester.tap(find.widgetWithText(AppButton, 'Reset'));
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Adjust the string to match your Validators.password output (likely 6 or 8)
       expect(find.textContaining('at least'), findsOneWidget);
     });
 
@@ -153,6 +146,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Invalid or expired token'), findsOneWidget);
+
+      await tester.pumpAndSettle(const Duration(seconds: 3));
     });
   });
 }
