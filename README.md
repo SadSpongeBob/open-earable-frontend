@@ -163,9 +163,24 @@ Ensure assets are correctly declared in `pubspec.yaml`
 
 ## Testing
 
-Run widget and unit tests with:
+The project includes **unit/widget tests** and **integration tests**.
+
+### Unit & Widget Tests
+
+Run unit and widget tests with:
+
 ```bash
    flutter test
+```
+
+---
+
+### Integration Tests
+Integration tests are located in the `integration_test/` directory.
+Run integration tests with:
+
+```bash
+   flutter test integration_test/
 ```
 
 ---
