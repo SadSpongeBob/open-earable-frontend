@@ -472,6 +472,7 @@ void main() {
         ],
       );
 
+
       await tester.pumpWidget(MaterialApp.router(routerConfig: goRouter));
 
       await tester.tap(find.text('OpenDialog'));
