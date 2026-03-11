@@ -2,13 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:openearable/app/constants/colors.dart';
 import 'package:openearable/app/theme/text_styles.dart';
 
-/// A tappable button representing "Users".
-///
-/// Calls [onTap] when pressed.
 class UsersButton extends StatelessWidget {
   const UsersButton({super.key, required this.onTap});
 
-  /// Callback triggered when the button is tapped.
   final VoidCallback onTap;
 
   @override
@@ -19,7 +15,7 @@ class UsersButton extends StatelessWidget {
       child: Container(
         width: 103,
         height: 109,
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
         decoration: BoxDecoration(
           color: AppColors.fifty,
           borderRadius: BorderRadius.circular(20),
@@ -32,16 +28,26 @@ class UsersButton extends StatelessWidget {
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/images/user.png',
-              width: 60,
-              height: 60,
-              fit: BoxFit.contain,
+            Flexible(
+              child: Image.asset(
+                'assets/images/user.png',
+                width: 56,
+                height: 56,
+                fit: BoxFit.contain,
+              ),
             ),
-            SizedBox(height: 4),
-            const Text('Users', style: AppTextStyles.footerBold),
+            const SizedBox(height: 2),
+            const Flexible(
+              child: Text(
+                'Users',
+                style: AppTextStyles.footerBold,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
           ],
         ),
       ),
