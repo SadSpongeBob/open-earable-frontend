@@ -50,8 +50,8 @@ Future<void> _pumpHome(
   authNotifier.setAuthenticated(
     User(
       userId: 'u1',
-      name: 'User',
-      emailAddress: 'u@example.com',
+      name: 'Test User',
+      emailAddress: 'test@example.com',
       photoUrl: null,
     ),
   );
@@ -86,6 +86,10 @@ Finder _recordingTextInGrid(String text) {
     of: find.byType(RecordingGrid),
     matching: find.text(text),
   ).first;
+}
+
+ProjectRole _ownerUser() {
+  return Owner(userId: 'u1');
 }
 
 Recording _cloudRecording({
@@ -125,6 +129,7 @@ void main() {
     });
 
     testWidgets('recordings are displayed for the open project', (tester) async {
+      final ownerUser = _ownerUser();
       final recordings = [
         _cloudRecording(id: 'r1', name: 'Rec 1', projectId: 'proj1'),
       ];
@@ -135,7 +140,7 @@ void main() {
           name: 'Project Rec',
           ownerId: 'u1',
           recordings: recordings,
-          users: const [],
+          users: [ownerUser],
         ),
       });
 
@@ -159,44 +164,49 @@ void main() {
       await _disposeHome(tester);
     });
 
-    testWidgets('user can enter recording selection mode by long pressing a recording', (tester) async {
-      final recordings = [
-        _cloudRecording(id: 'r2', name: 'Rec Select', projectId: 'proj2'),
-      ];
+    testWidgets(
+      'user can enter recording selection mode by long pressing a recording',
+          (tester) async {
+        final ownerUser = _ownerUser();
+        final recordings = [
+          _cloudRecording(id: 'r2', name: 'Rec Select', projectId: 'proj2'),
+        ];
 
-      final projectService = _RecordingTestProjectService({
-        'proj2': Project(
-          id: 'proj2',
-          name: 'Project S',
-          ownerId: 'u1',
-          recordings: recordings,
-          users: const [],
-        ),
-      });
+        final projectService = _RecordingTestProjectService({
+          'proj2': Project(
+            id: 'proj2',
+            name: 'Project S',
+            ownerId: 'u1',
+            recordings: recordings,
+            users: [ownerUser],
+          ),
+        });
 
-      final recordingService = _RecordingTestRecordingService(
-        projectRecordings: {'proj2': List.of(recordings)},
-        projectService: projectService,
-      );
+        final recordingService = _RecordingTestRecordingService(
+          projectRecordings: {'proj2': List.of(recordings)},
+          projectService: projectService,
+        );
 
-      await _pumpHome(
-        tester,
-        tmp: tmp,
-        projectService: projectService,
-        recordingService: recordingService,
-      );
+        await _pumpHome(
+          tester,
+          tmp: tmp,
+          projectService: projectService,
+          recordingService: recordingService,
+        );
 
-      await _openProject(tester, 'Project S');
+        await _openProject(tester, 'Project S');
 
-      await tester.longPress(_recordingTextInGrid('Rec Select'));
-      await tester.pumpAndSettle();
+        await tester.longPress(_recordingTextInGrid('Rec Select'));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(RecordingSelectionActionBar), findsOneWidget);
+        expect(find.byType(RecordingSelectionActionBar), findsOneWidget);
 
-      await _disposeHome(tester);
-    });
+        await _disposeHome(tester);
+      },
+    );
 
     testWidgets('user can delete a selected recording', (tester) async {
+      final ownerUser = _ownerUser();
       final recordings = [
         _cloudRecording(id: 'r3', name: 'Rec Delete', projectId: 'proj3'),
       ];
@@ -207,7 +217,7 @@ void main() {
           name: 'Project D',
           ownerId: 'u1',
           recordings: List.of(recordings),
-          users: const [],
+          users: [ownerUser],
         ),
       });
 
@@ -234,18 +244,27 @@ void main() {
       await tester.tap(deleteButtons.first);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Delete').last);
+      final confirmDeleteFinder = find.text('Delete');
+      expect(confirmDeleteFinder, findsWidgets);
+      await tester.tap(confirmDeleteFinder.last);
       await tester.pumpAndSettle();
 
       final remaining = await projectService.getProject('proj3');
       expect(remaining.recordings.where((r) => r.id == 'r3').isEmpty, isTrue);
       expect(find.byType(RecordingSelectionActionBar), findsNothing);
-      expect(_recordingTextInGrid('Rec Delete'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(RecordingGrid),
+          matching: find.text('Rec Delete'),
+        ),
+        findsNothing,
+      );
 
       await _disposeHome(tester);
     });
 
     testWidgets('user can duplicate a selected recording', (tester) async {
+      final ownerUser = _ownerUser();
       final recordings = [
         _cloudRecording(id: 'r4', name: 'Rec Dup', projectId: 'proj4'),
       ];
@@ -256,7 +275,7 @@ void main() {
           name: 'Project Dup',
           ownerId: 'u1',
           recordings: List.of(recordings),
-          users: const [],
+          users: [ownerUser],
         ),
       });
 
@@ -277,7 +296,9 @@ void main() {
       await tester.longPress(_recordingTextInGrid('Rec Dup'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Duplicate').first);
+      final duplicateFinder = find.text('Duplicate');
+      expect(duplicateFinder, findsWidgets);
+      await tester.tap(duplicateFinder.first);
       await tester.pumpAndSettle();
 
       final proj = await projectService.getProject('proj4');
@@ -288,7 +309,10 @@ void main() {
       await _disposeHome(tester);
     });
 
-    testWidgets('user can start move mode and pick a target project', (tester) async {
+    testWidgets('user can start move mode and pick a target project', (
+        tester,
+        ) async {
+      final ownerUser = _ownerUser();
       final recordings = [
         _cloudRecording(id: 'r5', name: 'Rec Move', projectId: 'src'),
       ];
@@ -299,14 +323,14 @@ void main() {
           name: 'Source',
           ownerId: 'u1',
           recordings: List.of(recordings),
-          users: const [],
+          users: [ownerUser],
         ),
         'tgt': Project(
           id: 'tgt',
           name: 'Target',
           ownerId: 'u1',
           recordings: const [],
-          users: const [],
+          users: [ownerUser],
         ),
       });
 
@@ -327,12 +351,16 @@ void main() {
       await tester.longPress(_recordingTextInGrid('Rec Move'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Move').first);
+      final moveFinder = find.text('Move');
+      expect(moveFinder, findsWidgets);
+      await tester.tap(moveFinder.first);
       await tester.pumpAndSettle();
 
       expect(find.byType(MoveRecordingsModal), findsOneWidget);
 
-      await tester.tap(find.text('Target'));
+      final targetFinder = find.text('Target');
+      expect(targetFinder, findsOneWidget);
+      await tester.tap(targetFinder);
       await tester.pumpAndSettle();
 
       final srcProj = await projectService.getProject('src');
@@ -345,7 +373,10 @@ void main() {
       await _disposeHome(tester);
     });
 
-    testWidgets('user can exit recording selection mode with done', (tester) async {
+    testWidgets('user can exit recording selection mode with done', (
+        tester,
+        ) async {
+      final ownerUser = _ownerUser();
       final recordings = [
         _cloudRecording(id: 'r6', name: 'Rec Done', projectId: 'proj6'),
       ];
@@ -356,7 +387,7 @@ void main() {
           name: 'Project Done',
           ownerId: 'u1',
           recordings: List.of(recordings),
-          users: const [],
+          users: [ownerUser],
         ),
       });
 
@@ -377,7 +408,9 @@ void main() {
       await tester.longPress(_recordingTextInGrid('Rec Done'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Done').first);
+      final doneFinder = find.text('Done');
+      expect(doneFinder, findsOneWidget);
+      await tester.tap(doneFinder);
       await tester.pumpAndSettle();
 
       expect(find.byType(RecordingSelectionActionBar), findsNothing);
@@ -389,41 +422,75 @@ void main() {
 
 class _RecordingTestProjectService implements ProjectService {
   final Map<String, Project> _projects;
+  void Function(String projectId, List<Recording> recordings)?
+  projectRecordingsSync;
 
-  _RecordingTestProjectService(Map<String, Project> projects) : _projects = Map.of(projects);
+  _RecordingTestProjectService(Map<String, Project> projects)
+      : _projects = Map.of(projects);
 
   @override
   Future<Project> getProject(String projectId) async {
     final p = _projects[projectId];
-    if (p == null) throw StateError('Project not found: $projectId');
+    if (p == null) {
+      throw StateError('Project not found: $projectId');
+    }
     return p;
   }
 
   @override
   Future<List<ProjectMetadata>> getProjects() async {
-    return _projects.values.map((p) => ProjectMetadata.cloud(p.id, p.name)).toList();
+    return _projects.values
+        .map((p) => ProjectMetadata.cloud(p.id, p.name))
+        .toList();
   }
 
   @override
   Future<List<ProjectMetadata>> getLocalProjects() async => [];
 
   @override
+  Future<List<ProjectUser>> getProjectUsers(String projectId) async {
+    final p = _projects[projectId];
+    if (p == null) {
+      throw StateError('Project not found: $projectId');
+    }
+
+    return p.users.map((role) {
+      return ProjectUser(
+        userId: role.userId,
+        name: role.userId,
+        emailAddress: '${role.userId}@example.com',
+        pictureUrl: null,
+        role: role,
+      );
+    }).toList();
+  }
+
+  @override
   Future<void> moveRecordings({
     required List<String> recordingIds,
     required String? targetProjectId,
   }) async {
-    if (targetProjectId == null) return;
+    if (targetProjectId == null) {
+      return;
+    }
 
     for (final pid in _projects.keys.toList()) {
       final p = _projects[pid]!;
-      final moving = p.recordings.where((r) => recordingIds.contains(r.id)).toList();
-      if (moving.isEmpty) continue;
+      final moving = p.recordings
+          .where((r) => recordingIds.contains(r.id))
+          .toList();
+
+      if (moving.isEmpty) {
+        continue;
+      }
 
       _projects[pid] = Project(
         id: p.id,
         name: p.name,
         ownerId: p.ownerId,
-        recordings: p.recordings.where((r) => !recordingIds.contains(r.id)).toList(),
+        recordings: p.recordings
+            .where((r) => !recordingIds.contains(r.id))
+            .toList(),
         users: p.users,
       );
 
@@ -453,31 +520,44 @@ class _RecordingTestProjectService implements ProjectService {
         users: target.users,
       );
     }
+
+    for (final entry in _projects.entries) {
+      projectRecordingsSync?.call(entry.key, entry.value.recordings);
+    }
   }
 
   @override
   Future<Project> createProject(String name) => throw UnimplementedError();
 
   @override
-  Future<void> renameProject(String projectId, String name) => throw UnimplementedError();
+  Future<void> renameProject(String projectId, String name) =>
+      throw UnimplementedError();
 
   @override
   Future<void> deleteProject(String projectId) => throw UnimplementedError();
 
   @override
-  Future<ProjectMetadata> duplicateProject(String projectId) => throw UnimplementedError();
+  Future<ProjectMetadata> duplicateProject(String projectId) =>
+      throw UnimplementedError();
 
   @override
-  Future<ProjectMetadata> createLocalProject({required String name, String? id}) => throw UnimplementedError();
+  Future<ProjectMetadata> createLocalProject({required String name, String? id}) =>
+      throw UnimplementedError();
 
   @override
   Future<void> deleteLocalProject(String projectId) => throw UnimplementedError();
 
   @override
-  Future<void> duplicateLocalProject(String projectId, ProjectMetadata newProject) => throw UnimplementedError();
+  Future<void> duplicateLocalProject(
+      String projectId,
+      ProjectMetadata newProject,
+      ) => throw UnimplementedError();
 
   @override
-  Future<void> updateLocalProject({required ProjectMetadata project, String? oldProjectId}) => throw UnimplementedError();
+  Future<void> updateLocalProject({
+    required ProjectMetadata project,
+    String? oldProjectId,
+  }) => throw UnimplementedError();
 
   @override
   Future<List<ProjectUser>> addProjectUser({
@@ -490,16 +570,20 @@ class _RecordingTestProjectService implements ProjectService {
   Future<List<String>> getLocalProjectIds() => throw UnimplementedError();
 
   @override
-  Future<List<ProjectUser>> getProjectUsers(String projectId) => throw UnimplementedError();
+  Future<void> leaveProject({required String projectId}) =>
+      throw UnimplementedError();
 
   @override
-  Future<void> leaveProject({required String projectId}) => throw UnimplementedError();
+  Future<void> overwriteMetaIfProjectDirExists(
+      String projectId,
+      ProjectMetadata project,
+      ) => throw UnimplementedError();
 
   @override
-  Future<void> overwriteMetaIfProjectDirExists(String projectId, ProjectMetadata project) => throw UnimplementedError();
-
-  @override
-  Future<void> removeUserFromProject({required String projectId, required String userId}) => throw UnimplementedError();
+  Future<void> removeUserFromProject({
+    required String projectId,
+    required String userId,
+  }) => throw UnimplementedError();
 
   @override
   Future<void> updateProjectUserRole({
@@ -516,7 +600,15 @@ class _RecordingTestRecordingService implements RecordingService {
   _RecordingTestRecordingService({
     required this.projectRecordings,
     this.projectService,
-  });
+  }) {
+    if (projectService != null) {
+      projectService!.projectRecordingsSync = _syncRecordings;
+    }
+  }
+
+  void _syncRecordings(String projectId, List<Recording> recordings) {
+    projectRecordings[projectId] = List.of(recordings);
+  }
 
   @override
   Future<List<Recording>> getLocalProjectRecordings(String projectId) async {
@@ -526,8 +618,10 @@ class _RecordingTestRecordingService implements RecordingService {
   @override
   Future<void> deleteCloudRecording(String recordingId) async {
     for (final key in projectRecordings.keys.toList()) {
-      projectRecordings[key] =
-          projectRecordings[key]!.where((r) => r.id != recordingId).toList();
+      projectRecordings[key] = projectRecordings[key]!
+          .where((r) => r.id != recordingId)
+          .toList();
+
       final p = projectService?._projects[key];
       if (p != null) {
         projectService!._projects[key] = Project(
@@ -585,16 +679,21 @@ class _RecordingTestRecordingService implements RecordingService {
   }
 
   @override
-  Future<Recording> completeUpload(String recordingId) => throw UnimplementedError();
+  Future<Recording> completeUpload(String recordingId) =>
+      throw UnimplementedError();
 
   @override
-  Future<GetRecordingResponse> getRecording(String recordingId) => throw UnimplementedError();
+  Future<GetRecordingResponse> getRecording(String recordingId) =>
+      throw UnimplementedError();
 
   @override
   Future<List<Recording>> getRecordings() => throw UnimplementedError();
 
   @override
-  Future<void> renameCloud({required String recordingId, required String name}) => throw UnimplementedError();
+  Future<void> renameCloud({
+    required String recordingId,
+    required String name,
+  }) => throw UnimplementedError();
 
   @override
   Future<bool> deleteLocalRecording({
@@ -603,13 +702,17 @@ class _RecordingTestRecordingService implements RecordingService {
   }) => throw UnimplementedError();
 
   @override
-  Future<Recording> getLocalRecording(String projectId, String recordingId) => throw UnimplementedError();
+  Future<Recording> getLocalRecording(String projectId, String recordingId) =>
+      throw UnimplementedError();
 
   @override
   Future<List<Recording>> getLocalRecordings() => throw UnimplementedError();
 
   @override
-  Future<List<Sensor>> getLocalRecordingSensors(String projectId, String recordingId) => throw UnimplementedError();
+  Future<List<Sensor>> getLocalRecordingSensors(
+      String projectId,
+      String recordingId,
+      ) => throw UnimplementedError();
 
   @override
   Future<void> renameLocal({
@@ -627,7 +730,8 @@ class _RecordingTestRecordingService implements RecordingService {
   }) => throw UnimplementedError();
 
   @override
-  Future<UploadRecordingResponse> startUpload(UploadRecordingRequest req) => throw UnimplementedError();
+  Future<UploadRecordingResponse> startUpload(UploadRecordingRequest req) =>
+      throw UnimplementedError();
 
   @override
   Future<void> updateLocalUploadStatus(
