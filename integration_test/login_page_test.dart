@@ -27,6 +27,9 @@ class MockLocalMedia extends Mock implements LocalMedia {}
 class MockUserService extends Mock implements UserService {}
 
 Future<MockAuthController> mockAuth(WidgetTester tester) async {
+  final dpi = tester.view.devicePixelRatio;
+      tester.view.physicalSize = Size(2560 * dpi, 1800 * dpi);
+      
   final mockAuthController = MockAuthController();
   final mockProjectService = MockProjectService();
   final mockRecordingService = MockRecordingService();
@@ -212,7 +215,15 @@ void main() {
       await tester.pump(); 
       await tester.pump(const Duration(seconds: 1));
 
-      expect(find.text('Default'), findsOneWidget);
+      // Verify we arrived at the Home Page
+      final addFolderImageFinder = find.byWidgetPredicate(
+        (widget) =>
+          widget is Image &&
+          widget.image is AssetImage &&
+          (widget.image as AssetImage).assetName == 'assets/buttons/home/add_folder.png',
+      );
+      
+      expect(addFolderImageFinder, findsOneWidget, reason: 'Home page image should be present');
     });
   });
 }
