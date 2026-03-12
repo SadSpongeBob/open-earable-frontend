@@ -27,9 +27,6 @@ class MockLocalMedia extends Mock implements LocalMedia {}
 class MockUserService extends Mock implements UserService {}
 
 Future<MockAuthController> mockAuth(WidgetTester tester) async {
-  final dpi = tester.view.devicePixelRatio;
-      tester.view.physicalSize = Size(2560 * dpi, 1800 * dpi);
-      
   final mockAuthController = MockAuthController();
   final mockProjectService = MockProjectService();
   final mockRecordingService = MockRecordingService();
