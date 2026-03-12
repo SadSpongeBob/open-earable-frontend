@@ -42,7 +42,7 @@ void main() {
     registerFallbackValue(const Duration());
   });
 
-  group('Playback Integration Test', () {
+  group('Playback Widget Test', () {
     late Recording recording;
     late Sensor sensor;
     late MockVideoController fakeVideo;
