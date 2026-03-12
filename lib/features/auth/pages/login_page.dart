@@ -159,7 +159,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Flexible( // <-- makes Text respect available width
+                      Flexible(
                         child: Text(
                           "Don’t have an account yet? ",
                           style: AppTextStyles.footerRegular,
