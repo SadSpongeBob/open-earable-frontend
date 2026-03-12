@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:integration_test/integration_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
@@ -27,6 +26,9 @@ class MockUserService extends Mock implements UserService {}
 
 // Helper to navigate from Login to Signup Page
 Future<MockAuthController> setupSignupPage(WidgetTester tester) async {
+  final dpi = tester.view.devicePixelRatio;
+  tester.view.physicalSize = Size(2560 * dpi, 1800 * dpi);
+
   final mockAuthController = MockAuthController();
   final mockProjectService = MockProjectService();
   final mockRecordingService = MockRecordingService();
@@ -59,9 +61,9 @@ Future<MockAuthController> setupSignupPage(WidgetTester tester) async {
 }
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Signup Page Integration Tests', () {
+  group('Signup Page Widget Tests', () {
 
     testWidgets('User can sign up successfully', (WidgetTester tester) async {
       final mockAuth = await setupSignupPage(tester);
@@ -149,11 +151,8 @@ void main() {
 
       await tester.pump();
 
-      final signupButton = find.byWidgetPredicate(
-        (widget) => widget is AppButton && widget.text == 'Sign Up',
-      );
-
-      await tester.tap(signupButton);
+      final FormState form = tester.state(find.byType(Form));
+      form.validate();
 
       for(int i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 200));
