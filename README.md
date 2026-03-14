@@ -175,7 +175,8 @@ Run unit tests with:
 
 ### Integration Tests
 Integration tests are located in the `integration_test/` directory.
-Before running them, make sure a device or emulator is connected and running.
+
+> ⚠️ Before running them, make sure a device or emulator is connected and running.
 
 Run all integration tests with:
 
